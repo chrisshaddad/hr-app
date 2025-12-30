@@ -10,6 +10,7 @@
     "db:seed": "prisma db seed"
   },
   "devDependencies": {
+    "@repo/typescript-config": "*",
     "@faker-js/faker": "^10.1.0",
     "@types/node": "^22.19.3",
     "@types/pg": "^8.16.0",

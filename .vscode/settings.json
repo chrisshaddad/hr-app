@@ -4,11 +4,5 @@
   "editor.insertSpaces": true,
   "editor.defaultFormatter": "prettier.prettier-vscode",
   "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true,
-  "[typescript]": {
-    "editor.defaultFormatter": "prettier.prettier-vscode"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "prettier.prettier-vscode"
-  }
+  "files.trimTrailingWhitespace": true
 }

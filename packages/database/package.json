@@ -1,15 +1,21 @@
 {
   "name": "@repo/db",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@types/node": "^22.19.3",
     "@types/pg": "^8.16.0",
-    "prisma": "^7.2.0"
+    "prisma": "^7.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",

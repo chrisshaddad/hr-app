@@ -66,6 +66,7 @@ export default function Home() {
         <Button appName="web" className={styles.secondary}>
           Open alert
         </Button>
+        <h1 className="text-3xl font-bold underline">Some Tailwind CSS</h1>
       </main>
       <footer className={styles.footer}>
         <a

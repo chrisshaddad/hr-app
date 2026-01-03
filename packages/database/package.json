@@ -1,7 +1,6 @@
 {
   "name": "@repo/db",
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

@@ -7,5 +7,6 @@
   "files.trimTrailingWhitespace": true,
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+  "files.eol": "\n"
 }

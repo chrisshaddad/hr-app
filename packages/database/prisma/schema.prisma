@@ -11,10 +11,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "private"]
 }
 
 model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
   name  String
+
+  @@schema("public")
 }

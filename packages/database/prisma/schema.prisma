@@ -31,6 +31,7 @@ model User {
   updatedAt   DateTime @updatedAt
 
   password Password?
+  sessions Session[]
 
   @@schema("public")
 }
@@ -45,5 +46,17 @@ model Password {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@schema("private")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@schema("private")
 }

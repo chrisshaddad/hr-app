@@ -1,6 +1,6 @@
-import { faker } from "@faker-js/faker";
+import { faker } from '@faker-js/faker';
 
-import { prisma } from "../../src/client";
+import { prisma } from '../../src/client';
 
 async function main() {
   const alice = await prisma.user.upsert({

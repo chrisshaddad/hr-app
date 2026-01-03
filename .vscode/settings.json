@@ -4,5 +4,8 @@
   "editor.insertSpaces": true,
   "editor.defaultFormatter": "prettier.prettier-vscode",
   "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true
+  "files.trimTrailingWhitespace": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
 }

@@ -14,10 +14,36 @@ datasource db {
   schemas  = ["public", "private"]
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  EMPLOYEE
 
   @@schema("public")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  isConfirmed Boolean  @default(false)
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  password Password?
+
+  @@schema("public")
+}
+
+model Password {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  hashedPassword   String
+  failedLoginCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
 }

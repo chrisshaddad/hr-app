@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "private"]
+}
+
+enum UserRole {
+  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
+  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
+  EMPLOYEE
+
+  @@schema("public")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+
+  @@schema("public")
+}
+
+enum OrganizationStatus {
+  PENDING // Awaiting super admin approval
+  ACTIVE // Approved and operational
+  SUSPENDED
+  INACTIVE
+
+  @@schema("public")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  isConfirmed    Boolean  @default(false)
+  name           String
+  role           UserRole @default(EMPLOYEE)
+  organizationId String? // null for SUPER_ADMIN users
+  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  password              Password?
+  sessions              Session[]
+  magicLinks            MagicLink[]
+  profile               UserProfile?
+  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
+  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdOrganization   Organization?  @relation("OrganizationCreator")
+  approvedOrganizations Organization[] @relation("OrganizationApprover")
+
+  @@index([organizationId])
+  @@index([departmentId])
+  @@schema("public")
+}
+
+model UserProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  dateOfBirth DateTime?
+  gender      Gender?
+  bio         String?   @db.Text
+  phoneNumber String?
+
+  // Address fields
+  street1    String?
+  street2    String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?
+
+  // Emergency contact
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+
+  nationality       String?
+  profilePictureUrl String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model Password {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  hashedPassword   String
+  failedLoginCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("private")
+}
+
+model MagicLink {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique // securely generated random token, not a UUID
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@schema("private")
+}
+
+model Organization {
+  id           String             @id @default(uuid())
+  name         String
+  status       OrganizationStatus @default(PENDING)
+  description  String?            @db.Text
+  website      String?
+  createdById  String             @unique // User can only create one organization
+  approvedById String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  approvedAt   DateTime? // When super admin approved
+
+  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  branches   Branch[]
+  users      User[]   @relation("OrganizationMembers")
+
+  @@index([approvedById])
+  @@index([status])
+  @@schema("public")
+}
+
+model Branch {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  street1        String?
+  street2        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  email          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departments  Department[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  branchId    String
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  users  User[]
+
+  @@index([branchId])
+  @@schema("public")
+}

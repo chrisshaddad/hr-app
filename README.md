@@ -1,11 +1,13 @@
 # OnRamp HR App
 
-Commands:
+Startup commands:
 
 ```
-npm run dev
-
+# Runs docker compose
 npm run services:init
+
+# Runs the repo apps
+npm run dev
 ```
 
 ## Web

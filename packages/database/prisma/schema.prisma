@@ -31,20 +31,37 @@ enum Gender {
   @@schema("public")
 }
 
+enum OrganizationStatus {
+  PENDING // Awaiting super admin approval
+  ACTIVE // Approved and operational
+  SUSPENDED
+  INACTIVE
+
+  @@schema("public")
+}
+
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  isConfirmed Boolean  @default(false)
-  name        String
-  role        UserRole @default(EMPLOYEE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  isConfirmed    Boolean  @default(false)
+  name           String
+  role           UserRole @default(EMPLOYEE)
+  organizationId String? // null for SUPER_ADMIN users
+  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  password   Password?
-  sessions   Session[]
-  magicLinks MagicLink[]
-  profile    UserProfile?
+  password              Password?
+  sessions              Session[]
+  magicLinks            MagicLink[]
+  profile               UserProfile?
+  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
+  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdOrganization   Organization?  @relation("OrganizationCreator")
+  approvedOrganizations Organization[] @relation("OrganizationApprover")
 
+  @@index([organizationId])
+  @@index([departmentId])
   @@schema("public")
 }
 
@@ -117,4 +134,63 @@ model MagicLink {
   @@index([token])
   @@index([userId])
   @@schema("private")
+}
+
+model Organization {
+  id           String             @id @default(uuid())
+  name         String
+  status       OrganizationStatus @default(PENDING)
+  description  String?            @db.Text
+  website      String?
+  createdById  String             @unique // User can only create one organization
+  approvedById String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  approvedAt   DateTime? // When super admin approved
+
+  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  branches   Branch[]
+  users      User[]   @relation("OrganizationMembers")
+
+  @@index([approvedById])
+  @@index([status])
+  @@schema("public")
+}
+
+model Branch {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  street1        String?
+  street2        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  email          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departments  Department[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  branchId    String
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  users  User[]
+
+  @@index([branchId])
+  @@schema("public")
 }

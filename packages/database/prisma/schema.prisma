@@ -40,6 +40,43 @@ enum OrganizationStatus {
   @@schema("public")
 }
 
+enum ReviewType {
+  MANAGER // Manager reviewing employee
+  PEER // Peer reviewing colleague
+  SELF // Employee self-assessment
+  ONE_ON_ONE // 1-on-1 meeting
+
+  @@schema("public")
+}
+
+enum ReviewCycle {
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+  SEMI_ANNUAL
+  BI_ANNUAL
+
+  @@schema("public")
+}
+
+enum ReviewStatus {
+  IN_PROGRESS // Being filled out
+  COMPLETED // Submitted
+  ACKNOWLEDGED // Reviewed by employee
+
+  @@schema("public")
+}
+
+enum MeetingRecurrence {
+  NONE // One-time meeting
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+  BI_ANNUAL
+
+  @@schema("public")
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -48,6 +85,7 @@ model User {
   role           UserRole @default(EMPLOYEE)
   organizationId String? // null for SUPER_ADMIN users
   departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
+  managerId      String? // Direct reporting structure: the manager this user reports to
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -60,8 +98,18 @@ model User {
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
 
+  // Performance Review relations
+  reviewsReceived PerformanceReview[] @relation("ReviewsReceived")
+  reviewsGiven    PerformanceReview[] @relation("ReviewsGiven")
+  goals           Goal[]              @relation("GoalsOwned")
+
+  // Direct reporting relations
+  manager       User?  @relation("DirectReports", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports User[] @relation("DirectReports")
+
   @@index([organizationId])
   @@index([departmentId])
+  @@index([managerId])
   @@schema("public")
 }
 
@@ -153,6 +201,9 @@ model Organization {
   branches   Branch[]
   users      User[]   @relation("OrganizationMembers")
 
+  // Performance Review relations
+  performanceReviews PerformanceReview[]
+
   @@index([approvedById])
   @@index([status])
   @@schema("public")
@@ -192,5 +243,74 @@ model Department {
   users  User[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+model PerformanceReview {
+  id          String       @id @default(uuid())
+  reviewType  ReviewType
+  reviewCycle ReviewCycle?
+  status      ReviewStatus @default(IN_PROGRESS)
+
+  // Who is being reviewed
+  revieweeId String
+
+  // Who is conducting the review
+  reviewerId String
+
+  // Organization context
+  organizationId String
+
+  // Review content
+  overallRating       Int?    @db.SmallInt // 1-5 scale
+  strengths           String? @db.Text
+  areasForImprovement String? @db.Text
+  achievements        String? @db.Text
+  notes               String? @db.Text
+
+  // 1-on-1 meeting specific fields (used when reviewType = ONE_ON_ONE)
+  scheduledAt DateTime? // When meeting is scheduled
+  duration    Int? // Duration in minutes
+  location    String? // Physical location or video link
+  recurrence  MeetingRecurrence? @default(NONE) // Recurrence pattern
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviewee     User         @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer     User         @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([revieweeId])
+  @@index([reviewerId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([reviewType])
+  @@index([scheduledAt])
+  @@schema("public")
+}
+
+model Goal {
+  id          String  @id @default(uuid())
+  title       String
+  description String  @db.Text
+  isCompleted Boolean @default(false)
+
+  // Goal owner
+  ownerId String
+
+  // Timeline
+  startDate     DateTime
+  targetDate    DateTime
+  completedDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation("GoalsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([targetDate])
+  @@index([isCompleted])
   @@schema("public")
 }

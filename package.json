@@ -7,9 +7,12 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\" \"!packages/database/generated/**\"",
     "check-types": "turbo run check-types",
-    "services:init": "docker compose up -d"
+    "services:init": "docker compose up -d",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "turbo": "^2.7.2",
     "typescript": "5.9.2"

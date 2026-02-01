@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
         url: process.env.REDIS_URL,
       },
     }),
+    DatabaseModule,
     AuthModule,
     MailModule,
     OrganizationsModule,

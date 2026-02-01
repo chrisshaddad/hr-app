@@ -3,10 +3,10 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "^db:generate"],
+      "dependsOn": ["^build", "^db:generate", "^db:build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DATABASE_URL", "REDIS_URL", "NODE_ENV"]
+      "env": ["DATABASE_URL", "REDIS_URL", "NODE_ENV", "NEXT_PUBLIC_API_URL"]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -15,10 +15,17 @@
       "dependsOn": ["^check-types"]
     },
     "dev": {
-      "dependsOn": ["^db:generate"],
+      "dependsOn": ["^db:generate", "^db:build"],
       "cache": false,
       "persistent": true,
-      "env": ["DATABASE_URL", "REDIS_URL", "NODE_ENV", "MAILPIT_URL"]
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NODE_ENV",
+        "MAILPIT_URL",
+        "APP_URL",
+        "NEXT_PUBLIC_API_URL"
+      ]
     },
     "db:generate": {
       "cache": false
@@ -35,6 +42,9 @@
       "persistent": true
     },
     "db:seed": {
+      "cache": false
+    },
+    "db:build": {
       "cache": false
     }
   }

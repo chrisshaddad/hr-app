@@ -1,3 +1,10 @@
 # @repo/typescript-config
 
-Typescript configuration files used across the monorepo.
+Shared TypeScript configurations for the monorepo.
+
+## Configs
+
+- `base.json` - Base config
+- `nestjs.json` - NestJS apps
+- `nextjs.json` - Next.js apps
+- `react-library.json` - React packages

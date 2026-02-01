@@ -1,25 +1,14 @@
-import { faker } from '@faker-js/faker';
-
 import { prisma } from '../../src/client';
+import { seedSuperAdmins, seedOrgAdmins } from './seedUsers';
+import { seedOrganizations } from './seedOrganizations';
 
 async function main() {
-  const alice = await prisma.user.upsert({
-    where: { email: faker.internet.email() },
-    update: {},
-    create: {
-      email: faker.internet.email(),
-      name: faker.person.fullName(),
-    },
-  });
-  const bob = await prisma.user.upsert({
-    where: { email: faker.internet.email() },
-    update: {},
-    create: {
-      email: faker.internet.email(),
-      name: faker.person.fullName(),
-    },
-  });
-  console.log({ alice, bob });
+  // Seed users first (org admins need to exist before organizations)
+  await seedSuperAdmins(prisma);
+  await seedOrgAdmins(prisma);
+
+  // Seed organizations (links org admins to their orgs)
+  await seedOrganizations(prisma);
 }
 main()
   .then(async () => {

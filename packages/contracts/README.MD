@@ -1,3 +1,9 @@
 # @repo/contracts
 
-Contracts shared between the frontend and backend.
+Shared Zod validation schemas between API and web.
+
+## Usage
+
+```typescript
+import { loginSchema, organizationSchema } from '@repo/contracts';
+```

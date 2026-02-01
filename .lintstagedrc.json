@@ -1,0 +1,12 @@
+{
+  "apps/api/**/*.ts": [
+    "eslint --fix --config apps/api/eslint.config.mjs",
+    "prettier --write"
+  ],
+  "apps/web/**/*.{ts,tsx}": [
+    "eslint --fix --config apps/web/eslint.config.js",
+    "prettier --write"
+  ],
+  "packages/contracts/**/*.ts": ["prettier --write"],
+  "packages/database/**/*.ts": ["prettier --write"]
+}

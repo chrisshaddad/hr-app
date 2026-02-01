@@ -21,7 +21,10 @@ import {
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser, Public } from './decorators';
-import { SESSION_COOKIE_NAME, type AuthenticatedRequest } from './auth.guard';
+import {
+  SESSION_COOKIE_NAME,
+  type AuthenticatedRequest,
+} from './guards/auth.guard';
 import {
   requestMagicLinkSchema,
   verifyMagicLinkSchema,

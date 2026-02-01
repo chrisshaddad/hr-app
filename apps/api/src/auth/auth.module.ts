@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import Redis from 'ioredis';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { AuthGuard } from './auth.guard';
+import { AuthGuard } from './guards/auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { SessionService } from './session.service';
 import { MailModule } from '../mail/mail.module';

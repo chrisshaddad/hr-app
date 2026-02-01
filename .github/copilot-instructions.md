@@ -185,7 +185,11 @@ lib/
 - Unit tests: Jest
 - E2E tests: Jest with supertest (apps/api/test/)
 
-## Notes for AI Assistants
+---
+
+## Best Practices & Guidelines for AI Assistants
+
+### General Principles
 
 1. Always use the shared database package (`@repo/db`) for Prisma operations
 2. Validation schemas should be defined in `@repo/contracts` and shared between frontend and backend
@@ -194,3 +198,373 @@ lib/
 5. Use Radix UI + Tailwind for frontend components, following shadcn/ui patterns
 6. Respect the multi-tenant architecture - always scope queries by organizationId for non-super-admin users
 7. Sensitive data (passwords, tokens) belongs in the `private` schema
+
+---
+
+### shadcn/ui Components
+
+**IMPORTANT**: Before implementing any UI component, check if shadcn/ui provides it.
+
+1. **Always check shadcn/ui first**: Visit [ui.shadcn.com](https://ui.shadcn.com/docs/components) to find the installation command
+2. **Use the CLI to add components**: Run the install command from the shadcn docs:
+   ```bash
+   # From apps/web directory
+   npx shadcn@latest add <component-name>
+   ```
+3. **Do NOT create custom implementations** of components that shadcn/ui already provides (Button, Dialog, Card, Table, etc.)
+4. **Existing components** are located in `apps/web/components/ui/`
+5. **Configuration** is defined in `apps/web/components.json` (style: new-york, icons: lucide)
+
+```bash
+# Examples
+npx shadcn@latest add dialog
+npx shadcn@latest add dropdown-menu
+npx shadcn@latest add form
+```
+
+---
+
+### Tailwind CSS v4 Guidelines
+
+**IMPORTANT**: This project uses Tailwind CSS v4 with CSS-first configuration.
+
+#### Units & Sizing
+
+1. **NEVER use pixel values** (`px`) - use relative units instead:
+   - Use `rem` for consistent scaling: `text-[1.125rem]` instead of `text-[18px]`
+   - Use Tailwind spacing scale: `p-4` (1rem), `m-6` (1.5rem), `gap-2` (0.5rem)
+   - Use fractional/percentage for responsive layouts: `w-1/2`, `w-full`
+
+2. **Prioritize theme variables** defined in `globals.css`:
+
+   ```css
+   /* Use these CSS variables via Tailwind classes */
+   --radius, --radius-sm, --radius-md, --radius-lg
+   --color-background, --color-foreground
+   --color-primary, --color-secondary
+   --color-muted, --color-accent
+   --color-destructive
+   ```
+
+3. **Preferred Tailwind patterns**:
+
+   ```tsx
+   // ✅ Good - uses theme variables
+   className = 'bg-background text-foreground rounded-lg p-4';
+
+   // ❌ Bad - hardcoded pixels
+   className = 'bg-white rounded-[8px] p-[16px]';
+   ```
+
+4. **Responsive design**: Use Tailwind breakpoints (`sm:`, `md:`, `lg:`, `xl:`) not media queries with pixels
+
+---
+
+### Zod v4 Schema Guidelines
+
+**IMPORTANT**: This project uses Zod v4. Many APIs have changed from v3.
+
+#### Deprecated Methods (Do NOT Use)
+
+```typescript
+// ❌ DEPRECATED - Don't use these method chains
+z.string().uuid();
+z.string().email();
+z.string().url();
+z.string().datetime();
+
+// ✅ CORRECT - Use top-level functions instead
+z.uuid();
+z.email();
+z.url();
+z.iso.datetime();
+```
+
+#### Key Zod v4 Changes
+
+1. **String format validators are now top-level**:
+
+   ```typescript
+   // ✅ Zod v4 style
+   import { z } from 'zod';
+
+   const schema = z.object({
+     id: z.uuid(),
+     email: z.email(),
+     website: z.url().optional(),
+     createdAt: z.iso.datetime(),
+   });
+   ```
+
+2. **Error customization uses `error` instead of `message`**:
+
+   ```typescript
+   // ✅ Zod v4
+   z.string().min(5, { error: 'Too short' });
+
+   // ❌ Deprecated
+   z.string().min(5, { message: 'Too short' });
+   ```
+
+3. **Use `z.strictObject()` and `z.looseObject()`**:
+
+   ```typescript
+   // ✅ Zod v4
+   z.strictObject({ name: z.string() });
+   z.looseObject({ name: z.string() });
+
+   // ❌ Deprecated
+   z.object({ ... }).strict();
+   z.object({ ... }).passthrough();
+   ```
+
+4. **Use `.extend()` instead of `.merge()`**:
+
+   ```typescript
+   // ✅ Recommended
+   const Extended = Base.extend(Additional.shape);
+
+   // ❌ Deprecated
+   const Extended = Base.merge(Additional);
+   ```
+
+5. **Records require two arguments**:
+
+   ```typescript
+   // ✅ Zod v4
+   z.record(z.string(), z.number());
+
+   // ❌ No longer valid
+   z.record(z.number());
+   ```
+
+6. **`z.nativeEnum()` is deprecated** - use `z.enum()` instead:
+
+   ```typescript
+   enum Color {
+     Red = 'red',
+     Blue = 'blue',
+   }
+
+   // ✅ Zod v4
+   const ColorSchema = z.enum(Color);
+   ```
+
+**Reference**: [Zod v4 Migration Guide](https://zod.dev/v4/changelog)
+
+---
+
+### Contracts Package Organization
+
+**IMPORTANT**: Organize contracts into logical, separate files - do NOT dump everything into one file.
+
+#### File Structure
+
+```
+packages/contracts/src/
+  index.ts                    # Re-exports only
+  auth/
+    index.ts                  # Re-exports auth schemas
+    request-magic-link.schema.ts
+    verify-magic-link.schema.ts
+    login.schema.ts
+  users/
+    index.ts
+    user.schema.ts
+    user-profile.schema.ts
+    create-user.schema.ts
+  organizations/
+    index.ts
+    organization.schema.ts    # Base schemas & types
+    organization-list.schema.ts
+    organization-actions.schema.ts
+    create-organization.schema.ts
+```
+
+#### Naming Conventions
+
+1. **File names**: Use kebab-case with `.schema.ts` suffix
+2. **Schema names**: Use camelCase with `Schema` suffix
+3. **Type names**: Infer from schemas using `z.infer<>`
+
+```typescript
+// organization.schema.ts
+export const organizationStatusSchema = z.enum([...]);
+export type OrganizationStatus = z.infer<typeof organizationStatusSchema>;
+
+export const organizationDetailSchema = z.object({...});
+export type OrganizationDetail = z.infer<typeof organizationDetailSchema>;
+```
+
+4. **Index files should only re-export**:
+   ```typescript
+   // auth/index.ts
+   export * from './request-magic-link.schema';
+   export * from './verify-magic-link.schema';
+   ```
+
+---
+
+### SWR & Data Fetching Patterns
+
+**IMPORTANT**: Create custom hooks for related entities instead of using SWR directly in components.
+
+#### Custom Hook Structure
+
+```typescript
+// hooks/use-<entity>.ts
+'use client';
+
+import useSWR, { mutate } from 'swr';
+import { useCallback } from 'react';
+import { apiPost, apiPatch, apiDelete } from '@/lib/api';
+import type { EntityResponse, CreateEntityDto } from '@repo/contracts';
+
+interface UseEntityOptions {
+  enabled?: boolean;
+  // Add relevant filters
+}
+
+interface UseEntityReturn {
+  data: EntityResponse | undefined;
+  isLoading: boolean;
+  error: Error | undefined;
+  mutate: () => void;
+  // Add action methods
+}
+
+export function useEntity(
+  id: string,
+  options: UseEntityOptions = {},
+): UseEntityReturn {
+  const { enabled = true } = options;
+
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: swrMutate,
+  } = useSWR<EntityResponse>(enabled ? `/entities/${id}` : null);
+
+  // Include related mutations with cache invalidation
+  const update = useCallback(
+    async (updateData: UpdateEntityDto) => {
+      const result = await apiPatch<EntityResponse>(
+        `/entities/${id}`,
+        updateData,
+      );
+      swrMutate(); // Invalidate this entity
+      // Invalidate related caches
+      mutate(
+        (key) => typeof key === 'string' && key.startsWith('/entities'),
+        undefined,
+        { revalidate: true },
+      );
+      return result;
+    },
+    [id, swrMutate],
+  );
+
+  return { data, isLoading, error, mutate: swrMutate, update };
+}
+```
+
+#### Key Patterns
+
+1. **One hook per entity domain**: `useUser`, `useOrganizations`, `useEmployees`
+2. **Include CRUD operations** in the hook when applicable
+3. **Handle cache invalidation** for related queries
+4. **Support conditional fetching** with `enabled` option
+5. **Type everything** with contracts from `@repo/contracts`
+
+```typescript
+// ✅ Good - using custom hook
+const { organization, isLoading, approve, reject } = useOrganization(id);
+
+// ❌ Bad - raw SWR in component
+const { data } = useSWR(`/organizations/${id}`);
+```
+
+---
+
+### NestJS Backend Patterns
+
+#### Module Structure
+
+```
+feature/
+  feature.module.ts        # Module definition with imports/exports
+  feature.service.ts       # Business logic (inject PrismaService)
+  feature.controller.ts    # HTTP endpoints with decorators
+  feature.service.spec.ts  # Service unit tests
+  feature.controller.spec.ts
+  dto/                     # If DTOs are needed beyond contracts
+    create-feature.dto.ts
+  guards/                  # Feature-specific guards
+```
+
+#### Controller Best Practices
+
+```typescript
+@ApiTags('feature')
+@Controller('feature')
+export class FeatureController {
+  constructor(private readonly featureService: FeatureService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List features' })
+  @ApiOkResponse({ description: 'Features retrieved successfully' })
+  async findAll(@Query() query: ListFeaturesQuery) {
+    return this.featureService.findAll(query);
+  }
+
+  @Post()
+  @UsePipes(new ZodValidationPipe(createFeatureSchema))
+  async create(@Body() dto: CreateFeatureDto) {
+    return this.featureService.create(dto);
+  }
+}
+```
+
+#### Service Best Practices
+
+1. **Always inject PrismaService** from `../database/prisma.service`
+2. **Use transactions** for multi-step operations
+3. **Throw appropriate NestJS exceptions** (NotFoundException, ForbiddenException, etc.)
+4. **Scope queries by organizationId** for tenant isolation
+
+```typescript
+@Injectable()
+export class FeatureService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAllForOrg(organizationId: string) {
+    return this.prisma.feature.findMany({
+      where: { organizationId }, // Always scope by org!
+    });
+  }
+}
+```
+
+#### Validation with Zod
+
+Use the shared `ZodValidationPipe` from `../common/pipes`:
+
+```typescript
+import { ZodValidationPipe } from '../common/pipes';
+import { createFeatureSchema, type CreateFeatureDto } from '@repo/contracts';
+
+@Post()
+@UsePipes(new ZodValidationPipe(createFeatureSchema))
+async create(@Body() dto: CreateFeatureDto) { ... }
+```
+
+---
+
+### Security Reminders
+
+1. **Never expose sensitive data** - passwords, tokens go in `private` schema
+2. **Always validate session** before returning user data
+3. **Scope all tenant data** by organizationId
+4. **Use guards** for role-based access (`@Roles()`, `@Public()`)
+5. **Sanitize user input** - Zod handles this via schema validation

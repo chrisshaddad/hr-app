@@ -1,34 +1,39 @@
-# OnRamp HR App
+# HumanLine HR App
 
-Startup commands:
+Multi-tenant HR/Employee Management SaaS platform. Turborepo monorepo with NestJS API, Next.js frontend, and PostgreSQL database.
 
-```
-# Runs docker compose
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) v20+
+- [Docker](https://www.docker.com/)
+
+## Quick Start
+
+```bash
+# Start Docker services (PostgreSQL, Redis, Mailpit)
 npm run services:init
 
-# Runs the repo apps
+# Run all apps in dev mode
 npm run dev
 ```
 
-## Web
-
-## API
-
-Commands:
-
-```
-npm install -g @nestjs/cli
-nest generate module some-module-name
-nest generate service some-module-name
-nest generate controller some-module-name
-```
+- **Web**: http://localhost:3000
+- **API**: http://localhost:3001
+- **Mailpit**: http://localhost:8025
 
 ## Database
 
-Commands:
+```bash
+npx turbo db:migrate   # Run migrations
+npx turbo db:reset     # Reset database
+npx turbo db:seed      # Seed initial data
+```
 
-```
-npx turbo db:migrate
-npx turbo db:reset
-npx turbo db:seed
-```
+## Project Structure
+
+| Path                 | Description                   |
+| -------------------- | ----------------------------- |
+| `apps/api`           | NestJS backend API            |
+| `apps/web`           | Next.js frontend              |
+| `packages/database`  | Prisma schema & client        |
+| `packages/contracts` | Shared Zod validation schemas |

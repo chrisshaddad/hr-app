@@ -25,13 +25,3 @@ export const organizationListResponseSchema = z.object({
 export type OrganizationListResponse = z.infer<
   typeof organizationListResponseSchema
 >;
-
-// Query params for listing organizations
-export const listOrganizationsQuerySchema = z.object({
-  status: organizationStatusSchema.optional(),
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-});
-export type ListOrganizationsQuery = z.infer<
-  typeof listOrganizationsQuerySchema
->;

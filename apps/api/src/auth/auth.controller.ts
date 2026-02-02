@@ -42,10 +42,6 @@ const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  /**
-   * Request a magic link to be sent to the user's email
-   * POST /auth/magic-link
-   */
   @Public()
   @Post('magic-link')
   @HttpCode(HttpStatus.OK)
@@ -73,10 +69,6 @@ export class AuthController {
     return this.authService.requestMagicLink(body.email);
   }
 
-  /**
-   * Verify a magic link token and create a session
-   * POST /auth/magic-link/verify
-   */
   @Public()
   @Post('magic-link/verify')
   @HttpCode(HttpStatus.OK)
@@ -131,10 +123,6 @@ export class AuthController {
     return { user };
   }
 
-  /**
-   * Logout the current user
-   * POST /auth/logout
-   */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth('session_id')
@@ -171,10 +159,6 @@ export class AuthController {
     return { success: true };
   }
 
-  /**
-   * Get the current authenticated user
-   * GET /auth/me
-   */
   @Get('me')
   @ApiCookieAuth('session_id')
   @ApiOperation({

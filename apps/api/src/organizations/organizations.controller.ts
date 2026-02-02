@@ -2,17 +2,20 @@ import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
+  ApiOkResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiQuery,
   ApiParam,
-  ApiBearerAuth,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import type { OrganizationStatus, User } from '@repo/db';
 import { OrganizationsService } from './organizations.service';
 import { Roles, CurrentUser } from '../auth/decorators';
 
 @ApiTags('organizations')
-@ApiBearerAuth()
+@ApiCookieAuth('session_id')
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
@@ -38,12 +41,9 @@ export class OrganizationsController {
     type: Number,
     description: 'Items per page (default: 20, max: 100)',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of organizations with pagination info',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Super Admin only' })
+  @ApiOkResponse({ description: 'List of organizations with pagination info' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiForbiddenResponse({ description: 'Super Admin access required' })
   async findAll(
     @Query('status') status?: OrganizationStatus,
     @Query('page') page?: string,
@@ -60,10 +60,10 @@ export class OrganizationsController {
   @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: 'Get organization details (Super Admin only)' })
   @ApiParam({ name: 'id', description: 'Organization ID' })
-  @ApiResponse({ status: 200, description: 'Organization details' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Super Admin only' })
-  @ApiResponse({ status: 404, description: 'Organization not found' })
+  @ApiOkResponse({ description: 'Organization details' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiForbiddenResponse({ description: 'Super Admin access required' })
+  @ApiNotFoundResponse({ description: 'Organization not found' })
   async findOne(@Param('id') id: string) {
     return this.organizationsService.findOne(id);
   }
@@ -72,13 +72,10 @@ export class OrganizationsController {
   @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: 'Approve an organization (Super Admin only)' })
   @ApiParam({ name: 'id', description: 'Organization ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Organization approved successfully',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Super Admin only' })
-  @ApiResponse({ status: 404, description: 'Organization not found' })
+  @ApiOkResponse({ description: 'Organization approved successfully' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiForbiddenResponse({ description: 'Super Admin access required' })
+  @ApiNotFoundResponse({ description: 'Organization not found' })
   async approve(@Param('id') id: string, @CurrentUser() user: User) {
     const organization = await this.organizationsService.approve(id, user.id);
     return {
@@ -91,13 +88,10 @@ export class OrganizationsController {
   @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: 'Reject an organization (Super Admin only)' })
   @ApiParam({ name: 'id', description: 'Organization ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Organization rejected successfully',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Super Admin only' })
-  @ApiResponse({ status: 404, description: 'Organization not found' })
+  @ApiOkResponse({ description: 'Organization rejected successfully' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiForbiddenResponse({ description: 'Super Admin access required' })
+  @ApiNotFoundResponse({ description: 'Organization not found' })
   async reject(@Param('id') id: string) {
     const organization = await this.organizationsService.reject(id);
     return {

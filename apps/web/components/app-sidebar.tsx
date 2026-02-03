@@ -3,20 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import {
-  LayoutDashboard,
-  Users,
-  CheckSquare,
-  CalendarOff,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  UserPlus,
-  HelpCircle,
-  Settings,
-  LogOut,
-  Building2,
-} from 'lucide-react';
+import { Users, HelpCircle, Settings, LogOut, Building2 } from 'lucide-react';
 import { useAuth, useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import {
@@ -43,44 +30,14 @@ interface NavItem {
 // Navigation items for ORG_ADMIN and EMPLOYEE roles
 const orgNavItems: NavItem[] = [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Employees',
-    url: '/employees',
+    title: 'Jobs',
+    url: '/jobs',
     icon: Users,
   },
   {
-    title: 'Checklist',
-    url: '/checklist',
-    icon: CheckSquare,
-  },
-  {
-    title: 'Time Off',
-    url: '/time-off',
-    icon: CalendarOff,
-  },
-  {
-    title: 'Attendance',
-    url: '/attendance',
-    icon: Clock,
-  },
-  {
-    title: 'Payroll',
-    url: '/payroll',
-    icon: DollarSign,
-  },
-  {
-    title: 'Performance',
-    url: '/performance',
-    icon: TrendingUp,
-  },
-  {
-    title: 'Recruitment',
-    url: '/recruitment',
-    icon: UserPlus,
+    title: 'Candidates',
+    url: '/candidates',
+    icon: Users,
   },
 ];
 
@@ -132,8 +89,8 @@ export function AppSidebar() {
     : orgSecondaryNavItems;
 
   const isActive = (url: string) => {
-    if (url === '/dashboard') {
-      return pathname === '/dashboard';
+    if (url === '/jobs') {
+      return pathname === '/jobs' || pathname.startsWith('/jobs/');
     }
     return pathname.startsWith(url);
   };
@@ -142,7 +99,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-gray-200 bg-white">
       <SidebarHeader className="px-5 py-6">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href="/jobs" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-base">
             <span className="text-lg font-bold text-white">✦</span>
           </div>
@@ -192,38 +149,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
         <SidebarSeparator className="my-4" />
-
-        {/* Secondary Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">
-            Support
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    className={cn(
-                      'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                      isActive(item.url)
-                        ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-                    )}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-5 w-5 text-gray-500" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-3">
@@ -231,7 +157,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => logout()}
-              className="h-11 gap-3 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="h-11 gap-3 rounded-lg cursor-pointer px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <LogOut className="h-5 w-5 text-gray-500" />
               <span>Logout</span>

@@ -7,7 +7,7 @@ const SESSION_COOKIE_NAME = 'humanline_session';
 const publicRoutes = ['/login', '/auth/verify'];
 
 // Default landing page for authenticated users
-const DEFAULT_AUTHENTICATED_ROUTE = '/dashboard';
+const DEFAULT_AUTHENTICATED_ROUTE = '/jobs';
 
 function isPublicRoute(pathname: string): boolean {
   return publicRoutes.some(
@@ -25,8 +25,8 @@ export function proxy(request: NextRequest) {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    // Redirect authenticated users to dashboard
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Redirect authenticated users to jobs
+    return NextResponse.redirect(new URL('/jobs', request.url));
   }
 
   // Redirect authenticated users away from public pages

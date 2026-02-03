@@ -187,9 +187,7 @@ export default function OrganizationsPage() {
                   <TableRow
                     key={org.id}
                     className="cursor-pointer"
-                    onClick={() =>
-                      router.push(`/dashboard/organizations/${org.id}`)
-                    }
+                    onClick={() => router.push(`/organizations/${org.id}`)}
                   >
                     <TableCell>
                       <div>

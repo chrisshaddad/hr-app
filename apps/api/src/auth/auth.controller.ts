@@ -17,10 +17,10 @@ import {
   type AuthenticatedRequest,
 } from './guards/auth.guard';
 import {
-  requestMagicLinkSchema,
-  verifyMagicLinkSchema,
-  type RequestMagicLinkDto,
-  type VerifyMagicLinkDto,
+  magicLinkRequestSchema,
+  magicLinkVerifyRequestSchema,
+  type MagicLinkRequest,
+  type MagicLinkVerifyRequest,
   type UserResponse,
 } from '@repo/contracts';
 import type { User } from '@repo/db';
@@ -35,17 +35,17 @@ export class AuthController {
   @Public()
   @Post('magic-link')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(requestMagicLinkSchema))
-  async requestMagicLink(@Body() body: RequestMagicLinkDto) {
+  @UsePipes(new ZodValidationPipe(magicLinkRequestSchema))
+  async requestMagicLink(@Body() body: MagicLinkRequest) {
     return this.authService.requestMagicLink(body.email);
   }
 
   @Public()
   @Post('magic-link/verify')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(verifyMagicLinkSchema))
+  @UsePipes(new ZodValidationPipe(magicLinkVerifyRequestSchema))
   async verifyMagicLink(
-    @Body() body: VerifyMagicLinkDto,
+    @Body() body: MagicLinkVerifyRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const { sessionId, user } = await this.authService.verifyMagicLink(

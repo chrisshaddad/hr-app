@@ -60,6 +60,11 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+  WorkSchedule          WorkSchedule[]
+  Contract              Contract[]
+  Documents             Documents[]
+  Employment            Employment[]
+  managedEmployees      Employment[]   @relation("EmployeeLineManager")
 
   @@index([organizationId])
   @@index([departmentId])
@@ -82,6 +87,18 @@ model UserProfile {
   postalCode String?
   country    String?
 
+  // Ensurance 
+  insuranceProvider String?
+
+  // Tax Info
+  personalTaxId String?
+
+  // Marital Status
+  maritalStatus MaritalStatus?
+
+  // Social Insurance
+  socialInsuranceNumber String?
+
   // Emergency contact
   emergencyContactName     String?
   emergencyContactPhone    String?
@@ -89,6 +106,7 @@ model UserProfile {
 
   nationality       String?
   profilePictureUrl String?
+  timezone          String?  @default("UTC") // IANA timezone identifier (e.g., "Asia/Bangkok")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -193,5 +211,148 @@ model Department {
   users  User[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+// Contract records for tracking employment contracts
+model Contract {
+  id             String       @id @default(uuid())
+  userId         String
+  contractNumber String       @unique
+  contractName   String
+  contractType   ContractType
+  startDate      DateTime
+  endDate        DateTime? // null for permanent contracts
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([contractNumber])
+  @@index([isActive])
+  @@schema("public")
+}
+
+// Employment records for tracking job positions and employment timeline
+model Employment {
+  id             String         @id @default(uuid())
+  userId         String
+  employeeId     String // Employee ID (e.g., "UNI203")
+  jobTitle       String // e.g., "UI UX Designer"
+  positionType   PositionType? // Full-time, Part-time, etc.
+  employmentType EmploymentType // Full-time, Part-time, Contract, Intern
+  lineManagerId  String? // Reference to manager's User ID
+  departmentId   String? // Can track department changes over time
+  effectiveDate  DateTime // When this position started
+  endDate        DateTime? // null for current position
+  isActive       Boolean        @default(true) // Is this the current position?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lineManager User? @relation("EmployeeLineManager", fields: [lineManagerId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([employeeId])
+  @@index([lineManagerId])
+  @@index([isActive])
+  @@schema("public")
+}
+
+model WorkSchedule {
+  id        String   @id @default(uuid())
+  userId    String
+  dayOfWeek Int // 0-6 (Sunday-Saturday)
+  startTime String // HH:mm format (e.g., "09:00")
+  endTime   String // HH:mm format (e.g., "17:00")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek])
+  @@index([userId])
+  @@schema("public")
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  PREFER_NOT_TO_SAY
+
+  @@schema("public")
+}
+
+enum DocumentType {
+  ID_CARD
+  PASSPORT
+  DRIVERS_LICENSE
+  BIRTH_CERTIFICATE
+  SOCIAL_SECURITY_CARD
+  TAX_DOCUMENT
+  EMPLOYMENT_CONTRACT
+  RESUME
+  DEGREE_CERTIFICATE
+  TRAINING_CERTIFICATE
+  MEDICAL_CERTIFICATE
+  BANK_STATEMENT
+  PROOF_OF_ADDRESS
+  OTHER
+
+  @@schema("public")
+}
+
+model Documents {
+  id           String       @id @default(uuid())
+  userId       String
+  documentType DocumentType
+  fileName     String // Original file name
+  fileUrl      String // S3/storage URL
+  fileSize     Int? // Size in bytes
+  mimeType     String? // e.g., "application/pdf"
+  uploadedAt   DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([documentType])
+  @@schema("public")
+}
+
+enum ContractType {
+  FULLTIME_PERMANENT
+  FULLTIME_FIXED_TERM
+  PARTTIME_PERMANENT
+  PARTTIME_FIXED_TERM
+  CONTRACTOR
+  FREELANCE
+  INTERN
+
+  @@schema("public")
+}
+
+enum PositionType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERN
+
+  @@schema("public")
+}
+
+enum EmploymentType {
+  FULLTIME
+  PARTTIME
+  CONTRACT
+  INTERN
+  FREELANCE
+
   @@schema("public")
 }

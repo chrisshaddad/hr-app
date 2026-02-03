@@ -6,10 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import {
-  requestMagicLinkSchema,
-  type RequestMagicLinkDto,
-} from '@repo/contracts';
+import { magicLinkRequestSchema, type MagicLinkRequest } from '@repo/contracts';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,11 +22,11 @@ export default function LoginPage() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<RequestMagicLinkDto>({
-    resolver: zodResolver(requestMagicLinkSchema),
+  } = useForm<MagicLinkRequest>({
+    resolver: zodResolver(magicLinkRequestSchema),
   });
 
-  const onSubmit = async (data: RequestMagicLinkDto) => {
+  const onSubmit = async (data: MagicLinkRequest) => {
     setIsSubmitting(true);
     try {
       await requestMagicLink(data);
@@ -87,7 +84,7 @@ export default function LoginPage() {
       <div className="relative flex w-full flex-col justify-between lg:w-1/2">
         {/* Form Section */}
         <div className="flex flex-1 items-center justify-center px-6 py-12">
-          <div className="flex w-full max-w-[480px] flex-col items-center gap-8">
+          <div className="flex w-full max-w-120 flex-col items-center gap-8">
             {/* Title */}
             <h2 className="w-full text-center text-2xl font-bold leading-[1.3] text-gray-900">
               Login first to your account
@@ -96,7 +93,7 @@ export default function LoginPage() {
             {/* Form */}
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="w-[315px] space-y-6"
+              className="w-78.75 space-y-6"
             >
               <div className="flex flex-col gap-2.5">
                 <Label

@@ -3,20 +3,14 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE_NAME = 'humanline_session';
 
-// Routes that require authentication
-const protectedRoutes = ['/dashboard'];
+// Public routes that don't require authentication
+const publicRoutes = ['/login', '/auth/verify'];
 
-// Routes that should redirect to dashboard if authenticated
-const authRoutes = ['/login'];
+// Default landing page for authenticated users
+const DEFAULT_AUTHENTICATED_ROUTE = '/dashboard';
 
-function isProtectedRoute(pathname: string): boolean {
-  return protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
-}
-
-function isAuthRoute(pathname: string): boolean {
-  return authRoutes.some(
+function isPublicRoute(pathname: string): boolean {
+  return publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 }
@@ -28,20 +22,22 @@ export function proxy(request: NextRequest) {
 
   // Handle root path
   if (pathname === '/') {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } else {
+    if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (isAuthRoute(pathname) && isAuthenticated) {
+    // Redirect authenticated users to dashboard
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Redirect unauthenticated users to login
-  if (isProtectedRoute(pathname) && !isAuthenticated) {
+  // Redirect authenticated users away from public pages
+  if (isPublicRoute(pathname) && isAuthenticated) {
+    return NextResponse.redirect(
+      new URL(DEFAULT_AUTHENTICATED_ROUTE, request.url),
+    );
+  }
+
+  // Redirect unauthenticated users to login (all routes except public are protected)
+  if (!isPublicRoute(pathname) && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

@@ -190,7 +190,7 @@ export default function OrganizationDetailPage() {
         variant="ghost"
         size="sm"
         className="gap-2"
-        onClick={() => router.push('/dashboard/organizations')}
+        onClick={() => router.push('/organizations')}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Organizations

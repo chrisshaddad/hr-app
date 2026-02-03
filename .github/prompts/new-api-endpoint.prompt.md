@@ -13,20 +13,21 @@ Add a new endpoint to: {{controller_name}}
 ### Controller Method
 
 ```typescript
+import type { FeatureDetailResponse } from '@repo/contracts';
+
 @{{http_method}}('{{endpoint_path}}')
-@ApiOperation({ summary: '{{description}}' })
-@ApiOkResponse({ description: 'Success response description' })
-@UsePipes(new ZodValidationPipe(schemaName))
-async methodName(@Body() dto: DtoType) {
+@UsePipes(new ZodValidationPipe(createFeatureRequestSchema))
+async methodName(@Body() dto: CreateFeatureRequest): Promise<FeatureDetailResponse> {
   return this.service.method(dto);
 }
 ```
 
 ### Validation
 
-- Create Zod schema in `@repo/contracts` if needed
+- Create Zod schema in `@repo/contracts` with `.request.ts` suffix
 - Use `ZodValidationPipe` for request validation
 - Follow Zod v4 syntax
+- Add return type annotation using contract response types
 
 ### Authorization
 
@@ -43,10 +44,4 @@ Consider required guards:
 - Scope queries by organizationId for tenant isolation
 - Use transactions for multi-step operations
 - Throw appropriate NestJS exceptions (NotFoundException, ForbiddenException)
-
-### OpenAPI Documentation
-
-- Add `@ApiTags()` if new tag needed
-- Add `@ApiOperation()` with summary
-- Add `@ApiResponse()` decorators for all response types
-- Document request body with `@ApiBody()` if complex
+- Add return type annotation using contract response types

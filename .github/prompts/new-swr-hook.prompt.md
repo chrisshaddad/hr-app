@@ -14,14 +14,19 @@ Create a data fetching hook for: {{entity_name}}
 import useSWR, { mutate } from 'swr';
 import { useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
-import type { EntityType } from '@repo/contracts';
+import type {
+  EntityDetailResponse,
+  EntityListResponse,
+  CreateEntityRequest,
+  UpdateEntityRequest,
+} from '@repo/contracts';
 
 interface UseEntityOptions {
   enabled?: boolean;
 }
 
 interface UseEntityReturn {
-  data: EntityType | undefined;
+  data: EntityDetailResponse | undefined;
   isLoading: boolean;
   error: Error | undefined;
   mutate: () => void;

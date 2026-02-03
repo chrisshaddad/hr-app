@@ -4,7 +4,11 @@ Create validation schemas for: {{entity_name}}
 
 ## File Location
 
-`packages/contracts/src/{{entity_name}}/{{schema_name}}.schema.ts`
+Use the appropriate suffix based on schema type:
+
+- Request DTOs: `packages/contracts/src/{{entity_name}}/{{schema_name}}.request.ts`
+- Response DTOs: `packages/contracts/src/{{entity_name}}/{{schema_name}}.response.ts`
+- Shared schemas (enums, common types): `packages/contracts/src/{{entity_name}}/{{schema_name}}.schema.ts`
 
 ## Zod v4 Syntax Requirements
 
@@ -50,27 +54,35 @@ z.enum(MyEnum); // NOT z.nativeEnum(MyEnum)
 
 ## Schema Pattern
 
-```typescript
-import { z } from 'zod';
+### Response Schema Example
 
-// Base schema
-export const {{entity_name}}Schema = z.object({
+```typescript
+// {{entity_name}}-detail.response.ts
+import { z } from 'zod';
+import { dateSchema } from '../common';
+
+export const {{entity_name}}DetailResponseSchema = z.object({
   id: z.uuid(),
   // fields...
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
+  createdAt: dateSchema,  // Use dateSchema for Prisma Date compatibility
+  updatedAt: dateSchema,
 });
 
-export type {{EntityName}} = z.infer<typeof {{entity_name}}Schema>;
+export type {{EntityName}}DetailResponse = z.infer<typeof {{entity_name}}DetailResponseSchema>;
+```
 
-// Create schema (omit auto-generated fields)
-export const create{{EntityName}}Schema = {{entity_name}}Schema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+### Request Schema Example
+
+```typescript
+// create-{{entity_name}}.request.ts
+import { z } from 'zod';
+
+export const create{{EntityName}}RequestSchema = z.object({
+  name: z.string().min(1, { error: 'Name is required' }),
+  // fields (omit auto-generated like id, createdAt)
 });
 
-export type Create{{EntityName}} = z.infer<typeof create{{EntityName}}Schema>;
+export type Create{{EntityName}}Request = z.infer<typeof create{{EntityName}}RequestSchema>;
 ```
 
 ## Export from Index
@@ -78,7 +90,8 @@ export type Create{{EntityName}} = z.infer<typeof create{{EntityName}}Schema>;
 Add to `packages/contracts/src/{{entity_name}}/index.ts`:
 
 ```typescript
-export * from './{{schema_name}}.schema';
+export * from './{{entity_name}}-detail.response';
+export * from './create-{{entity_name}}.request';
 ```
 
 Add to `packages/contracts/src/index.ts`:

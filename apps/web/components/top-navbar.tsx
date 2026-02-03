@@ -29,10 +29,10 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 
 // Menu items only shown to non-super-admin users
 const orgMenuItems = [
-  { title: 'Documents', icon: FileText, url: '/dashboard/documents' },
-  { title: 'News', icon: Newspaper, url: '/dashboard/news' },
-  { title: 'Payslip', icon: Receipt, url: '/dashboard/payslip' },
-  { title: 'Report', icon: BarChart3, url: '/dashboard/report' },
+  { title: 'Documents', icon: FileText, url: '/documents' },
+  { title: 'News', icon: Newspaper, url: '/news' },
+  { title: 'Payslip', icon: Receipt, url: '/payslip' },
+  { title: 'Report', icon: BarChart3, url: '/report' },
 ];
 
 export function TopNavbar() {
@@ -148,10 +148,7 @@ export function TopNavbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
-              <Link
-                href="/dashboard/settings"
-                className="flex items-center gap-2"
-              >
+              <Link href="/settings" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
               </Link>

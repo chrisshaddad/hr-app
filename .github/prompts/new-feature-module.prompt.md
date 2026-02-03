@@ -17,9 +17,10 @@ Generate the following files following existing project patterns:
 ### Contracts (packages/contracts)
 
 1. `src/{{feature_name}}/index.ts` - Re-exports
-2. `src/{{feature_name}}/{{feature_name}}.schema.ts` - Base Zod schemas (use Zod v4 syntax)
-3. `src/{{feature_name}}/create-{{feature_name}}.schema.ts` - Create DTO schema
-4. `src/{{feature_name}}/update-{{feature_name}}.schema.ts` - Update DTO schema
+2. `src/{{feature_name}}/{{feature_name}}-list.response.ts` - List response schema
+3. `src/{{feature_name}}/{{feature_name}}-detail.response.ts` - Detail response schema
+4. `src/{{feature_name}}/create-{{feature_name}}.request.ts` - Create request schema
+5. `src/{{feature_name}}/update-{{feature_name}}.request.ts` - Update request schema
 
 ### Frontend (apps/web)
 
@@ -29,7 +30,9 @@ Generate the following files following existing project patterns:
 
 - [ ] Multi-tenant: Scope data by organizationId
 - [ ] Use Zod v4 syntax (z.uuid(), z.email(), not z.string().uuid())
-- [ ] Add proper Swagger/OpenAPI decorators
+- [ ] Use dateSchema from common for date fields
+- [ ] Name files with .request.ts or .response.ts suffix appropriately
+- [ ] Add return type annotations to controller/service methods
 - [ ] Include ZodValidationPipe for request validation
 - [ ] Register module in app.module.ts
 - [ ] Export schemas from packages/contracts/src/index.ts

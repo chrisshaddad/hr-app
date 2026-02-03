@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { organizationDetailSchema } from './organization-detail.schema';
+import { organizationDetailResponseSchema } from './organization-detail.response';
 
-// Response for approve/reject actions
+// Response from PATCH /organizations/:id/approve or /reject
 export const organizationActionResponseSchema = z.object({
   message: z.string(),
-  organization: organizationDetailSchema,
+  organization: organizationDetailResponseSchema,
 });
 export type OrganizationActionResponse = z.infer<
   typeof organizationActionResponseSchema

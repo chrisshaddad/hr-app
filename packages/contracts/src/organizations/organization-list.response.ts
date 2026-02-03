@@ -1,14 +1,21 @@
 import { z } from 'zod';
 import { organizationStatusSchema } from './organization-status.schema';
-import { organizationCreatorSchema } from './organization-creator.schema';
+import { dateSchema } from '../common';
 
-// Organization list item (for listing)
-export const organizationListItemSchema = z.object({
+// Minimal user info for organization creator
+const organizationCreatorSchema = z.object({
+  id: z.uuid(),
+  email: z.email(),
+  name: z.string(),
+});
+
+// Organization list item
+const organizationListItemSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   status: organizationStatusSchema,
   website: z.string().nullable(),
-  createdAt: z.iso.datetime(),
+  createdAt: dateSchema,
   createdBy: organizationCreatorSchema,
   _count: z.object({
     users: z.number(),
@@ -17,7 +24,7 @@ export const organizationListItemSchema = z.object({
 });
 export type OrganizationListItem = z.infer<typeof organizationListItemSchema>;
 
-// Organization list response
+// Response from GET /organizations
 export const organizationListResponseSchema = z.object({
   organizations: z.array(organizationListItemSchema),
   total: z.number(),

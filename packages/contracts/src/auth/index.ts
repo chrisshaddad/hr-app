@@ -1,2 +1,2 @@
-export * from './request-magic-link.schema';
-export * from './verify-magic-link.schema';
+export * from './magic-link.request';
+export * from './magic-link-verify.request';

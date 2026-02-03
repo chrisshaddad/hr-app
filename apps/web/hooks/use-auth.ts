@@ -5,8 +5,8 @@ import { useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { apiPost, ApiError } from '@/lib/api';
 import type {
-  RequestMagicLinkDto,
-  VerifyMagicLinkDto,
+  MagicLinkRequest,
+  MagicLinkVerifyRequest,
   UserResponse,
 } from '@repo/contracts';
 
@@ -64,12 +64,12 @@ export function useUser(options: UseUserOptions = {}): UseUserReturn {
 export function useAuth() {
   const { mutate } = useUser();
 
-  const requestMagicLink = useCallback(async (data: RequestMagicLinkDto) => {
+  const requestMagicLink = useCallback(async (data: MagicLinkRequest) => {
     return apiPost<{ success: boolean }>('/auth/magic-link', data);
   }, []);
 
   const verifyMagicLink = useCallback(
-    async (data: VerifyMagicLinkDto) => {
+    async (data: MagicLinkVerifyRequest) => {
       const result = await apiPost<{ user: UserResponse }>(
         '/auth/magic-link/verify',
         data,

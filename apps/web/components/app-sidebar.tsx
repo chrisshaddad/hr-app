@@ -49,37 +49,37 @@ const orgNavItems: NavItem[] = [
   },
   {
     title: 'Employees',
-    url: '/dashboard/employees',
+    url: '/employees',
     icon: Users,
   },
   {
     title: 'Checklist',
-    url: '/dashboard/checklist',
+    url: '/checklist',
     icon: CheckSquare,
   },
   {
     title: 'Time Off',
-    url: '/dashboard/time-off',
+    url: '/time-off',
     icon: CalendarOff,
   },
   {
     title: 'Attendance',
-    url: '/dashboard/attendance',
+    url: '/attendance',
     icon: Clock,
   },
   {
     title: 'Payroll',
-    url: '/dashboard/payroll',
+    url: '/payroll',
     icon: DollarSign,
   },
   {
     title: 'Performance',
-    url: '/dashboard/performance',
+    url: '/performance',
     icon: TrendingUp,
   },
   {
     title: 'Recruitment',
-    url: '/dashboard/recruitment',
+    url: '/recruitment',
     icon: UserPlus,
   },
 ];
@@ -88,12 +88,12 @@ const orgNavItems: NavItem[] = [
 const superAdminNavItems: NavItem[] = [
   {
     title: 'Organizations',
-    url: '/dashboard/organizations',
+    url: '/organizations',
     icon: Building2,
   },
   {
     title: 'Users',
-    url: '/dashboard/users',
+    url: '/users',
     icon: Users,
     disabled: true, // Placeholder for future implementation
   },
@@ -102,12 +102,12 @@ const superAdminNavItems: NavItem[] = [
 const orgSecondaryNavItems: NavItem[] = [
   {
     title: 'Help Center',
-    url: '/dashboard/help',
+    url: '/help',
     icon: HelpCircle,
   },
   {
     title: 'Setting',
-    url: '/dashboard/settings',
+    url: '/settings',
     icon: Settings,
   },
 ];
@@ -115,7 +115,7 @@ const orgSecondaryNavItems: NavItem[] = [
 const superAdminSecondaryNavItems: NavItem[] = [
   {
     title: 'Setting',
-    url: '/dashboard/settings',
+    url: '/settings',
     icon: Settings,
   },
 ];

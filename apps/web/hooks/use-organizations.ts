@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { apiPatch } from '@/lib/api';
 import type {
   OrganizationListResponse,
-  OrganizationDetail,
+  OrganizationDetailResponse,
   OrganizationActionResponse,
   OrganizationStatus,
 } from '@repo/contracts';
@@ -56,7 +56,7 @@ interface UseOrganizationOptions {
 }
 
 interface UseOrganizationReturn {
-  organization: OrganizationDetail | undefined;
+  organization: OrganizationDetailResponse | undefined;
   isLoading: boolean;
   error: Error | undefined;
   approve: () => Promise<OrganizationActionResponse>;
@@ -78,7 +78,9 @@ export function useOrganization(
     error,
     isLoading,
     mutate: swrMutate,
-  } = useSWR<OrganizationDetail>(enabled ? `/organizations/${id}` : null);
+  } = useSWR<OrganizationDetailResponse>(
+    enabled ? `/organizations/${id}` : null,
+  );
 
   const invalidateAll = useCallback(() => {
     // Invalidate this specific organization

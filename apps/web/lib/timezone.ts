@@ -44,32 +44,6 @@ export function getBrowserTimezone(): string {
 }
 
 /**
- * Common timezones for selection
- */
-export const COMMON_TIMEZONES = [
-  { label: 'GMT +00:00 London', value: 'Europe/London' },
-  { label: 'GMT +01:00 Paris, Berlin', value: 'Europe/Paris' },
-  { label: 'GMT +02:00 Cairo, Athens', value: 'Africa/Cairo' },
-  { label: 'GMT +03:00 Moscow, Istanbul', value: 'Europe/Moscow' },
-  { label: 'GMT +04:00 Dubai', value: 'Asia/Dubai' },
-  { label: 'GMT +05:00 Karachi', value: 'Asia/Karachi' },
-  { label: 'GMT +05:30 Mumbai, Delhi', value: 'Asia/Kolkata' },
-  { label: 'GMT +06:00 Dhaka', value: 'Asia/Dhaka' },
-  { label: 'GMT +07:00 Bangkok, Ha Noi, Jakarta', value: 'Asia/Bangkok' },
-  { label: 'GMT +08:00 Singapore, Kuala Lumpur', value: 'Asia/Singapore' },
-  { label: 'GMT +08:00 Hong Kong, Beijing', value: 'Asia/Hong_Kong' },
-  { label: 'GMT +09:00 Tokyo, Seoul', value: 'Asia/Tokyo' },
-  { label: 'GMT +10:00 Sydney', value: 'Australia/Sydney' },
-  { label: 'GMT +12:00 Auckland', value: 'Pacific/Auckland' },
-  { label: 'GMT -05:00 New York', value: 'America/New_York' },
-  { label: 'GMT -06:00 Chicago', value: 'America/Chicago' },
-  { label: 'GMT -07:00 Denver', value: 'America/Denver' },
-  { label: 'GMT -08:00 Los Angeles', value: 'America/Los_Angeles' },
-  { label: 'GMT -03:00 São Paulo', value: 'America/Sao_Paulo' },
-  { label: 'UTC', value: 'UTC' },
-];
-
-/**
  * Compare times across different timezones
  */
 export function compareTimezones(

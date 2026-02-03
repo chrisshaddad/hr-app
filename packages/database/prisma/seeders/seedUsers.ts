@@ -12,6 +12,10 @@ const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
 // The order here matches the order in seedOrganizations.ts
 const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
   {
+    email: 'mahmoud.kalekish@gmail.com',
+    name: 'Mahmoud Kalekish',
+  },
+  {
     email: 'admin@techcorp.example.com',
     name: 'Sarah Chen',
   },

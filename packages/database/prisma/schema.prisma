@@ -61,6 +61,26 @@ model User {
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
 
+  // Review assignments
+  reviewAssignmentsGiven     ReviewAssignment[] @relation("ReviewAssignmentsAsReviewer")
+  reviewAssignmentsReceived  ReviewAssignment[] @relation("ReviewAssignmentsAsReviewee")
+
+  // Reviews
+  reviewsWritten Review[] @relation("ReviewsAsReviewer")
+  reviewsAbout   Review[] @relation("ReviewsAsReviewee")
+
+  // Goals
+  goalsOwned    Goal[] @relation("GoalsAsOwner")
+  goalsCreated  Goal[] @relation("GoalsAsCreator")
+
+  // 1-on-1 meeting series
+  meetingSeriesHosted        MeetingSeries[] @relation("MeetingSeriesAsHost")
+  meetingSeriesParticipating MeetingSeries[] @relation("MeetingSeriesAsParticipant")
+
+  // Meetings
+  meetingsHosted        Meeting[] @relation("MeetingsAsHost")
+  meetingsParticipating Meeting[] @relation("MeetingsAsParticipant")
+
   @@index([organizationId])
   @@index([departmentId])
   @@schema("public")
@@ -154,6 +174,15 @@ model Organization {
   branches   Branch[]
   users      User[]   @relation("OrganizationMembers")
 
+  // Performance review models
+
+  reviewCycles      ReviewCycle[]
+  reviewAssignments ReviewAssignment[]
+  reviews           Review[]
+  goals             Goal[]
+  meetingSeries     MeetingSeries[]
+  meetings          Meeting[]
+
   @@index([approvedById])
   @@index([status])
   @@schema("public")
@@ -193,5 +222,199 @@ model Department {
   users  User[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+
+enum ReviewType {
+  MANAGER
+  PEER
+  SELF
+
+  @@schema("public")
+}
+
+model ReviewCycle {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignments ReviewAssignment[]
+  reviews      Review[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model ReviewAssignment {
+  id             String     @id @default(uuid())
+  organizationId String
+  cycleId        String
+  reviewerId     String
+  revieweeId     String
+  type           ReviewType
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cycle        ReviewCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  reviewer User @relation("ReviewAssignmentsAsReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User @relation("ReviewAssignmentsAsReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  review Review?
+
+  @@index([organizationId])
+  @@index([cycleId])
+  @@index([organizationId, reviewerId])
+  @@index([organizationId, revieweeId])
+
+  @@unique([cycleId, revieweeId, reviewerId, type])
+
+  @@schema("public")
+}
+
+model Review {
+  id             String     @id @default(uuid())
+  organizationId String
+  cycleId        String
+  assignmentId   String     @unique
+  reviewerId     String
+  revieweeId     String
+  type           ReviewType
+
+  summary         String? @db.Text
+  strengths       String? @db.Text
+  areasToImprove  String? @db.Text
+  accomplishments String? @db.Text
+  rating          Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cycle        ReviewCycle      @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  assignment   ReviewAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  reviewer User @relation("ReviewsAsReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User @relation("ReviewsAsReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([cycleId])
+  @@index([organizationId, reviewerId])
+  @@index([organizationId, revieweeId])
+
+  @@schema("public")
+}
+
+model Goal {
+  id             String   @id @default(uuid())
+  organizationId String
+  ownerId        String
+  creatorId      String
+
+  title       String
+  description String?  @db.Text
+  startDate   DateTime?
+  dueDate     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner        User         @relation("GoalsAsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  creator      User         @relation("GoalsAsCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  milestones Milestone[]
+
+  @@index([organizationId])
+  @@index([organizationId, ownerId])
+  @@index([organizationId, creatorId])
+
+  @@schema("public")
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  goalId      String
+  title       String
+  description String?  @db.Text
+  weight      Int      @default(1)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  order       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@schema("public")
+}
+
+model MeetingSeries {
+  id             String   @id @default(uuid())
+  organizationId String
+  hostId         String
+  participantId  String
+
+  // Weekly recurrence definition
+  weekday   Int    // 0-6 (your app decides mapping)
+  timeOfDay String // "HH:mm"
+  timezone  String // e.g., "Asia/Beirut"
+
+  startsOn DateTime
+  endsOn   DateTime?
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  host         User         @relation("MeetingSeriesAsHost", fields: [hostId], references: [id], onDelete: Cascade)
+  participant  User         @relation("MeetingSeriesAsParticipant", fields: [participantId], references: [id], onDelete: Cascade)
+
+  meetings Meeting[]
+
+  @@index([organizationId])
+  @@index([organizationId, hostId, participantId])
+
+  @@schema("public")
+}
+
+model Meeting {
+  id             String   @id @default(uuid())
+  organizationId String
+  seriesId       String?
+
+  hostId        String
+  participantId String
+
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+
+  agenda String? @db.Text
+  notes  String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  series       MeetingSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  host        User @relation("MeetingsAsHost", fields: [hostId], references: [id], onDelete: Cascade)
+  participant User @relation("MeetingsAsParticipant", fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, hostId, participantId])
+  @@index([scheduledStart])
+
   @@schema("public")
 }

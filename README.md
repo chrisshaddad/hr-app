@@ -17,6 +17,12 @@ cp packages/database/.env.example packages/database/.env
 # Start Docker services (PostgreSQL, Redis, Mailpit)
 npm run services:init
 
+# Install dependencies
+npm install
+
+# Run initial database setup (needed for prisma type generation when starting the app)
+npx turbo db:migrate
+
 # Run all apps in dev mode
 npm run dev
 ```

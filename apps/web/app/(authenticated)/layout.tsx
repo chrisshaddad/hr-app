@@ -1,8 +1,11 @@
 'use client';
 
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
-import { TopNavbar } from '@/components/top-navbar';
+import { TopNavbar } from '@/components/atoms/TopNavbar/TopNavbar';
+import { AppSidebar } from '@/components/atoms/Sidebar/AppSidebar';
+import {
+  SidebarProvider,
+  SidebarInset,
+} from '@/components/atoms/Sidebar/Sidebar';
 
 export default function DashboardLayout({
   children,
@@ -12,9 +15,11 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex h-screen flex-col overflow-hidden">
         <TopNavbar />
-        <main className="flex-1 bg-gray-50 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

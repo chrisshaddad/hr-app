@@ -1,31 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import {
-  Search,
+  Mail,
+  LogOut,
+  Receipt,
+  Settings,
   FileText,
   Newspaper,
-  Receipt,
   BarChart3,
-  Mail,
-  MessageSquare,
-  Settings,
-  LogOut,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
-import { useAuth, useUser } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
+import { useState } from 'react';
+
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+  DropdownMenuSeparator,
+} from '@/components/atoms/DropdownMenu/DropdownMenu';
+import { Cta } from '@/components/atoms/Cta/Cta';
+import { useAuth, useUser } from '@/hooks/use-auth';
+import { SidebarTrigger } from '@/components/atoms/Sidebar/Sidebar';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/atoms/Avatar/Avatar';
 
 // Menu items only shown to non-super-admin users
 const orgMenuItems = [
@@ -64,17 +67,6 @@ export function TopNavbar() {
       {/* Left Section - Sidebar Toggle & Search */}
       <div className="flex items-center gap-4">
         <SidebarTrigger className="-ml-1 h-9 w-9 text-gray-500 hover:bg-gray-100 hover:text-gray-900" />
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="search"
-            placeholder={isSuperAdmin ? 'Search organizations...' : 'Search...'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 w-64 rounded-lg border-gray-200 bg-gray-50 pl-10 text-sm placeholder:text-gray-400 focus-visible:border-primary-base focus-visible:ring-primary-base/20"
-          />
-        </div>
       </div>
 
       {/* Center Section - Menu Items (hidden for super admins) */}
@@ -97,7 +89,7 @@ export function TopNavbar() {
       <div className="flex items-center gap-3">
         {/* Mail Notification (hidden for super admins) */}
         {!isSuperAdmin && (
-          <Button
+          <Cta
             variant="ghost"
             size="icon"
             className="relative h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
@@ -107,12 +99,12 @@ export function TopNavbar() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-base opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-base" />
             </span>
-          </Button>
+          </Cta>
         )}
 
         {/* Message Notification (hidden for super admins) */}
         {!isSuperAdmin && (
-          <Button
+          <Cta
             variant="ghost"
             size="icon"
             className="relative h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
@@ -122,13 +114,13 @@ export function TopNavbar() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
             </span>
-          </Button>
+          </Cta>
         )}
 
         {/* User Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
+            <Cta
               variant="ghost"
               className="flex h-10 items-center gap-2 rounded-lg px-2 hover:bg-gray-100"
             >
@@ -144,7 +136,7 @@ export function TopNavbar() {
                 </p>
               </div>
               <ChevronDown className="h-4 w-4 text-gray-500" />
-            </Button>
+            </Cta>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>

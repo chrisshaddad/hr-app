@@ -5,7 +5,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Cta } from '@/components/atoms/Cta/Cta';
 
 function Dialog({
   ...props
@@ -111,7 +111,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Cta variant="outline">Close</Cta>
         </DialogPrimitive.Close>
       )}
     </div>

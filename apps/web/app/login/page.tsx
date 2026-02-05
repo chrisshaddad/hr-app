@@ -1,17 +1,17 @@
 'use client';
 
+import { toast } from 'sonner';
+import Image from 'next/image';
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import Image from 'next/image';
-import { magicLinkRequestSchema, type MagicLinkRequest } from '@repo/contracts';
-import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
 import { ApiError } from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth';
+import { Cta } from '@/components/atoms/Cta/Cta';
+import { Input } from '@/components/atoms/Input/Input';
+import { magicLinkRequestSchema, type MagicLinkRequest } from '@repo/contracts';
 
 export default function LoginPage() {
   const { requestMagicLink } = useAuth();
@@ -21,10 +21,16 @@ export default function LoginPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm<MagicLinkRequest>({
     resolver: zodResolver(magicLinkRequestSchema),
   });
+
+  const emailValue = watch('email') || '';
+  const emailRegister = register('email');
 
   const onSubmit = async (data: MagicLinkRequest) => {
     setIsSubmitting(true);
@@ -95,27 +101,32 @@ export default function LoginPage() {
               onSubmit={handleSubmit(onSubmit)}
               className="w-78.75 space-y-6"
             >
-              <div className="flex flex-col gap-2.5">
-                <Label
-                  htmlFor="email"
-                  className="flex gap-0.5 text-sm font-medium leading-[1.6] text-gray-900"
-                >
-                  <span>Email Address</span>
-                  <span className="text-error">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Input your registered email"
-                  aria-invalid={!!errors.email}
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="text-sm text-error">{errors.email.message}</p>
-                )}
-              </div>
+              <Input
+                required
+                type="email"
+                name="email"
+                value={emailValue}
+                label="Email Address"
+                touched={!!errors.email}
+                error={errors.email?.message}
+                placeholder="Input your registered email"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
+                  setValue('email', value, { shouldValidate: true });
+                  emailRegister.onChange(e);
+                  if (
+                    errors.email &&
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+                  ) {
+                    clearErrors('email');
+                  }
+                }}
+                onBlur={(e: React.FocusEvent<HTMLInputElement>) =>
+                  emailRegister.onBlur(e)
+                }
+              />
 
-              <Button
+              <Cta
                 type="submit"
                 className="h-14 w-full rounded-[10px] bg-gray-900 text-base font-bold leading-normal tracking-[0.3px] text-white hover:bg-gray-900/90 disabled:bg-gray-200 disabled:text-gray-500"
                 disabled={isSubmitting}
@@ -128,7 +139,7 @@ export default function LoginPage() {
                 ) : (
                   'Send Magic Link'
                 )}
-              </Button>
+              </Cta>
             </form>
 
             {/* Info Text */}

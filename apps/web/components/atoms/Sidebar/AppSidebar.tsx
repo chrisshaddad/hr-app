@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from '@/components/ui/sidebar';
+} from '@/components/atoms/Sidebar/Sidebar';
 
 interface NavItem {
   title: string;
@@ -29,6 +29,11 @@ interface NavItem {
 
 // Navigation items for ORG_ADMIN and EMPLOYEE roles
 const orgNavItems: NavItem[] = [
+  {
+    title: 'Dashboard',
+    url: '/dashboard',
+    icon: Users,
+  },
   {
     title: 'Jobs',
     url: '/jobs',
@@ -107,7 +112,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-3">
+      <SidebarContent className="px-3 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] max-w-full">
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">

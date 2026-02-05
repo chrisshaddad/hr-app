@@ -1,28 +1,34 @@
 'use client';
 
+import { useState } from 'react';
+import { Building2, ShieldX } from 'lucide-react';
+
 import { useUser } from '@/hooks/use-auth';
-import { useOrganizations } from '@/hooks/use-organizations';
 import { useRouter } from 'next/navigation';
+import { useOrganizations } from '@/hooks/use-organizations';
 import {
   Table,
+  TableRow,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+} from '@/components/atoms/Table/Table';
 import {
   Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Building2, ShieldX } from 'lucide-react';
-import { useState } from 'react';
+  SelectTrigger,
+  SelectContent,
+} from '@/components/atoms/Select/Select';
 import type { OrganizationStatus } from '@repo/contracts';
+import { Skeleton } from '@/components/atoms/Skeleton/Skeleton';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/atoms/Card/Card';
 
 type StatusFilter =
   | 'all'

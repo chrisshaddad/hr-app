@@ -7,23 +7,21 @@ import { PanelLeftIcon } from 'lucide-react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
+import { Cta } from '@/components/atoms/Cta/Cta';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '@/components/atoms/Sheet/Sheet';
+import { Skeleton } from '@/components/atoms/Skeleton/Skeleton';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@/components/atoms/ToolTip/ToolTip';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -257,11 +255,11 @@ function SidebarTrigger({
   className,
   onClick,
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Cta>) {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <Button
+    <Cta
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
@@ -275,7 +273,7 @@ function SidebarTrigger({
     >
       <PanelLeftIcon />
       <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    </Cta>
   );
 }
 
@@ -318,20 +316,6 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
   );
 }
 
-function SidebarInput({
-  className,
-  ...props
-}: React.ComponentProps<typeof Input>) {
-  return (
-    <Input
-      data-slot="sidebar-input"
-      data-sidebar="input"
-      className={cn('bg-background h-8 w-full shadow-none', className)}
-      {...props}
-    />
-  );
-}
-
 function SidebarHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -357,12 +341,12 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<'div'>) {
 function SidebarSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof Separator>) {
+}: React.ComponentProps<'div'>) {
   return (
-    <Separator
+    <div
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cn('bg-sidebar-border mx-2 w-auto', className)}
+      className={cn('bg-sidebar-border mx-2 w-auto h-px', className)}
       {...props}
     />
   );
@@ -707,7 +691,6 @@ export {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
   SidebarInset,
   SidebarMenu,
   SidebarMenuAction,

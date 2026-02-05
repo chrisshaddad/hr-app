@@ -5,9 +5,14 @@ import { useOrganization } from '@/hooks/use-organizations';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/atoms/Card/Card';
+import { Cta } from '@/components/atoms/Cta/Cta';
+import { Skeleton } from '@/components/atoms/Skeleton/Skeleton';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/atoms/Dialog/Dialog';
 import {
   ArrowLeft,
   Building2,
@@ -163,9 +168,9 @@ export default function OrganizationDetailPage() {
     return (
       <div className="py-10 text-center">
         <div className="text-red-500 mb-4">Failed to load organization</div>
-        <Button variant="outline" onClick={() => router.back()}>
+        <Cta variant="outline" onClick={() => router.back()}>
           Go Back
-        </Button>
+        </Cta>
       </div>
     );
   }
@@ -174,9 +179,9 @@ export default function OrganizationDetailPage() {
     return (
       <div className="py-10 text-center">
         <div className="text-gray-500 mb-4">Organization not found</div>
-        <Button variant="outline" onClick={() => router.back()}>
+        <Cta variant="outline" onClick={() => router.back()}>
           Go Back
-        </Button>
+        </Cta>
       </div>
     );
   }
@@ -186,7 +191,7 @@ export default function OrganizationDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <Button
+      <Cta
         variant="ghost"
         size="sm"
         className="gap-2"
@@ -194,7 +199,7 @@ export default function OrganizationDetailPage() {
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Organizations
-      </Button>
+      </Cta>
 
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -208,21 +213,21 @@ export default function OrganizationDetailPage() {
         {/* Action Buttons (only for PENDING organizations) */}
         {isPending && (
           <div className="flex gap-3">
-            <Button
+            <Cta
               variant="outline"
               className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
               onClick={() => setShowRejectDialog(true)}
             >
               <XCircle className="h-4 w-4" />
               Reject
-            </Button>
-            <Button
+            </Cta>
+            <Cta
               className="gap-2 bg-green-600 hover:bg-green-700"
               onClick={() => setShowApproveDialog(true)}
             >
               <CheckCircle className="h-4 w-4" />
               Approve
-            </Button>
+            </Cta>
           </div>
         )}
       </div>
@@ -362,20 +367,20 @@ export default function OrganizationDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
+            <Cta
               variant="outline"
               onClick={() => setShowApproveDialog(false)}
               disabled={isApproving}
             >
               Cancel
-            </Button>
-            <Button
+            </Cta>
+            <Cta
               className="bg-green-600 hover:bg-green-700"
               onClick={handleApprove}
               disabled={isApproving}
             >
               {isApproving ? 'Approving...' : 'Approve'}
-            </Button>
+            </Cta>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -391,20 +396,20 @@ export default function OrganizationDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
+            <Cta
               variant="outline"
               onClick={() => setShowRejectDialog(false)}
               disabled={isRejecting}
             >
               Cancel
-            </Button>
-            <Button
+            </Cta>
+            <Cta
               variant="destructive"
               onClick={handleReject}
               disabled={isRejecting}
             >
               {isRejecting ? 'Rejecting...' : 'Reject'}
-            </Button>
+            </Cta>
           </DialogFooter>
         </DialogContent>
       </Dialog>

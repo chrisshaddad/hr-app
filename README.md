@@ -12,6 +12,7 @@ Multi-tenant HR/Employee Management SaaS platform. Turborepo monorepo with NestJ
 ```bash
 # Copy environment files
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 cp packages/database/.env.example packages/database/.env
 
 # Start Docker services (PostgreSQL, Redis, Mailpit)

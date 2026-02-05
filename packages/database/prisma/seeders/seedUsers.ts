@@ -5,7 +5,18 @@ const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
     email: 'chris.haddad@humanline.com',
     name: 'Chris Haddad',
   },
-  // Add more super admins as needed
+  {
+    email: 'fakhriraphael@gmail.com',
+    name: 'Raphael Fakhri',
+  },
+  {
+    email: 'makhoulshbeeb@gmail.com',
+    name: 'Makhoul Shbeeb',
+  },
+  {
+    email: 'jihadissa610@gmail.com',
+    name: 'Jihad Issa',
+  },
 ];
 
 // Org admins - these will be linked to organizations in seedOrganizations.ts

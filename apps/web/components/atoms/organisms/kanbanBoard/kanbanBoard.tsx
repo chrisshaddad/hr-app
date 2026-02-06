@@ -26,7 +26,7 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   CandidateCard,
   CandidateCardData,
-} from '@/components/molecules/candidateCard/candidateCard';
+} from '@/components/atoms/molecules/candidateCard/candidateCard';
 
 export type Stage = {
   id: string;

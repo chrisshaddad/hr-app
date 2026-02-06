@@ -154,9 +154,11 @@ model User {
   email          String   @unique
   isConfirmed    Boolean  @default(false)
   name           String
-  role           UserRole @default(EMPLOYEE)
-  organizationId String? 
-  departmentId   String? 
+
+  //role           UserRole @default(EMPLOYEE)
+  roles UserRoleAssignment[]
+  organizationId String? // null for SUPER_ADMIN users
+  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -184,6 +186,17 @@ model User {
 
   @@index([organizationId])
   @@index([departmentId])
+  @@schema("public")
+}
+
+model UserRoleAssignment {
+  id     String   @id @default(uuid())
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   UserRole
+  createdAt DateTime @default(now())
+
+  @@unique([userId, role])
   @@schema("public")
 }
 
@@ -275,7 +288,6 @@ model Organization {
   branches   Branch[]
   users      User[]   @relation("OrganizationMembers")
 
-  isDeleted          Boolean             @default(false)
   deletedAt          DateTime?
   departments        Department[]
   checklistTemplates ChecklistTemplate[]
@@ -309,9 +321,7 @@ model Branch {
 
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   departments        Department[]
-  isDeleted          Boolean             @default(false)
   deletedAt          DateTime?
-  checklistTemplates ChecklistTemplate[]
   employments        Employment[]
 
   @@index([organizationId])
@@ -330,10 +340,8 @@ model Department {
   branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
   users  User[]
 
-  isDeleted          Boolean             @default(false)
   deletedAt          DateTime?
   employments        Employment[]
-  checklistTemplates ChecklistTemplate[]
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([branchId])
@@ -351,13 +359,24 @@ model TaskTemplate {
   name           String
   description    String?
   mandatory      Boolean   @default(true)
-  assignedToRole UserRole?
+  //assignedToRole UserRole?
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
 
   checklistTemplateTasks ChecklistTemplateTask[]
   taskInstances          TaskInstance[]
+  assignedRoles          TaskTemplateRole[]
+  @@schema("public")
+}
 
+model TaskTemplateRole {
+  id            String       @id @default(uuid())
+  taskTemplate  TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
+  taskTemplateId String
+  role          UserRole
+  createdAt     DateTime     @default(now())
+
+  @@unique([taskTemplateId, role])
   @@schema("public")
 }
 
@@ -375,8 +394,6 @@ model ChecklistTemplate {
   updatedAt      DateTime      @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id])
-  branch       Branch?       @relation(fields: [branchId], references: [id])
-  department   Department?   @relation(fields: [departmentId], references: [id])
 
   tasks              ChecklistTemplateTask[]
   checklistInstances ChecklistInstance[]
@@ -478,7 +495,6 @@ model Employment {
   exitDate     DateTime?
   departmentId String?
   branchId     String?
-  isDeleted    Boolean          @default(false)
   deletedAt    DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt

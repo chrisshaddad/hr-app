@@ -1,1 +1,5 @@
-npx lint-staged
+#!/usr/bin/env sh
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+npm exec -- lint-staged

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,13 +5,517 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["public", "private"]
+  schemas  = ["private", "public"]
 }
 
-enum UserRole {
-  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
-  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
-  EMPLOYEE
+model MagicLink {
+  id        String    @id
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@schema("private")
+}
+
+model Password {
+  id               String   @id
+  userId           String   @unique
+  hashedPassword   String
+  failedLoginCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  User             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("private")
+}
+
+model Application {
+  id              String            @id
+  organizationId  String
+  jobId           String
+  candidateId     String
+  currentStage    ApplicationStage  @default(APPLIED)
+  source          String?
+  appliedAt       DateTime          @default(now())
+  rejectedReason  String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  Candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  Organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Communication   Communication[]
+  Interview       Interview[]
+  PipelineHistory PipelineHistory[]
+
+  @@unique([jobId, candidateId])
+  @@index([candidateId])
+  @@index([currentStage])
+  @@index([jobId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Branch {
+  id             String       @id
+  organizationId String
+  name           String
+  street1        String?
+  street2        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  email          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Department     Department[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Candidate {
+  id             String          @id
+  organizationId String
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  linkedinUrl    String?
+  portfolioUrl   String?
+  resumeUrl      String?
+  coverLetter    String?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime
+  Application    Application[]
+  Organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  CandidateTag   CandidateTag[]
+  Communication  Communication[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model CandidateTag {
+  candidateId String
+  tagId       String
+  Candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, tagId])
+  @@index([candidateId])
+  @@index([tagId])
+  @@schema("public")
+}
+
+model Communication {
+  id                String                 @id
+  organizationId    String
+  candidateId       String
+  applicationId     String?
+  interviewId       String?
+  direction         CommunicationDirection
+  channel           CommunicationChannel
+  subject           String?
+  body              String
+  sentByUserId      String?
+  status            CommunicationStatus    @default(QUEUED)
+  providerMessageId String?
+  sentAt            DateTime?
+  createdAt         DateTime               @default(now())
+  Application       Application?           @relation(fields: [applicationId], references: [id])
+  Candidate         Candidate              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Interview         Interview?             @relation(fields: [interviewId], references: [id])
+  Organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  User              User?                  @relation(fields: [sentByUserId], references: [id])
+
+  @@index([applicationId])
+  @@index([candidateId])
+  @@index([interviewId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Department {
+  id          String   @id
+  branchId    String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  User        User[]
+
+  @@index([branchId])
+  @@schema("public")
+}
+
+model FeedbackAnswer {
+  id                String            @id
+  feedbackId        String
+  questionId        String
+  score             Int?
+  notes             String?
+  InterviewFeedback InterviewFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  Question          Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackId, questionId])
+  @@index([feedbackId])
+  @@schema("public")
+}
+
+model Interview {
+  id                   String                 @id
+  organizationId       String
+  applicationId        String
+  templateId           String?
+  scheduledStartAt     DateTime
+  scheduledEndAt       DateTime?
+  timezone             String
+  locationType         LocationType
+  locationDetails      String?
+  status               InterviewStatus        @default(SCHEDULED)
+  calendarProvider     CalendarProvider       @default(NONE)
+  calendarEventId      String?
+  meetingJoinUrl       String?
+  createdByUserId      String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  Communication        Communication[]
+  Application          Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  User                 User                   @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  Organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  InterviewTemplate    InterviewTemplate?     @relation(fields: [templateId], references: [id])
+  InterviewFeedback    InterviewFeedback[]
+  InterviewInterviewer InterviewInterviewer[]
+  Reminder             Reminder[]
+
+  @@index([applicationId])
+  @@index([createdByUserId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([templateId])
+  @@schema("public")
+}
+
+model InterviewFeedback {
+  id             String           @id
+  interviewId    String
+  userId         String
+  overallScore   Int?
+  recommendation Recommendation
+  comments       String?
+  submittedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  FeedbackAnswer FeedbackAnswer[]
+  Interview      Interview        @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  User           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, userId])
+  @@index([interviewId])
+  @@index([userId])
+  @@schema("public")
+}
+
+model InterviewInterviewer {
+  interviewId      String
+  userId           String
+  interviewerRole  InterviewerRole
+  attendanceStatus AttendanceStatus @default(INVITED)
+  Interview        Interview        @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  User             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([interviewId, userId])
+  @@index([interviewId])
+  @@index([userId])
+  @@schema("public")
+}
+
+model InterviewTemplate {
+  id               String             @id
+  organizationId   String
+  name             String
+  description      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  Interview        Interview[]
+  Organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  TemplateQuestion TemplateQuestion[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Job {
+  id              String         @id
+  organizationId  String
+  title           String
+  department      JobDepartment
+  employmentType  EmploymentType
+  description     String?
+  status          JobStatus      @default(DRAFT)
+  hiringManagerId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+  Application     Application[]
+  User            User?          @relation(fields: [hiringManagerId], references: [id])
+  Organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([hiringManagerId])
+  @@index([organizationId])
+  @@index([status])
+  @@schema("public")
+}
+
+model Organization {
+  id                                     String              @id
+  name                                   String
+  status                                 OrganizationStatus  @default(PENDING)
+  description                            String?
+  website                                String?
+  createdById                            String              @unique
+  approvedById                           String?
+  createdAt                              DateTime            @default(now())
+  updatedAt                              DateTime
+  approvedAt                             DateTime?
+  Application                            Application[]
+  Branch                                 Branch[]
+  Candidate                              Candidate[]
+  Communication                          Communication[]
+  Interview                              Interview[]
+  InterviewTemplate                      InterviewTemplate[]
+  Job                                    Job[]
+  User_Organization_approvedByIdToUser   User?               @relation("Organization_approvedByIdToUser", fields: [approvedById], references: [id])
+  User_Organization_createdByIdToUser    User                @relation("Organization_createdByIdToUser", fields: [createdById], references: [id])
+  Question                               Question[]
+  Reminder                               Reminder[]
+  Tag                                    Tag[]
+  User_User_organizationIdToOrganization User[]              @relation("User_organizationIdToOrganization")
+
+  @@index([approvedById])
+  @@index([status])
+  @@schema("public")
+}
+
+model PipelineHistory {
+  id              String           @id
+  applicationId   String
+  changedByUserId String
+  fromStage       ApplicationStage
+  toStage         ApplicationStage
+  note            String?
+  changedAt       DateTime         @default(now())
+  Application     Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  User            User             @relation(fields: [changedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([changedByUserId])
+  @@schema("public")
+}
+
+model Question {
+  id               String             @id
+  organizationId   String
+  text             String
+  type             QuestionType
+  category         String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  FeedbackAnswer   FeedbackAnswer[]
+  Organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  TemplateQuestion TemplateQuestion[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Reminder {
+  id                String             @id
+  organizationId    String
+  interviewId       String
+  targetType        ReminderTargetType
+  targetUserId      String?
+  channel           ReminderChannel
+  scheduledFor      DateTime
+  status            ReminderStatus     @default(PENDING)
+  sentAt            DateTime?
+  providerMessageId String?
+  createdAt         DateTime           @default(now())
+  Interview         Interview          @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  Organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  User              User?              @relation(fields: [targetUserId], references: [id])
+
+  @@index([interviewId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([targetUserId])
+  @@schema("public")
+}
+
+model Tag {
+  id             String         @id
+  organizationId String
+  name           String
+  type           String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  CandidateTag   CandidateTag[]
+  Organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model TemplateQuestion {
+  templateId        String
+  questionId        String
+  orderIndex        Int
+  required          Boolean           @default(false)
+  Question          Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  InterviewTemplate InterviewTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, questionId])
+  @@index([templateId])
+  @@schema("public")
+}
+
+model User {
+  id                                             String                 @id
+  email                                          String                 @unique
+  isConfirmed                                    Boolean                @default(false)
+  name                                           String
+  createdAt                                      DateTime               @default(now())
+  updatedAt                                      DateTime
+  role                                           UserRole               @default(EMPLOYEE)
+  departmentId                                   String?
+  organizationId                                 String?
+  MagicLink                                      MagicLink[]
+  Password                                       Password?
+  Session                                        Session[]
+  Communication                                  Communication[]
+  Interview                                      Interview[]
+  InterviewFeedback                              InterviewFeedback[]
+  InterviewInterviewer                           InterviewInterviewer[]
+  Job                                            Job[]
+  Organization_Organization_approvedByIdToUser   Organization[]         @relation("Organization_approvedByIdToUser")
+  Organization_Organization_createdByIdToUser    Organization?          @relation("Organization_createdByIdToUser")
+  PipelineHistory                                PipelineHistory[]
+  Reminder                                       Reminder[]
+  Department                                     Department?            @relation(fields: [departmentId], references: [id])
+  Organization_User_organizationIdToOrganization Organization?          @relation("User_organizationIdToOrganization", fields: [organizationId], references: [id])
+  UserProfile                                    UserProfile?
+
+  @@index([departmentId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model UserProfile {
+  id                       String    @id
+  userId                   String    @unique
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  bio                      String?
+  phoneNumber              String?
+  street1                  String?
+  street2                  String?
+  city                     String?
+  state                    String?
+  postalCode               String?
+  country                  String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  nationality              String?
+  profilePictureUrl        String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime
+  User                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+enum ApplicationStage {
+  APPLIED
+  SCREENING
+  INTERVIEW_1
+  INTERVIEW_2
+  OFFERED
+  HIRED
+  REJECTED
+
+  @@schema("public")
+}
+
+enum AttendanceStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  ATTENDED
+  ABSENT
+
+  @@schema("public")
+}
+
+enum CalendarProvider {
+  GOOGLE
+  MICROSOFT
+  NONE
+
+  @@schema("public")
+}
+
+enum CommunicationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  IN_APP
+
+  @@schema("public")
+}
+
+enum CommunicationDirection {
+  OUTBOUND
+  INBOUND
+
+  @@schema("public")
+}
+
+enum CommunicationStatus {
+  QUEUED
+  SENT
+  FAILED
+
+  @@schema("public")
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
 
   @@schema("public")
 }
@@ -31,167 +529,111 @@ enum Gender {
   @@schema("public")
 }
 
-enum OrganizationStatus {
-  PENDING // Awaiting super admin approval
-  ACTIVE // Approved and operational
-  REJECTED // Denied by super admin
-  SUSPENDED
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+
+  @@schema("public")
+}
+
+enum InterviewerRole {
+  HOST
+  PANELIST
+  OBSERVER
+
+  @@schema("public")
+}
+
+enum JobDepartment {
+  DEVELOPMENT
+  DESIGN
+  MARKETING
+  MANAGEMENT
+  HR
+  SALES
+  OTHER
+
+  @@schema("public")
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  CLOSED
   INACTIVE
 
   @@schema("public")
 }
 
-model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  isConfirmed    Boolean  @default(false)
-  name           String
-  role           UserRole @default(EMPLOYEE)
-  organizationId String? // null for SUPER_ADMIN users
-  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  password              Password?
-  sessions              Session[]
-  magicLinks            MagicLink[]
-  profile               UserProfile?
-  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdOrganization   Organization?  @relation("OrganizationCreator")
-  approvedOrganizations Organization[] @relation("OrganizationApprover")
-
-  @@index([organizationId])
-  @@index([departmentId])
-  @@schema("public")
-}
-
-model UserProfile {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  dateOfBirth DateTime?
-  gender      Gender?
-  bio         String?   @db.Text
-  phoneNumber String?
-
-  // Address fields
-  street1    String?
-  street2    String?
-  city       String?
-  state      String?
-  postalCode String?
-  country    String?
-
-  // Emergency contact
-  emergencyContactName     String?
-  emergencyContactPhone    String?
-  emergencyContactRelation String?
-
-  nationality       String?
-  profilePictureUrl String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum LocationType {
+  IN_PERSON
+  ZOOM
+  GOOGLE_MEET
+  TEAMS
+  PHONE
+  OTHER
 
   @@schema("public")
 }
 
-model Password {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  hashedPassword   String
-  failedLoginCount Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+  REJECTED
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("private")
-}
-
-model Session {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@schema("private")
-}
-
-model MagicLink {
-  id        String    @id @default(uuid())
-  userId    String
-  token     String    @unique // securely generated random token, not a UUID
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@schema("private")
-}
-
-model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  status       OrganizationStatus @default(PENDING)
-  description  String?            @db.Text
-  website      String?
-  createdById  String             @unique // User can only create one organization
-  approvedById String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  approvedAt   DateTime? // When super admin approved
-
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
-  branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
-
-  @@index([approvedById])
-  @@index([status])
   @@schema("public")
 }
 
-model Branch {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  street1        String?
-  street2        String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String
-  phoneNumber    String?
-  email          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+enum QuestionType {
+  TEXT
+  RATING
+  MCQ
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  departments  Department[]
-
-  @@index([organizationId])
   @@schema("public")
 }
 
-model Department {
-  id          String   @id @default(uuid())
-  branchId    String
-  name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum Recommendation {
+  STRONG_NO
+  NO
+  MAYBE
+  YES
+  STRONG_YES
 
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
+  @@schema("public")
+}
 
-  @@index([branchId])
+enum ReminderChannel {
+  EMAIL
+  IN_APP
+
+  @@schema("public")
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum ReminderTargetType {
+  CANDIDATE
+  EMPLOYEE
+
+  @@schema("public")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  EMPLOYEE
+
   @@schema("public")
 }

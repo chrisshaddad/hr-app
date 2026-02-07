@@ -326,6 +326,7 @@ model Goal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deleted Boolean
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   owner        User         @relation("GoalsAsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -352,6 +353,7 @@ model Milestone {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deleted Boolean
 
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 

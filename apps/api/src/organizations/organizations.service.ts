@@ -35,7 +35,7 @@ export class OrganizationsService {
           status: true,
           website: true,
           createdAt: true,
-          createdBy: {
+          User_Organization_createdByIdToUser: {
             select: {
               id: true,
               email: true,
@@ -44,8 +44,8 @@ export class OrganizationsService {
           },
           _count: {
             select: {
-              users: true,
-              branches: true,
+              User_User_organizationIdToOrganization: true,
+              Branch: true,
             },
           },
         },
@@ -53,7 +53,17 @@ export class OrganizationsService {
       this.prisma.organization.count({ where }),
     ]);
 
-    return { organizations, total };
+    return {
+      organizations: organizations.map((org) => ({
+        ...org,
+        createdBy: org.User_Organization_createdByIdToUser,
+        _count: {
+          users: org._count.User_User_organizationIdToOrganization,
+          branches: org._count.Branch,
+        },
+      })),
+      total,
+    };
   }
 
   /**
@@ -71,14 +81,14 @@ export class OrganizationsService {
         createdAt: true,
         updatedAt: true,
         approvedAt: true,
-        createdBy: {
+        User_Organization_createdByIdToUser: {
           select: {
             id: true,
             email: true,
             name: true,
           },
         },
-        approvedBy: {
+        User_Organization_approvedByIdToUser: {
           select: {
             id: true,
             email: true,
@@ -87,8 +97,8 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
-            branches: true,
+            User_User_organizationIdToOrganization: true,
+            Branch: true,
           },
         },
       },
@@ -98,7 +108,15 @@ export class OrganizationsService {
       throw new NotFoundException(`Organization with ID ${id} not found`);
     }
 
-    return organization;
+    return {
+      ...organization,
+      createdBy: organization.User_Organization_createdByIdToUser,
+      approvedBy: organization.User_Organization_approvedByIdToUser,
+      _count: {
+        users: organization._count.User_User_organizationIdToOrganization,
+        branches: organization._count.Branch,
+      },
+    };
   }
 
   /**
@@ -133,14 +151,14 @@ export class OrganizationsService {
         createdAt: true,
         updatedAt: true,
         approvedAt: true,
-        createdBy: {
+        User_Organization_createdByIdToUser: {
           select: {
             id: true,
             email: true,
             name: true,
           },
         },
-        approvedBy: {
+        User_Organization_approvedByIdToUser: {
           select: {
             id: true,
             email: true,
@@ -149,14 +167,22 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
-            branches: true,
+            User_User_organizationIdToOrganization: true,
+            Branch: true,
           },
         },
       },
     });
 
-    return organization;
+    return {
+      ...organization,
+      createdBy: organization.User_Organization_createdByIdToUser,
+      approvedBy: organization.User_Organization_approvedByIdToUser,
+      _count: {
+        users: organization._count.User_User_organizationIdToOrganization,
+        branches: organization._count.Branch,
+      },
+    };
   }
 
   /**
@@ -186,14 +212,14 @@ export class OrganizationsService {
         createdAt: true,
         updatedAt: true,
         approvedAt: true,
-        createdBy: {
+        User_Organization_createdByIdToUser: {
           select: {
             id: true,
             email: true,
             name: true,
           },
         },
-        approvedBy: {
+        User_Organization_approvedByIdToUser: {
           select: {
             id: true,
             email: true,
@@ -202,13 +228,21 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
-            branches: true,
+            User_User_organizationIdToOrganization: true,
+            Branch: true,
           },
         },
       },
     });
 
-    return organization;
+    return {
+      ...organization,
+      createdBy: organization.User_Organization_createdByIdToUser,
+      approvedBy: organization.User_Organization_approvedByIdToUser,
+      _count: {
+        users: organization._count.User_User_organizationIdToOrganization,
+        branches: organization._count.Branch,
+      },
+    };
   }
 }

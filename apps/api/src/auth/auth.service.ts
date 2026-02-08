@@ -53,6 +53,7 @@ export class AuthService {
     // Create new magic link
     await this.prisma.magicLink.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         token,
         expiresAt,
@@ -85,7 +86,7 @@ export class AuthService {
     // Find the magic link
     const magicLink = await this.prisma.magicLink.findUnique({
       where: { token },
-      include: { user: true },
+      include: { User: true },
     });
 
     if (!magicLink) {
@@ -109,9 +110,9 @@ export class AuthService {
     });
 
     // Confirm user email if not already confirmed
-    if (!magicLink.user.isConfirmed) {
+    if (!magicLink.User.isConfirmed) {
       await this.prisma.user.update({
-        where: { id: magicLink.user.id },
+        where: { id: magicLink.User.id },
         data: { isConfirmed: true },
       });
     }
@@ -124,10 +125,10 @@ export class AuthService {
     return {
       sessionId,
       user: {
-        id: magicLink.user.id,
-        email: magicLink.user.email,
-        name: magicLink.user.name,
-        role: magicLink.user.role,
+        id: magicLink.User.id,
+        email: magicLink.User.email,
+        name: magicLink.User.name,
+        role: magicLink.User.role,
       },
     };
   }

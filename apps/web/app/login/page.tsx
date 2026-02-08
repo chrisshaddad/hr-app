@@ -59,7 +59,7 @@ export default function LoginPage() {
         </div>
 
         {/* Content Section with green top border */}
-        <div className="flex flex-col gap-6 border-t-[5px] border-primary-base bg-gray-900 px-12.5 pb-15 pt-10">
+        <div className="flex flex-col gap-6 border-t-[0.3125rem] border-primary-base bg-gray-900 px-12.5 pb-15 pt-10">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="flex h-6 w-6 items-center justify-center">
@@ -69,7 +69,7 @@ export default function LoginPage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl font-bold leading-[1.2] tracking-[-0.5px] text-white">
+          <h1 className="text-5xl font-bold leading-[1.2] tracking-[-0.03125rem] text-white">
             Let&apos;s empower your employees today.
           </h1>
 
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="h-14 w-full rounded-[10px] bg-gray-900 text-base font-bold leading-normal tracking-[0.3px] text-white hover:bg-gray-900/90 disabled:bg-gray-200 disabled:text-gray-500"
+                className="h-14 w-full rounded-[0.625rem] bg-gray-900 text-base font-bold leading-normal tracking-[0.01875rem] text-white hover:bg-gray-900/90 disabled:bg-gray-200 disabled:text-gray-500"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

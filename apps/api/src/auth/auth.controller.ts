@@ -7,7 +7,6 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  UsePipes,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -35,17 +34,18 @@ export class AuthController {
   @Public()
   @Post('magic-link')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(magicLinkRequestSchema))
-  async requestMagicLink(@Body() body: MagicLinkRequest) {
+  async requestMagicLink(
+    @Body(new ZodValidationPipe(magicLinkRequestSchema)) body: MagicLinkRequest,
+  ) {
     return this.authService.requestMagicLink(body.email);
   }
 
   @Public()
   @Post('magic-link/verify')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(magicLinkVerifyRequestSchema))
   async verifyMagicLink(
-    @Body() body: MagicLinkVerifyRequest,
+    @Body(new ZodValidationPipe(magicLinkVerifyRequestSchema))
+    body: MagicLinkVerifyRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const { sessionId, user } = await this.authService.verifyMagicLink(

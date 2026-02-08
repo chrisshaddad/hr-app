@@ -75,7 +75,7 @@ export class SessionService {
     // Cache miss - check database
     const dbSession = await this.prisma.session.findUnique({
       where: { id: sessionId },
-      include: { user: true },
+      include: { User: true },
     });
 
     if (!dbSession) {
@@ -105,7 +105,7 @@ export class SessionService {
       );
     }
 
-    return dbSession.user;
+    return dbSession.User;
   }
 
   /**

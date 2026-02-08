@@ -48,3 +48,11 @@ npx turbo db:seed      # Seed initial data
 | `apps/web`           | Next.js frontend              |
 | `packages/database`  | Prisma schema & client        |
 | `packages/contracts` | Shared Zod validation schemas |
+
+
+## Notes
+
+```bash
+# Stop docker to free resources
+docker compose stop
+```

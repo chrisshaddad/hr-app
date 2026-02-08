@@ -466,6 +466,13 @@ export default function JobDetailPage() {
               ))}
             </div>
           )}
+          {/* Description */}
+          {job.description && (
+            <div
+              className="tiptap mt-3 max-w-3xl text-sm leading-relaxed text-gray-600"
+              dangerouslySetInnerHTML={{ __html: job.description }}
+            />
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   Dialog,
   DialogContent,
@@ -395,14 +396,11 @@ export function EditJobDialog({ open, onOpenChange, job }: EditJobDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <textarea
-                id="edit-description"
-                placeholder="Job description"
+              <Label>Description</Label>
+              <RichTextEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="flex min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                rows={5}
+                onChange={setDescription}
+                placeholder="Job description"
               />
             </div>
           </div>

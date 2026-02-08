@@ -1,21 +1,6 @@
 'use client';
 
-import { MessageCircle, Eye, MoreVertical } from 'lucide-react';
-
-export type CandidateCardData = {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  initials: string;
-  messageCount: number;
-  viewCount: number;
-  status: string;
-};
-
-type CandidateCardProps = {
-  candidate: CandidateCardData;
-};
+import { CandidateCardProps } from './CandidateCard.types';
 
 const CandidateCard = ({ candidate }: CandidateCardProps) => {
   return (

@@ -5,11 +5,16 @@ import { Calendar } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 import { useState, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 
 import { cn } from '@/lib/utils';
 import { Input } from '../Input/Input';
 import { DatePickerProps } from './DatePicker.types';
-import { Dialog, DialogContent } from '@/components/atoms/Dialog/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/atoms/Dialog/Dialog';
 
 const DatePicker = ({
   label,
@@ -74,20 +79,24 @@ const DatePicker = ({
             label={undefined}
             required={false}
             value={formattedDate}
-            placeholder={placeholder}
-            icon={<Calendar className="h-5 w-5 text-GreyScale-900" />}
-            onChange={() => {}}
             error={error}
             touched={touched}
+            placeholder={placeholder}
+            onChange={() => {}}
+            icon={<Calendar className="h-5 w-5 text-GreyScale-900" />}
           />
         </div>
       </div>
-
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent
           className="w-auto max-w-[95vw] mx-4 p-6"
           showCloseButton={false}
         >
+          <VisuallyHidden.Root>
+            <DialogTitle>
+              {label ? `Select ${label}` : 'Select date'}
+            </DialogTitle>
+          </VisuallyHidden.Root>
           <div className="flex justify-center">
             <DayPicker
               animate

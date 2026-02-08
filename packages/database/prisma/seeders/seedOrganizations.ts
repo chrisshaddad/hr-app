@@ -97,32 +97,58 @@ export async function seedOrganizations(prisma: PrismaClient) {
       continue;
     }
 
-    const createdOrg = await prisma.organization.create({
-      data: {
-        name: org.name,
-        description: org.description,
-        website: org.website,
-        status: org.status,
-        createdAt: org.createdAt,
-        createdById: orgAdmin.id,
-        // Link approvedBy for ACTIVE and SUSPENDED orgs
-        approvedById:
-          org.status === 'ACTIVE' || org.status === 'SUSPENDED'
-            ? superAdmin.id
-            : null,
-        approvedAt: org.approvedAt || null,
-      },
+    // Check if organization already exists
+    let existingOrg = await prisma.organization.findFirst({
+      where: { name: org.name },
     });
+
+    let createdOrg;
+    if (existingOrg) {
+      // Update existing organization
+      createdOrg = await prisma.organization.update({
+        where: { id: existingOrg.id },
+        data: {
+          description: org.description,
+          website: org.website,
+          status: org.status,
+          approvedById:
+            org.status === 'ACTIVE' || org.status === 'SUSPENDED'
+              ? superAdmin.id
+              : null,
+          approvedAt: org.approvedAt || null,
+        },
+      });
+      console.log(
+        `  Updated organization: ${org.name} (${org.status}) - Admin: ${orgAdmin.email}`,
+      );
+    } else {
+      // Create new organization
+      createdOrg = await prisma.organization.create({
+        data: {
+          name: org.name,
+          description: org.description,
+          website: org.website,
+          status: org.status,
+          createdAt: org.createdAt,
+          createdById: orgAdmin.id,
+          // Link approvedBy for ACTIVE and SUSPENDED orgs
+          approvedById:
+            org.status === 'ACTIVE' || org.status === 'SUSPENDED'
+              ? superAdmin.id
+              : null,
+          approvedAt: org.approvedAt || null,
+        },
+      });
+      console.log(
+        `  Created organization: ${org.name} (${org.status}) - Admin: ${orgAdmin.email}`,
+      );
+    }
 
     // Update the org admin to be a member of their organization
     await prisma.user.update({
       where: { id: orgAdmin.id },
       data: { organizationId: createdOrg.id },
     });
-
-    console.log(
-      `  Created organization: ${org.name} (${org.status}) - Admin: ${orgAdmin.email}`,
-    );
   }
 
   console.log(`Organizations seeded: ${ORGANIZATIONS.length} total`);

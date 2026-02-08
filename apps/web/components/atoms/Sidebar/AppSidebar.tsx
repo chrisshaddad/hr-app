@@ -102,7 +102,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-gray-200 bg-white">
-      <SidebarHeader className="px-5 py-6">
+      <SidebarHeader className="px-5 py-6 bg-white">
         {/* Logo */}
         <Link href="/jobs" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-base">
@@ -112,7 +112,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] max-w-full">
+      <SidebarContent className="px-3 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] max-w-full bg-white">
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -154,10 +154,9 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator className="my-4" />
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 bg-white">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

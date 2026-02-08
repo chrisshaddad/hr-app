@@ -1,5 +1,5 @@
-const CandidatesPage = () => {
-  return <div>CandidatesPage</div>;
-};
+'use client';
 
-export default CandidatesPage;
+export default function CandidatesPage() {
+  return <div>Candidates</div>;
+}

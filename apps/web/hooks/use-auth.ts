@@ -3,7 +3,9 @@
 import useSWR from 'swr';
 import { useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { apiPost, ApiError } from '@/lib/api';
+
+import { apiPost, ApiError, API_URL } from '@/lib/api';
+
 import type {
   MagicLinkRequest,
   MagicLinkVerifyRequest,
@@ -47,6 +49,13 @@ export function useUser(options: UseUserOptions = {}): UseUserReturn {
       error?.status === 401 &&
       !isAuthRoute(pathname)
     ) {
+      // Clear invalid cookie by calling logout endpoint (handles cookie cleanup)
+      // Then redirect to login
+      fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
+
       const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       router.replace(loginUrl);
     }
@@ -62,7 +71,7 @@ export function useUser(options: UseUserOptions = {}): UseUserReturn {
 }
 
 export function useAuth() {
-  const { mutate } = useUser();
+  const { mutate } = useUser({ redirectOnUnauthenticated: false });
 
   const requestMagicLink = useCallback(async (data: MagicLinkRequest) => {
     return apiPost<{ success: boolean }>('/auth/magic-link', data);

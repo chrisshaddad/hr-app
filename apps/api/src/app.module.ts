@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
+
 import { AppService } from './app.service';
+import { JobsModule } from './jobs/jobs.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
-import { OrganizationsModule } from './organizations/organizations.module';
+import { AppController } from './app.controller';
 import { DatabaseModule } from './database/database.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { DatabaseModule } from './database/database.module';
     AuthModule,
     MailModule,
     OrganizationsModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

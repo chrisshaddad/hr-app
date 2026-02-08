@@ -4,24 +4,26 @@ import * as Yup from 'yup';
 import { useFormik } from 'formik';
 
 import {
-  Button,
-  Dropdown,
   Input,
+  Button,
   Textarea,
+  Dropdown,
   DatePicker,
 } from '@/components/atoms';
-
-import { CreateJobFormProps, JobFormData } from '../molecules.types';
+import { DropdownItem } from '@/common/common.types';
+import { CreateJobFormProps, JobFormData } from './CreateJobForm.types';
 
 export const CreateJobForm = ({
   onClose,
   handleCreateJob,
 }: CreateJobFormProps) => {
   const validationSchema = Yup.object({
+    location: Yup.string().required('Location is required'),
     jobTitle: Yup.string().required('Job title is required'),
     department: Yup.string().required('Department is required'),
     description: Yup.string().required('Description is required'),
     employmentType: Yup.string().required('Employment type is required'),
+    experienceLevel: Yup.string().required('Experience level is required'),
     expectedClosingDate: Yup.string().required(
       'Expected closing date is required',
     ),
@@ -29,10 +31,12 @@ export const CreateJobForm = ({
 
   const formik = useFormik<JobFormData>({
     initialValues: {
+      location: '',
       jobTitle: '',
       department: '',
       description: '',
       employmentType: '',
+      experienceLevel: '',
       expectedClosingDate: '',
     },
     validationSchema,
@@ -40,24 +44,44 @@ export const CreateJobForm = ({
       handleCreateJob(values);
       onClose();
     },
+    validateOnBlur: true,
+    validateOnChange: true,
   });
 
-  const employmentTypeItems = [
-    { label: 'Fulltime', value: 'fulltime' },
-    { label: 'Part time', value: 'parttime' },
+  const employmentTypeItems: DropdownItem[] = [
+    { label: 'Full Time', value: 'Full Time' },
+    { label: 'Part Time', value: 'Part Time' },
+    { label: 'Contract', value: 'Contract' },
+    { label: 'Internship', value: 'Internship' },
   ];
 
-  const departmentItems = [
-    { label: 'Design', value: 'design' },
-    { label: 'Development', value: 'development' },
+  const departmentItems: DropdownItem[] = [
+    { label: 'Design', value: 'Design' },
+    { label: 'Development', value: 'Development' },
+    { label: 'Marketing', value: 'Marketing' },
+    { label: 'Sales', value: 'Sales' },
+    { label: 'Operations', value: 'Operations' },
+    { label: 'HR', value: 'HR' },
+    { label: 'Finance', value: 'Finance' },
+  ];
+
+  const locationItems: DropdownItem[] = [
+    { label: 'Remote', value: 'Remote' },
+    { label: 'Onsite', value: 'Onsite' },
+    { label: 'Hybrid', value: 'Hybrid' },
+  ];
+
+  const experienceLevelItems: DropdownItem[] = [
+    { label: 'Entry Level', value: 'Entry' },
+    { label: 'Mid Level', value: 'Mid' },
+    { label: 'Senior Level', value: 'Senior' },
+    { label: 'Executive', value: 'Executive' },
   ];
 
   return (
     <div className="h-full flex flex-col p-8 gap-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-GreyScale-900">
-          Create New Job
-        </h2>
+        <p className="text-2xl font-bold text-GreyScale-900">Create New Job</p>
       </div>
       <div className="h-full flex flex-col">
         <div className="flex-1">
@@ -82,21 +106,47 @@ export const CreateJobForm = ({
                 value={formik.values.employmentType}
                 error={formik.errors.employmentType}
                 touched={formik.touched.employmentType}
-                onBlur={() => formik.setFieldTouched('employmentType', true)}
                 onChange={(value) =>
                   formik.setFieldValue('employmentType', value)
                 }
+                onBlur={() => formik.setFieldTouched('employmentType', true)}
               />
               <Dropdown
                 required
                 label="Department"
                 items={departmentItems}
                 placeholder="Select department"
-                value={formik.values.department}
                 error={formik.errors.department}
                 touched={formik.touched.department}
+                value={formik.values.department || ''}
                 onBlur={() => formik.setFieldTouched('department', true)}
                 onChange={(value) => formik.setFieldValue('department', value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Dropdown
+                required
+                label="Location"
+                items={locationItems}
+                placeholder="Select location"
+                error={formik.errors.location}
+                touched={formik.touched.location}
+                value={formik.values.location || ''}
+                onBlur={() => formik.setFieldTouched('location', true)}
+                onChange={(value) => formik.setFieldValue('location', value)}
+              />
+              <Dropdown
+                required
+                label="Experience Level"
+                placeholder="Select level"
+                items={experienceLevelItems}
+                error={formik.errors.experienceLevel}
+                touched={formik.touched.experienceLevel}
+                value={formik.values.experienceLevel || ''}
+                onBlur={() => formik.setFieldTouched('experienceLevel', true)}
+                onChange={(value) =>
+                  formik.setFieldValue('experienceLevel', value)
+                }
               />
             </div>
             <DatePicker
@@ -104,8 +154,8 @@ export const CreateJobForm = ({
               placeholder="Select date"
               label="Expected Closing Date"
               error={formik.errors.expectedClosingDate}
-              value={formik.values.expectedClosingDate}
               touched={formik.touched.expectedClosingDate}
+              value={formik.values.expectedClosingDate || ''}
               onChange={(value: string) => {
                 formik.setFieldValue('expectedClosingDate', value);
                 formik.setFieldTouched('expectedClosingDate', true, false);
@@ -139,7 +189,18 @@ export const CreateJobForm = ({
             text="Submit"
             variant="primary"
             className="w-[150px]"
-            onClick={() => formik.handleSubmit()}
+            onClick={async () => {
+              await formik.setTouched({
+                location: true,
+                jobTitle: true,
+                department: true,
+                description: true,
+                employmentType: true,
+                experienceLevel: true,
+                expectedClosingDate: true,
+              });
+              formik.handleSubmit();
+            }}
             disabled={!(formik.isValid && formik.dirty)}
           />
         </div>

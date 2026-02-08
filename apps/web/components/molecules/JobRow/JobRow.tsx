@@ -1,50 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreVertical } from 'lucide-react';
 
-import { JobRowProps } from '../molecules.types';
 import { Chip, Dropdown } from '@/components/atoms';
+import { DropdownItem } from '@/common/common.types';
+import { JobRowProps, JobStatus } from './JobRow.types';
 
 const JobRow = ({
   id,
   title,
   status,
+  onClick,
   createdAt,
   department,
   companyName,
-  numberOfCandidates,
   onStatusChange,
-  onClick,
+  numberOfCandidates,
 }: JobRowProps) => {
-  const [jobStatus, setJobStatus] = useState(status);
+  const [jobStatus, setJobStatus] = useState<JobStatus>(status as JobStatus);
 
-  const statusItems = [
-    { label: 'Active', value: 'active' },
+  const statusItems: DropdownItem[] = [
+    { label: 'Draft', value: 'draft' },
+    { label: 'Published', value: 'published' },
     { label: 'Closed', value: 'closed' },
-    { label: 'Unactive', value: 'unactive' },
   ];
 
-  const getChipTypeByJobStatus = (status: string) => {
+  const getChipTypeByJobStatus = (status: JobStatus) => {
     switch (status) {
-      case 'active':
+      case 'published':
         return 'success';
-      case 'closed':
+      case 'draft':
         return 'default';
-      case 'unactive':
+      case 'closed':
         return 'error';
     }
   };
 
   const handleStatusChange = (value: string) => {
-    setJobStatus(value);
-    if (id && onStatusChange) {
+    const newStatus = value as JobStatus;
+
+    setJobStatus(newStatus);
+    if (onStatusChange) {
       onStatusChange(id, value);
     }
   };
 
   const handleClick = () => {
-    if (id && onClick) {
+    if (onClick) {
       onClick(id);
     }
   };
@@ -53,14 +55,10 @@ const JobRow = ({
     e.stopPropagation();
   };
 
-  const handleMoreVerticalClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div
-      className="p-6 rounded-[16px] w-full bg-Others-White gap-4 flex flex-col cursor-pointer"
       onClick={handleClick}
+      className="p-6 rounded-[16px] w-full bg-Others-White gap-4 flex flex-col cursor-pointer"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px] h-14">
@@ -70,7 +68,10 @@ const JobRow = ({
             text={jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1)}
           />
         </div>
-        <div className="flex items-center gap-2" onClick={handleDropdownClick}>
+        <div
+          className="flex flex-col items-end gap-2"
+          onClick={handleDropdownClick}
+        >
           <div onClick={handleDropdownClick}>
             <Dropdown
               align="end"
@@ -79,9 +80,6 @@ const JobRow = ({
               placeholder="Change Status"
               onChange={handleStatusChange}
             />
-          </div>
-          <div className="cursor-pointer" onClick={handleMoreVerticalClick}>
-            <MoreVertical className="h-6 w-6 text-GreyScale-600" />
           </div>
         </div>
       </div>

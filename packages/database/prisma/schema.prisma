@@ -60,6 +60,7 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+  employee              Employee?
 
   @@index([organizationId])
   @@index([departmentId])
@@ -149,10 +150,11 @@ model Organization {
   updatedAt    DateTime           @updatedAt
   approvedAt   DateTime? // When super admin approved
 
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  createdBy  User       @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy User?      @relation("OrganizationApprover", fields: [approvedById], references: [id])
   branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
+  users      User[]     @relation("OrganizationMembers")
+  employees  Employee[]
 
   @@index([approvedById])
   @@index([status])
@@ -176,6 +178,7 @@ model Branch {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   departments  Department[]
+  employees    Employee[]
 
   @@index([organizationId])
   @@schema("public")
@@ -189,9 +192,82 @@ model Department {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
+  branch    Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  users     User[]
+  employees Employee[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_BOARDING
+  OFF_BOARDING
+  ON_LEAVE
+  PROBATION
+
+  @@schema("public")
+}
+
+model EmployeePersonalInfo {
+  id       String    @id @default(uuid())
+  employee Employee?
+
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+
+  @@schema("public")
+}
+
+model EmployeeAddress {
+  id         String   @id @default(uuid())
+  employeeId String   @unique
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  primaryAddress String
+  country        String
+  state          String
+  city           String
+  postCode       String?
+
+  @@schema("public")
+}
+
+model Employee {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  lineManagerId String?
+  lineManager   Employee?  @relation("EmployeeLineManager", fields: [lineManagerId], references: [id])
+  // note: this is needed since Employee is both the parent and child in the relation, needed by prisma to differentiate the two sides of the relation
+  directReports Employee[] @relation("EmployeeLineManager")
+
+  // if the userId is null, it means the employee record is not yet linked to a user account
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  jobTitle String
+  joinDate DateTime
+  timezone String
+  status   EmployeeStatus
+
+  personalInfoId String               @unique
+  personalInfo   EmployeePersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  address EmployeeAddress?
+
+  @@index([branchId])
+  @@index([departmentId])
   @@schema("public")
 }

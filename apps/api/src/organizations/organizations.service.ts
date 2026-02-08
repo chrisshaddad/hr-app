@@ -10,6 +10,28 @@ import type {
 export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getAllBranchesAndJobTitles(organizationId: string): Promise<{
+    branches: Array<{ id: string; name: string }>;
+    jobTitles: string[];
+  }> {
+    const branches = await this.prisma.branch.findMany({
+      where: { organizationId },
+      select: { id: true, name: true },
+    });
+
+    const jobTitlesData = await this.prisma.employee.findMany({
+      where: { organizationId },
+      distinct: ['jobTitle'],
+      select: { jobTitle: true },
+    });
+
+    const jobTitles = jobTitlesData
+      .map((e) => e.jobTitle)
+      .filter((title): title is string => !!title);
+
+    return { branches, jobTitles };
+  }
+
   /**
    * Get all organizations with optional status filter
    */

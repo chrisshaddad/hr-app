@@ -14,6 +14,23 @@ a {
   text-decoration: none;
 }
 
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  60% {
+    transform: translateX(40%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.loading-bar {
+  width: 33.3333%;
+  animation: loading-bar 1.2s ease-in-out infinite;
+}
+
 .imgDark {
   display: none;
 }

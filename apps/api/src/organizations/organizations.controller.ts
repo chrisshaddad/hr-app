@@ -26,6 +26,21 @@ export class OrganizationsController {
     });
   }
 
+  @Get('branches-and-job-titles')
+  @Roles('ORG_ADMIN')
+  async getAllBranchesAndJobTitles(@CurrentUser() user: User): Promise<{
+    branches: Array<{ id: string; name: string }>;
+    jobTitles: string[];
+  }> {
+    const organizationId = user.organizationId ?? undefined;
+
+    if (organizationId == null) {
+      throw new Error('Organization ID required');
+    }
+
+    return this.organizationsService.getAllBranchesAndJobTitles(organizationId);
+  }
+
   @Get(':id')
   @Roles('SUPER_ADMIN')
   async findOne(@Param('id') id: string): Promise<OrganizationDetailResponse> {

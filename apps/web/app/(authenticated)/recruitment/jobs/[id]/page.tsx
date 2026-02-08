@@ -45,34 +45,37 @@ import {
   Pencil,
   Trash2,
   FileText,
+  Tag as TagIcon,
 } from 'lucide-react';
 import type { ApplicationStage, ApplicationInJob } from '@repo/contracts';
 
-const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
-  APPLIED: { label: 'Applied', color: 'bg-gray-100 text-gray-700' },
-  SCREENING: { label: 'Screening', color: 'bg-blue-100 text-blue-700' },
-  INTERVIEW_1: {
-    label: '1st Interview',
-    color: 'bg-purple-100 text-purple-700',
-  },
-  INTERVIEW_2: {
-    label: '2nd Interview',
-    color: 'bg-indigo-100 text-indigo-700',
-  },
-  OFFERED: { label: 'Hiring', color: 'bg-yellow-100 text-yellow-700' },
-  HIRED: { label: 'Hiring', color: 'bg-green-100 text-green-700' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
+interface JobStage {
+  id: string;
+  name: string;
+  isLocked: boolean;
+  orderIndex: number;
+}
+
+// Mapping from DB stage name → ApplicationStage enum value
+const STAGE_NAME_TO_ENUM: Record<string, ApplicationStage> = {
+  Applied: 'APPLIED',
+  Screening: 'SCREENING',
+  '1st Interview': 'INTERVIEW_1',
+  '2nd Interview': 'INTERVIEW_2',
+  Offered: 'OFFERED',
+  Hired: 'HIRED',
+  Rejected: 'REJECTED',
 };
 
-const PIPELINE_STAGES: ApplicationStage[] = [
-  'APPLIED',
-  'SCREENING',
-  'INTERVIEW_1',
-  'INTERVIEW_2',
-  'OFFERED',
-  'HIRED',
-  'REJECTED',
-];
+const STAGE_COLORS: Record<string, string> = {
+  APPLIED: 'bg-gray-50',
+  SCREENING: 'bg-blue-50/50',
+  INTERVIEW_1: 'bg-purple-50/50',
+  INTERVIEW_2: 'bg-indigo-50/50',
+  OFFERED: 'bg-amber-50/50',
+  HIRED: 'bg-green-50/50',
+  REJECTED: 'bg-red-50/50',
+};
 
 function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -94,6 +97,10 @@ function getAvatarColor(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length]!;
+}
+
+function stageEnumForDbStage(stage: JobStage): ApplicationStage | null {
+  return STAGE_NAME_TO_ENUM[stage.name] ?? null;
 }
 
 // ─── Pipeline / Kanban View ────────────────────────────────
@@ -152,25 +159,31 @@ function CandidateCard({ application }: { application: ApplicationInJob }) {
 }
 
 function PipelineColumn({
-  stage,
+  stageName,
+  stageEnum,
   applications,
+  bgColor,
 }: {
-  stage: ApplicationStage;
+  stageName: string;
+  stageEnum: ApplicationStage | null;
   applications: ApplicationInJob[];
+  bgColor: string;
 }) {
-  const config = STAGE_CONFIG[stage]!;
+  const filtered = stageEnum
+    ? applications.filter((a) => a.currentStage === stageEnum)
+    : [];
   return (
-    <div className="flex min-w-[17rem] flex-col rounded-xl bg-gray-50 p-3">
+    <div className={cn('flex min-w-[17rem] flex-col rounded-xl p-3', bgColor)}>
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-700">
-            {config.label}
+            {stageName}
           </span>
           <Badge
             variant="secondary"
             className="h-5 min-w-5 justify-center rounded-full bg-primary-base px-1.5 text-xs font-medium text-white"
           >
-            {applications.length}
+            {filtered.length}
           </Badge>
         </div>
         <Button
@@ -182,7 +195,7 @@ function PipelineColumn({
         </Button>
       </div>
       <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto">
-        {applications.map((app) => (
+        {filtered.map((app) => (
           <CandidateCard key={app.id} application={app} />
         ))}
       </div>
@@ -190,33 +203,50 @@ function PipelineColumn({
   );
 }
 
-function PipelineView({ applications }: { applications: ApplicationInJob[] }) {
-  const grouped = PIPELINE_STAGES.reduce(
-    (acc, stage) => {
-      acc[stage] = applications.filter((a) => a.currentStage === stage);
-      return acc;
-    },
-    {} as Record<ApplicationStage, ApplicationInJob[]>,
-  );
-
+function PipelineView({
+  applications,
+  dbStages,
+}: {
+  applications: ApplicationInJob[];
+  dbStages: JobStage[];
+}) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {PIPELINE_STAGES.map((stage) => (
-        <PipelineColumn
-          key={stage}
-          stage={stage}
-          applications={grouped[stage]!}
-        />
-      ))}
+      {dbStages.map((stage) => {
+        const enumVal = stageEnumForDbStage(stage);
+        const bgColor = enumVal
+          ? (STAGE_COLORS[enumVal] ?? 'bg-gray-50')
+          : 'bg-gray-50';
+        return (
+          <PipelineColumn
+            key={stage.id}
+            stageName={stage.name}
+            stageEnum={enumVal}
+            applications={applications}
+            bgColor={bgColor}
+          />
+        );
+      })}
     </div>
   );
 }
 
 // ─── Table View ────────────────────────────────────────────
 
-function TableView({ applications }: { applications: ApplicationInJob[] }) {
+function TableView({
+  applications,
+  dbStages,
+}: {
+  applications: ApplicationInJob[];
+  dbStages: JobStage[];
+}) {
+  const stageLabel = (enumVal: string) => {
+    const found = dbStages.find((s) => STAGE_NAME_TO_ENUM[s.name] === enumVal);
+    return found?.name ?? enumVal;
+  };
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -254,7 +284,6 @@ function TableView({ applications }: { applications: ApplicationInJob[] }) {
             applications.map((app) => {
               const { candidate } = app;
               const fullName = `${candidate.firstName} ${candidate.lastName}`;
-              const stageConfig = STAGE_CONFIG[app.currentStage]!;
               return (
                 <TableRow key={app.id}>
                   <TableCell>
@@ -307,14 +336,20 @@ function TableView({ applications }: { applications: ApplicationInJob[] }) {
                   <TableCell>
                     <Select defaultValue={app.currentStage}>
                       <SelectTrigger className="h-8 w-36 text-xs">
-                        <SelectValue>{stageConfig.label}</SelectValue>
+                        <SelectValue>
+                          {stageLabel(app.currentStage)}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {PIPELINE_STAGES.map((stage) => (
-                          <SelectItem key={stage} value={stage}>
-                            {STAGE_CONFIG[stage]!.label}
-                          </SelectItem>
-                        ))}
+                        {dbStages.map((stage) => {
+                          const enumVal = stageEnumForDbStage(stage);
+                          if (!enumVal) return null;
+                          return (
+                            <SelectItem key={stage.id} value={enumVal}>
+                              {stage.name}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -353,7 +388,7 @@ function LoadingSkeleton() {
     <div className="space-y-6">
       <Skeleton className="h-8 w-64" />
       <div className="flex gap-4">
-        {[...Array(4)].map((_, i) => (
+        {[...Array(5)].map((_, i) => (
           <Skeleton key={i} className="h-96 w-72" />
         ))}
       </div>
@@ -390,6 +425,16 @@ export default function JobDetailPage() {
     );
   });
 
+  // Use per-job hiring stages (sorted by orderIndex)
+  const pipelineStages: JobStage[] = (job.hiringStages ?? [])
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((jhs) => ({
+      id: jhs.hiringStageId,
+      name: jhs.hiringStage.name,
+      isLocked: jhs.hiringStage.isLocked,
+      orderIndex: jhs.orderIndex,
+    }));
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb & Header */}
@@ -406,8 +451,23 @@ export default function JobDetailPage() {
             <span>{'>'}</span>
             <span className="font-medium text-gray-700">{job.title}</span>
           </div>
+          {/* Tags */}
+          {job.tags && job.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <TagIcon className="h-3.5 w-3.5 text-gray-400" />
+              {job.tags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
@@ -415,7 +475,7 @@ export default function JobDetailPage() {
               placeholder="Search what you need"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 w-64 rounded-lg border-gray-200 bg-white pl-10 text-sm placeholder:text-gray-400"
+              className="h-10 w-full rounded-lg border-gray-200 bg-white pl-10 text-sm placeholder:text-gray-400 sm:w-64"
             />
           </div>
           <Button className="h-10 gap-2 rounded-lg bg-primary-base px-4 text-sm font-medium text-white hover:bg-primary-base/90">
@@ -471,9 +531,15 @@ export default function JobDetailPage() {
 
       {/* Content */}
       {viewMode === 'pipeline' ? (
-        <PipelineView applications={filteredApplications} />
+        <PipelineView
+          applications={filteredApplications}
+          dbStages={pipelineStages}
+        />
       ) : (
-        <TableView applications={filteredApplications} />
+        <TableView
+          applications={filteredApplications}
+          dbStages={pipelineStages}
+        />
       )}
     </div>
   );

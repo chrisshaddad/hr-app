@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useJobs, createJob, deleteJob } from '@/hooks/use-jobs';
+import { useJobs, deleteJob } from '@/hooks/use-jobs';
+import { CreateJobDialog } from './create-job-dialog';
+import { EditJobDialog } from './edit-job-dialog';
 import { useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -30,17 +32,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
-import { Search, Plus, MoreVertical, Users, Briefcase } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  MoreVertical,
+  Users,
+  Briefcase,
+  CalendarClock,
+  AlertTriangle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { apiPatch } from '@/lib/api';
 import { mutate } from 'swr';
-import type {
-  JobStatus,
-  JobDepartment,
-  EmploymentType,
-  JobListItem,
-} from '@repo/contracts';
+import type { JobStatus, JobListItem } from '@repo/contracts';
 
 const STATUS_CONFIG: Record<
   string,
@@ -122,21 +126,48 @@ function JobStatusBadge({ status }: { status: string }) {
   );
 }
 
+function isJobExpired(job: JobListItem): boolean {
+  if (!job.expectedClosingDate) return false;
+  const closing = new Date(job.expectedClosingDate);
+  closing.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return closing < today;
+}
+
 function StatusDropdown({
   job,
   onStatusChange,
+  onReactivateRequest,
 }: {
   job: JobListItem;
   onStatusChange: (jobId: string, status: JobStatus) => void;
+  onReactivateRequest: (job: JobListItem, newStatus: JobStatus) => void;
 }) {
+  const expired = isJobExpired(job);
   const config = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.DRAFT!;
+
+  const handleChange = (value: string) => {
+    const newStatus = value as JobStatus;
+    // If the job is closed/expired and user wants to reactivate, ask for confirmation
+    if (
+      (job.status === 'CLOSED' || expired) &&
+      (newStatus === 'ACTIVE' ||
+        newStatus === 'DRAFT' ||
+        newStatus === 'ON_HOLD')
+    ) {
+      onReactivateRequest(job, newStatus);
+      return;
+    }
+    onStatusChange(job.id, newStatus);
+  };
+
   return (
-    <Select
-      value={job.status}
-      onValueChange={(value) => onStatusChange(job.id, value as JobStatus)}
-    >
+    <Select value={job.status} onValueChange={handleChange}>
       <SelectTrigger className="h-9 w-28 gap-1 rounded-lg border-gray-200 text-sm font-medium">
-        <SelectValue>{config.label}</SelectValue>
+        <SelectValue>
+          {expired && job.status === 'CLOSED' ? 'Expired' : config.label}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
@@ -161,12 +192,14 @@ function JobCard({
   job,
   onClick,
   onStatusChange,
+  onReactivateRequest,
   onEdit,
   onDelete,
 }: {
   job: JobListItem;
   onClick: () => void;
   onStatusChange: (jobId: string, status: JobStatus) => void;
+  onReactivateRequest: (job: JobListItem, newStatus: JobStatus) => void;
   onEdit: (job: JobListItem) => void;
   onDelete: (job: JobListItem) => void;
 }) {
@@ -189,20 +222,52 @@ function JobCard({
           {DEPARTMENT_LABELS[job.department] || job.department}
           {job.hiringManager && ` · ${job.hiringManager.name}`}
         </p>
-        <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500">
-          <Users className="h-4 w-4" />
-          <span>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
             {job._count.applications} Candidate
             {job._count.applications !== 1 ? 's' : ''} Applied
           </span>
+          {job.expectedClosingDate && (
+            <span
+              className={cn(
+                'flex items-center gap-1.5 text-xs',
+                new Date(job.expectedClosingDate) < new Date()
+                  ? 'font-medium text-red-500'
+                  : 'text-gray-400',
+              )}
+            >
+              <CalendarClock className="h-3.5 w-3.5" />
+              {new Date(job.expectedClosingDate) < new Date()
+                ? 'Expired'
+                : `Closes ${new Date(job.expectedClosingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+            </span>
+          )}
         </div>
+        {job.tags && job.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {job.tags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="rounded-full px-2 py-0 text-[0.65rem] font-medium"
+              >
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
         <span className="hidden text-sm text-gray-400 sm:block">
           {formatTimeAgo(job.createdAt)}
         </span>
-        <StatusDropdown job={job} onStatusChange={onStatusChange} />
+        <StatusDropdown
+          job={job}
+          onStatusChange={onStatusChange}
+          onReactivateRequest={onReactivateRequest}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -246,29 +311,23 @@ export default function RecruitmentJobsPage() {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newJob, setNewJob] = useState({
-    title: '',
-    department: 'DEVELOPMENT' as JobDepartment,
-    employmentType: 'FULL_TIME' as EmploymentType,
-    description: '',
-  });
 
   // Edit dialog state
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [editingJob, setEditingJob] = useState<JobListItem | null>(null);
-  const [editForm, setEditForm] = useState({
-    title: '',
-    department: 'DEVELOPMENT' as JobDepartment,
-    employmentType: 'FULL_TIME' as EmploymentType,
-    description: '',
-  });
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingJob, setDeletingJob] = useState<JobListItem | null>(null);
+
+  // Reactivation confirmation dialog state
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [reactivateJob, setReactivateJob] = useState<JobListItem | null>(null);
+  const [reactivateStatus, setReactivateStatus] = useState<JobStatus | null>(
+    null,
+  );
+  const [reactivating, setReactivating] = useState(false);
 
   const isOrgAdmin = user?.role === 'ORG_ADMIN';
 
@@ -290,43 +349,42 @@ export default function RecruitmentJobsPage() {
     }
   };
 
-  const handleEditJob = (job: JobListItem) => {
-    setEditingJob(job);
-    setEditForm({
-      title: job.title,
-      department: job.department as JobDepartment,
-      employmentType: job.employmentType as EmploymentType,
-      description: job.description || '',
-    });
-    setShowEditDialog(true);
+  const handleReactivateRequest = (job: JobListItem, newStatus: JobStatus) => {
+    setReactivateJob(job);
+    setReactivateStatus(newStatus);
+    setShowReactivateDialog(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingJob || !editForm.title.trim()) {
-      toast.error('Job title is required');
-      return;
-    }
-    setEditing(true);
+  const handleConfirmReactivate = async () => {
+    if (!reactivateJob || !reactivateStatus) return;
+    setReactivating(true);
     try {
-      await apiPatch(`/jobs/${editingJob.id}`, {
-        title: editForm.title,
-        department: editForm.department,
-        employmentType: editForm.employmentType,
-        description: editForm.description || undefined,
+      await apiPatch(`/jobs/${reactivateJob.id}`, {
+        status: reactivateStatus,
+        // Clear the expired closing date so it doesn't immediately close again
+        expectedClosingDate: null,
       });
-      toast.success('Job updated successfully');
-      setShowEditDialog(false);
-      setEditingJob(null);
       mutate(
         (key) => typeof key === 'string' && key.startsWith('/jobs'),
         undefined,
         { revalidate: true },
       );
+      toast.success(
+        `Job reactivated as ${STATUS_CONFIG[reactivateStatus]?.label ?? reactivateStatus}`,
+      );
+      setShowReactivateDialog(false);
+      setReactivateJob(null);
+      setReactivateStatus(null);
     } catch {
-      toast.error('Failed to update job');
+      toast.error('Failed to reactivate job');
     } finally {
-      setEditing(false);
+      setReactivating(false);
     }
+  };
+
+  const handleEditJob = (job: JobListItem) => {
+    setEditingJob(job);
+    setShowEditDialog(true);
   };
 
   const handleDeleteJob = (job: JobListItem) => {
@@ -349,33 +407,8 @@ export default function RecruitmentJobsPage() {
     }
   };
 
-  const handleCreateJob = async () => {
-    if (!newJob.title.trim()) {
-      toast.error('Job title is required');
-      return;
-    }
-    setCreating(true);
-    try {
-      const created = await createJob({
-        title: newJob.title,
-        department: newJob.department,
-        employmentType: newJob.employmentType,
-        description: newJob.description || undefined,
-      });
-      toast.success('Job created successfully');
-      setShowCreateDialog(false);
-      setNewJob({
-        title: '',
-        department: 'DEVELOPMENT',
-        employmentType: 'FULL_TIME',
-        description: '',
-      });
-      router.push(`/recruitment/jobs/${created.id}`);
-    } catch {
-      toast.error('Failed to create job');
-    } finally {
-      setCreating(false);
-    }
+  const handleJobCreated = (jobId: string) => {
+    router.push(`/recruitment/jobs/${jobId}`);
   };
 
   return (
@@ -443,6 +476,7 @@ export default function RecruitmentJobsPage() {
               job={job}
               onClick={() => router.push(`/recruitment/jobs/${job.id}`)}
               onStatusChange={handleStatusChange}
+              onReactivateRequest={handleReactivateRequest}
               onEdit={handleEditJob}
               onDelete={handleDeleteJob}
             />
@@ -451,207 +485,18 @@ export default function RecruitmentJobsPage() {
       )}
 
       {/* Create Job Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create New Job</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Job Title</Label>
-              <Input
-                id="title"
-                placeholder="e.g. Senior Frontend Developer"
-                value={newJob.title}
-                onChange={(e) =>
-                  setNewJob((prev) => ({ ...prev, title: e.target.value }))
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Department</Label>
-                <Select
-                  value={newJob.department}
-                  onValueChange={(value) =>
-                    setNewJob((prev) => ({
-                      ...prev,
-                      department: value as JobDepartment,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(DEPARTMENT_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Employment Type</Label>
-                <Select
-                  value={newJob.employmentType}
-                  onValueChange={(value) =>
-                    setNewJob((prev) => ({
-                      ...prev,
-                      employmentType: value as EmploymentType,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(EMPLOYMENT_TYPE_LABELS).map(
-                      ([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <textarea
-                id="description"
-                placeholder="Job description..."
-                value={newJob.description}
-                onChange={(e) =>
-                  setNewJob((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateJob}
-              disabled={creating}
-              className="bg-gray-900 text-white hover:bg-gray-800"
-            >
-              {creating ? 'Creating...' : 'Create Job'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateJobDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={handleJobCreated}
+      />
 
       {/* Edit Job Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Job</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Job Title</Label>
-              <Input
-                id="edit-title"
-                placeholder="e.g. Senior Frontend Developer"
-                value={editForm.title}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, title: e.target.value }))
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Department</Label>
-                <Select
-                  value={editForm.department}
-                  onValueChange={(value) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      department: value as JobDepartment,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(DEPARTMENT_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Employment Type</Label>
-                <Select
-                  value={editForm.employmentType}
-                  onValueChange={(value) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      employmentType: value as EmploymentType,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(EMPLOYMENT_TYPE_LABELS).map(
-                      ([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description (optional)</Label>
-              <textarea
-                id="edit-description"
-                placeholder="Job description..."
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveEdit}
-              disabled={editing}
-              className="bg-gray-900 text-white hover:bg-gray-800"
-            >
-              {editing ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditJobDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        job={editingJob}
+      />
 
       {/* Delete Job Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -679,6 +524,77 @@ export default function RecruitmentJobsPage() {
               disabled={deleting}
             >
               {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate Expired/Closed Job Confirmation Dialog */}
+      <Dialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+      >
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center gap-4 pt-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+              <AlertTriangle className="h-7 w-7 text-amber-600" />
+            </div>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-center text-lg">
+                Reactivate Expired Job?
+              </DialogTitle>
+              <DialogDescription className="text-center">
+                <span className="font-semibold text-gray-900">
+                  {reactivateJob?.title}
+                </span>{' '}
+                {reactivateJob?.expectedClosingDate && (
+                  <>
+                    expired on{' '}
+                    <span className="font-medium text-gray-700">
+                      {new Date(
+                        reactivateJob.expectedClosingDate,
+                      ).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    .{' '}
+                  </>
+                )}
+                Changing the status to{' '}
+                <span className="font-semibold text-gray-900">
+                  {reactivateStatus
+                    ? STATUS_CONFIG[reactivateStatus]?.label
+                    : ''}
+                </span>{' '}
+                will reopen this job and clear the closing date.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-xs text-amber-800">
+              <strong>Note:</strong> The expected closing date will be removed.
+              You can set a new one by editing the job after reactivation.
+            </p>
+          </div>
+          <DialogFooter className="mt-2 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReactivateDialog(false);
+                setReactivateJob(null);
+                setReactivateStatus(null);
+              }}
+            >
+              Keep Closed
+            </Button>
+            <Button
+              onClick={handleConfirmReactivate}
+              disabled={reactivating}
+              className="bg-amber-600 text-white hover:bg-amber-700"
+            >
+              {reactivating ? 'Reactivating...' : 'Yes, Reactivate'}
             </Button>
           </DialogFooter>
         </DialogContent>

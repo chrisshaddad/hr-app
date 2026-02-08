@@ -36,6 +36,9 @@ export const jobDetailResponseSchema = z.object({
   employmentType: employmentTypeSchema,
   status: jobStatusSchema,
   description: z.string().nullable(),
+  quantity: z.number(),
+  expectedClosingDate: dateSchema.nullable(),
+  location: z.string().nullable(),
   createdAt: dateSchema,
   updatedAt: dateSchema,
   hiringManager: z
@@ -45,6 +48,23 @@ export const jobDetailResponseSchema = z.object({
       email: z.email(),
     })
     .nullable(),
+  tags: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+    }),
+  ),
+  hiringStages: z.array(
+    z.object({
+      hiringStageId: z.uuid(),
+      orderIndex: z.number(),
+      hiringStage: z.object({
+        id: z.uuid(),
+        name: z.string(),
+        isLocked: z.boolean(),
+      }),
+    }),
+  ),
   applications: z.array(applicationInJobSchema),
   _count: z.object({
     applications: z.number(),

@@ -27,6 +27,18 @@ export class JobsService {
     const { organizationId, status, search, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
+    // Auto-close expired jobs before querying
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    await this.prisma.job.updateMany({
+      where: {
+        organizationId,
+        expectedClosingDate: { lt: now },
+        status: { in: ['ACTIVE', 'DRAFT'] },
+      },
+      data: { status: 'CLOSED', updatedAt: new Date() },
+    });
+
     const where: Prisma.JobWhereInput = { organizationId };
     if (status) where.status = status;
     if (search) {
@@ -44,6 +56,17 @@ export class JobsService {
             User: {
               select: { id: true, name: true, email: true },
             },
+            JobTag: {
+              include: { Tag: { select: { id: true, name: true } } },
+            },
+            JobHiringStage: {
+              orderBy: { orderIndex: 'asc' },
+              include: {
+                HiringStage: {
+                  select: { id: true, name: true, isLocked: true },
+                },
+              },
+            },
             _count: {
               select: { Application: true },
             },
@@ -60,9 +83,18 @@ export class JobsService {
           employmentType: job.employmentType,
           status: job.status,
           description: job.description,
+          quantity: job.quantity,
+          expectedClosingDate: job.expectedClosingDate,
+          location: job.location,
           createdAt: job.createdAt,
           updatedAt: job.updatedAt,
           hiringManager: job.User ?? null,
+          tags: job.JobTag.map((jt) => jt.Tag),
+          hiringStages: job.JobHiringStage.map((jhs) => ({
+            hiringStageId: jhs.hiringStageId,
+            orderIndex: jhs.orderIndex,
+            hiringStage: jhs.HiringStage,
+          })),
           _count: { applications: job._count.Application },
         })),
         total,
@@ -81,6 +113,15 @@ export class JobsService {
       include: {
         User: {
           select: { id: true, name: true, email: true },
+        },
+        JobTag: {
+          include: { Tag: { select: { id: true, name: true } } },
+        },
+        JobHiringStage: {
+          orderBy: { orderIndex: 'asc' },
+          include: {
+            HiringStage: { select: { id: true, name: true, isLocked: true } },
+          },
         },
         Application: {
           orderBy: { appliedAt: 'desc' },
@@ -121,9 +162,19 @@ export class JobsService {
       employmentType: job.employmentType,
       status: job.status,
       description: job.description,
+      quantity: job.quantity,
+      expectedClosingDate: job.expectedClosingDate,
+      location: job.location,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       hiringManager: job.User ?? null,
+      tags: job.JobTag.map((jt) => jt.Tag),
+      hiringStages:
+        (job as any).JobHiringStage?.map((jhs: any) => ({
+          hiringStageId: jhs.hiringStageId,
+          orderIndex: jhs.orderIndex,
+          hiringStage: jhs.HiringStage,
+        })) ?? [],
       applications: job.Application.map((app) => ({
         id: app.id,
         currentStage: app.currentStage,
@@ -151,43 +202,92 @@ export class JobsService {
     data: CreateJobRequest,
   ): Promise<JobDetailResponse> {
     const now = new Date();
-    const job = await this.prisma.job.create({
-      data: {
-        id: crypto.randomUUID(),
-        organizationId,
-        title: data.title,
-        department: data.department,
-        employmentType: data.employmentType,
-        description: data.description ?? null,
-        hiringManagerId: data.hiringManagerId ?? null,
-        status: 'DRAFT',
-        updatedAt: now,
-      },
-      include: {
-        User: {
-          select: { id: true, name: true, email: true },
+    const jobId = crypto.randomUUID();
+    const { tagIds, hiringStages, ...jobData } = data;
+
+    const job = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.job.create({
+        data: {
+          id: jobId,
+          organizationId,
+          title: jobData.title,
+          department: jobData.department,
+          employmentType: jobData.employmentType,
+          description: jobData.description ?? null,
+          hiringManagerId: jobData.hiringManagerId ?? null,
+          quantity: jobData.quantity ?? 1,
+          expectedClosingDate: jobData.expectedClosingDate
+            ? new Date(jobData.expectedClosingDate)
+            : null,
+          location: jobData.location ?? null,
+          status: 'DRAFT',
+          updatedAt: now,
         },
-        Application: {
-          include: {
-            Candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-                resumeUrl: true,
-              },
-            },
-            _count: {
-              select: { Interview: true, Communication: true },
+      });
+
+      if (tagIds && tagIds.length > 0) {
+        await tx.jobTag.createMany({
+          data: tagIds.map((tagId) => ({ jobId: created.id, tagId })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Use custom hiring stages if provided, otherwise copy global defaults
+      if (hiringStages && hiringStages.length > 0) {
+        await tx.jobHiringStage.createMany({
+          data: hiringStages.map((hs) => ({
+            jobId: created.id,
+            hiringStageId: hs.hiringStageId,
+            orderIndex: hs.orderIndex,
+          })),
+          skipDuplicates: true,
+        });
+      } else {
+        const globalStages = await tx.hiringStage.findMany({
+          where: { organizationId },
+          orderBy: { orderIndex: 'asc' },
+        });
+        if (globalStages.length > 0) {
+          await tx.jobHiringStage.createMany({
+            data: globalStages.map((stage) => ({
+              jobId: created.id,
+              hiringStageId: stage.id,
+              orderIndex: stage.orderIndex,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.job.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          User: { select: { id: true, name: true, email: true } },
+          JobTag: { include: { Tag: { select: { id: true, name: true } } } },
+          JobHiringStage: {
+            orderBy: { orderIndex: 'asc' },
+            include: {
+              HiringStage: { select: { id: true, name: true, isLocked: true } },
             },
           },
+          Application: {
+            include: {
+              Candidate: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true,
+                  resumeUrl: true,
+                },
+              },
+              _count: { select: { Interview: true, Communication: true } },
+            },
+          },
+          _count: { select: { Application: true } },
         },
-        _count: {
-          select: { Application: true },
-        },
-      },
+      });
     });
 
     return {
@@ -197,9 +297,19 @@ export class JobsService {
       employmentType: job.employmentType,
       status: job.status,
       description: job.description,
+      quantity: job.quantity,
+      expectedClosingDate: job.expectedClosingDate,
+      location: job.location,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       hiringManager: job.User ?? null,
+      tags: job.JobTag.map((jt) => jt.Tag),
+      hiringStages:
+        (job as any).JobHiringStage?.map((jhs: any) => ({
+          hiringStageId: jhs.hiringStageId,
+          orderIndex: jhs.orderIndex,
+          hiringStage: jhs.HiringStage,
+        })) ?? [],
       applications: [],
       _count: { applications: 0 },
     } as unknown as JobDetailResponse;
@@ -220,38 +330,76 @@ export class JobsService {
       throw new ForbiddenException('You do not have access to this job');
     }
 
-    const job = await this.prisma.job.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
-      include: {
-        User: {
-          select: { id: true, name: true, email: true },
+    const { expectedClosingDate, tagIds, hiringStages, ...rest } = data;
+
+    const job = await this.prisma.$transaction(async (tx) => {
+      await tx.job.update({
+        where: { id },
+        data: {
+          ...rest,
+          ...(expectedClosingDate !== undefined && {
+            expectedClosingDate: expectedClosingDate
+              ? new Date(expectedClosingDate)
+              : null,
+          }),
+          updatedAt: new Date(),
         },
-        Application: {
-          orderBy: { appliedAt: 'desc' },
-          include: {
-            Candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-                resumeUrl: true,
-              },
-            },
-            _count: {
-              select: { Interview: true, Communication: true },
+      });
+
+      if (tagIds !== undefined) {
+        await tx.jobTag.deleteMany({ where: { jobId: id } });
+        if (tagIds.length > 0) {
+          await tx.jobTag.createMany({
+            data: tagIds.map((tagId) => ({ jobId: id, tagId })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      if (hiringStages !== undefined) {
+        await tx.jobHiringStage.deleteMany({ where: { jobId: id } });
+        if (hiringStages.length > 0) {
+          await tx.jobHiringStage.createMany({
+            data: hiringStages.map((hs) => ({
+              jobId: id,
+              hiringStageId: hs.hiringStageId,
+              orderIndex: hs.orderIndex,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.job.findUniqueOrThrow({
+        where: { id },
+        include: {
+          User: { select: { id: true, name: true, email: true } },
+          JobTag: { include: { Tag: { select: { id: true, name: true } } } },
+          JobHiringStage: {
+            orderBy: { orderIndex: 'asc' },
+            include: {
+              HiringStage: { select: { id: true, name: true, isLocked: true } },
             },
           },
+          Application: {
+            orderBy: { appliedAt: 'desc' },
+            include: {
+              Candidate: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true,
+                  resumeUrl: true,
+                },
+              },
+              _count: { select: { Interview: true, Communication: true } },
+            },
+          },
+          _count: { select: { Application: true } },
         },
-        _count: {
-          select: { Application: true },
-        },
-      },
+      });
     });
 
     return {
@@ -261,9 +409,19 @@ export class JobsService {
       employmentType: job.employmentType,
       status: job.status,
       description: job.description,
+      quantity: job.quantity,
+      expectedClosingDate: job.expectedClosingDate,
+      location: job.location,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       hiringManager: job.User ?? null,
+      tags: job.JobTag.map((jt) => jt.Tag),
+      hiringStages:
+        (job as any).JobHiringStage?.map((jhs: any) => ({
+          hiringStageId: jhs.hiringStageId,
+          orderIndex: jhs.orderIndex,
+          hiringStage: jhs.HiringStage,
+        })) ?? [],
       applications: job.Application.map((app) => ({
         id: app.id,
         currentStage: app.currentStage,

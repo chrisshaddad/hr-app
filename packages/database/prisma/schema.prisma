@@ -252,6 +252,23 @@ model InterviewInterviewer {
   @@schema("public")
 }
 
+model HiringStage {
+  id             String            @id
+  organizationId String
+  name           String
+  orderIndex     Int
+  isDefault      Boolean           @default(false)
+  isLocked       Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime
+  Organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  JobHiringStage JobHiringStage[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@schema("public")
+}
+
 model InterviewTemplate {
   id               String             @id
   organizationId   String
@@ -268,23 +285,53 @@ model InterviewTemplate {
 }
 
 model Job {
-  id              String         @id
-  organizationId  String
-  title           String
-  department      JobDepartment
-  employmentType  EmploymentType
-  description     String?
-  status          JobStatus      @default(DRAFT)
-  hiringManagerId String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime
-  Application     Application[]
-  User            User?          @relation(fields: [hiringManagerId], references: [id])
-  Organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id                  String         @id
+  organizationId      String
+  title               String
+  department          JobDepartment
+  employmentType      EmploymentType
+  description         String?
+  status              JobStatus      @default(DRAFT)
+  hiringManagerId     String?
+  quantity            Int            @default(1)
+  expectedClosingDate DateTime?
+  location            String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime
+  Application         Application[]
+  User                User?          @relation(fields: [hiringManagerId], references: [id])
+  Organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  JobTag              JobTag[]
+  JobHiringStage      JobHiringStage[]
 
   @@index([hiringManagerId])
   @@index([organizationId])
   @@index([status])
+  @@schema("public")
+}
+
+model JobTag {
+  jobId String
+  tagId String
+  Job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  Tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, tagId])
+  @@index([jobId])
+  @@index([tagId])
+  @@schema("public")
+}
+
+model JobHiringStage {
+  jobId          String
+  hiringStageId  String
+  orderIndex     Int
+  Job            Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  HiringStage    HiringStage @relation(fields: [hiringStageId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, hiringStageId])
+  @@index([jobId])
+  @@index([hiringStageId])
   @@schema("public")
 }
 
@@ -301,6 +348,7 @@ model Organization {
   approvedAt                             DateTime?
   Application                            Application[]
   Branch                                 Branch[]
+  HiringStage                            HiringStage[]
   Candidate                              Candidate[]
   Communication                          Communication[]
   Interview                              Interview[]
@@ -381,6 +429,7 @@ model Tag {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime
   CandidateTag   CandidateTag[]
+  JobTag         JobTag[]
   Organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, name])

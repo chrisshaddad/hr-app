@@ -12,5 +12,21 @@ export const updateJobRequestSchema = z.object({
   description: z.string().nullable().optional(),
   status: jobStatusSchema.optional(),
   hiringManagerId: z.uuid().nullable().optional(),
+  quantity: z
+    .number()
+    .int()
+    .min(1, { error: 'Quantity must be at least 1' })
+    .optional(),
+  expectedClosingDate: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  tagIds: z.array(z.uuid()).optional(),
+  hiringStages: z
+    .array(
+      z.object({
+        hiringStageId: z.uuid(),
+        orderIndex: z.number(),
+      }),
+    )
+    .optional(),
 });
 export type UpdateJobRequest = z.infer<typeof updateJobRequestSchema>;

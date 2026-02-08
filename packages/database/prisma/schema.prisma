@@ -19,6 +19,8 @@ enum UserRole {
   ORG_ADMIN // Manages a single organization (can also invite employees to their org)
   EMPLOYEE
 
+  // later this should only distinguish between ORG_USER and SUPER_ADMIN, and we can have a separate "permissions" table to manage fine-grained permissions like "can_approve_attendance", "can_manage_users", etc. This allows more flexibility in the future if we want to add roles like "HR_MANAGER", "DEPARTMENT_MANAGER", etc. without changing the core user model.
+
   @@schema("public")
 }
 
@@ -41,32 +43,52 @@ enum OrganizationStatus {
   @@schema("public")
 }
 
+enum EmployeeStatus {
+  ACTIVE // Currently working normally
+  ON_BOARDING // New hire in onboarding process
+  PROBATION // In probationary period
+  ON_LEAVE // Currently on leave
+  TERMINATED // No longer employed
+
+  @@schema("public")
+}
+
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  isConfirmed    Boolean  @default(false)
+  id             String          @id @default(uuid())
+  email          String          @unique
+  isConfirmed    Boolean         @default(false)
   name           String
-  role           UserRole @default(EMPLOYEE)
+  role           UserRole        @default(EMPLOYEE)
+  employeeStatus EmployeeStatus? // Only set for EMPLOYEE role users
   organizationId String? // null for SUPER_ADMIN users
   departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   password              Password?
   sessions              Session[]
   magicLinks            MagicLink[]
-  profile               UserProfile?
-  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdOrganization   Organization?  @relation("OrganizationCreator")
-  approvedOrganizations Organization[] @relation("OrganizationApprover")
+  profile               EmployeeProfile?
+  organization          Organization?      @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
+  department            Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdOrganization   Organization?      @relation("OrganizationCreator")
+  approvedOrganizations Organization[]     @relation("OrganizationApprover")
+  contracts             Contract[]
+  documents             Documents[]
+  employments           JobAssignment[]    @relation("employments")
+  managedEmployees      JobAssignment[]    @relation("EmployeeLineManager")
+  attendances           Attendance[]
+  assignedSchedules     UserWorkSchedule[] // Many-to-many
+  auditLogs             AuditLog[]
+  orgRoles              UserOrgRole[] // Organization-specific role assignments
 
   @@index([organizationId])
   @@index([departmentId])
+  @@index([employeeStatus])
   @@schema("public")
 }
 
-model UserProfile {
+model EmployeeProfile {
   id          String    @id @default(uuid())
   userId      String    @unique
   dateOfBirth DateTime?
@@ -82,6 +104,18 @@ model UserProfile {
   postalCode String?
   country    String?
 
+  // Ensurance
+  insuranceProvider String?
+
+  // Tax Info
+  personalTaxId String?
+
+  // Marital Status
+  maritalStatus MaritalStatus?
+
+  // Social Insurance
+  socialInsuranceNumber String?
+
   // Emergency contact
   emergencyContactName     String?
   emergencyContactPhone    String?
@@ -89,6 +123,7 @@ model UserProfile {
 
   nationality       String?
   profilePictureUrl String?
+  timezone          String?  @default("UTC") // IANA timezone identifier (e.g., "Asia/Bangkok")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -138,22 +173,36 @@ model MagicLink {
 }
 
 model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  status       OrganizationStatus @default(PENDING)
-  description  String?            @db.Text
-  website      String?
-  createdById  String             @unique // User can only create one organization
+  id            String             @id @default(uuid())
+  name          String
+  status        OrganizationStatus @default(PENDING)
+  description   String?            @db.Text // overview of the organization, industry, etc.
+  website       String?
+  contactNumber String?
+  contactEmail  String?
+
+  createdById String @unique // User can only create one organization
+
   approvedById String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   approvedAt   DateTime? // When super admin approved
 
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
-  branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
+  createdBy            User                              @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy           User?                             @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  branches             Branch[]
+  users                User[]                            @relation("OrganizationMembers")
+  documents            Documents[]
+  workSchedules        WorkSchedule[]
+  auditLogs            AuditLog[]
+  Department           Department[]
+  roles                OrgRole[] // Organization-specific roles
+  Integration          Integration[]
+  Subscription         Subscription[]
+  notificationSettings OrganizationNotificationSettings?
 
+  @@unique([contactEmail])
+  @@unique([contactNumber])
   @@index([approvedById])
   @@index([status])
   @@schema("public")
@@ -175,23 +224,663 @@ model Branch {
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  departments  Department[]
 
   @@index([organizationId])
   @@schema("public")
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  branchId    String
-  name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
+  parentDepartmentId String?
+  parentDepartment   Department?  @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id], onDelete: SetNull)
+  subDepartments     Department[] @relation("DepartmentHierarchy")
 
-  @@index([branchId])
+  users       User[]
+  employments JobAssignment[]
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([parentDepartmentId])
+  @@schema("public")
+}
+
+// Contract records for tracking employment contracts
+model Contract {
+  id             String       @id @default(uuid())
+  userId         String
+  contractNumber String       @unique
+  contractName   String
+  contractType   ContractType
+  startDate      DateTime
+  endDate        DateTime? // null for permanent contracts
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([contractNumber])
+  @@index([isActive])
+  @@schema("public")
+}
+
+// JobAssignment records for tracking job positions and employment timeline
+model JobAssignment {
+  id             String         @id @default(uuid())
+  userId         String
+  employeeId     String // Employee ID (e.g., "UNI203")
+  jobTitleId     String // e.g., "UI UX Designer"
+  employmentType EmploymentType // Full-time, Part-time, Contract, Intern
+  lineManagerId  String? // Reference to manager's User ID
+  departmentId   String? // Can track department changes over time
+  effectiveDate  DateTime // When this position started
+  endDate        DateTime? // null for current position
+  isActive       Boolean        @default(true) // Is this the current position?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user        User        @relation("employments", fields: [userId], references: [id], onDelete: Cascade)
+  lineManager User?       @relation("EmployeeLineManager", fields: [lineManagerId], references: [id], onDelete: SetNull)
+  jobTitle    JobTitle    @relation(fields: [jobTitleId], references: [id], onDelete: Restrict)
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([employeeId])
+  @@index([lineManagerId])
+  @@index([departmentId])
+  @@index([isActive])
+  @@schema("public")
+}
+
+model JobTitle {
+  id          String          @id @default(uuid())
+  title       String          @unique
+  isActive    Boolean         @default(true)
+  description String?         @db.Text
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  employments JobAssignment[]
+
+  @@schema("public")
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  PREFER_NOT_TO_SAY
+
+  @@schema("public")
+}
+
+enum DocumentType {
+  ID_CARD
+  PASSPORT
+  DRIVERS_LICENSE
+  BIRTH_CERTIFICATE
+  SOCIAL_SECURITY_CARD
+  TAX_DOCUMENT
+  EMPLOYMENT_CONTRACT
+  RESUME
+  DEGREE_CERTIFICATE
+  TRAINING_CERTIFICATE
+  MEDICAL_CERTIFICATE
+  BANK_STATEMENT
+  PROOF_OF_ADDRESS
+  OTHER
+
+  @@schema("public")
+}
+
+model Documents {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  documentType   DocumentType
+  fileName       String // Original file name
+  fileUrl        String // S3/storage URL
+  fileSize       Int? // Size in bytes
+  mimeType       String? // e.g., "application/pdf"
+  uploadedAt     DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([documentType])
+  @@schema("public")
+}
+
+model Attendance {
+  id               String           @id @default(uuid())
+  userId           String
+  date             DateTime         @db.Date
+  clockIn          DateTime?
+  clockInLocation  String?
+  clockInTimezone  String?
+  clockOut         DateTime?
+  clockOutLocation String?
+  clockOutTimezone String?
+  scheduledHours   Decimal          @db.Decimal(5, 2) // From WorkSchedule
+  loggedHours      Decimal          @db.Decimal(5, 2) // Calculated
+  paidHours        Decimal          @db.Decimal(5, 2) // After deductions
+  deficitHours     Decimal          @db.Decimal(5, 2) // Difference
+  overtimeHours    Decimal          @default(0) @db.Decimal(5, 2)
+  status           AttendanceStatus @default(PENDING)
+  notes            String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@schema("public")
+}
+
+model WorkSchedule {
+  id                  String           @id @default(uuid())
+  organizationId      String
+  name                String // e.g., "Mon-Fri, Duration 40 hours/week"
+  scheduleType        WorkScheduleType @default(DURATION_BASED)
+  isDefault           Boolean          @default(false) // Default schedule for new employees
+  standardHoursPerDay Decimal?         @db.Decimal(5, 2) // e.g., 8.00
+  totalWeeklyHours    Decimal          @db.Decimal(5, 2) // e.g., 40.00
+  effectiveFrom       DateTime
+  effectiveTo         DateTime?
+  isActive            Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dailySchedules WorkScheduleDay[]
+  assignedUsers  UserWorkSchedule[] // Many-to-many with users
+
+  @@unique([organizationId, name]) // Unique schedule names per organization
+  @@index([organizationId])
+  @@index([isDefault])
+  @@index([isActive])
+  @@schema("public")
+}
+
+// Daily breakdown of work schedule
+model WorkScheduleDay {
+  id           String   @id @default(uuid())
+  scheduleId   String
+  dayOfWeek    Int // 0-6 (Sunday-Saturday)
+  hoursPerDay  Decimal  @db.Decimal(5, 2) // e.g., 8.00
+  startTime    String? // e.g., "09:00"
+  endTime      String? // e.g., "17:00"
+  isWorkingDay Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  schedule WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, dayOfWeek])
+  @@index([scheduleId])
+  @@schema("public")
+}
+
+// Join table: Many users can have many work schedules
+model UserWorkSchedule {
+  id         String   @id @default(uuid())
+  userId     String
+  scheduleId String
+  assignedAt DateTime @default(now())
+  assignedBy String? // Who assigned this schedule
+  isActive   Boolean  @default(true) // Current schedule vs historical
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scheduleId]) // User can have same schedule only once
+  @@index([userId])
+  @@index([scheduleId])
+  @@index([isActive])
+  @@schema("public")
+}
+
+enum WorkScheduleType {
+  DURATION_BASED // Track by total hours
+  TIME_BASED // Track by clock in/out times
+  FLEXIBLE // No fixed schedule
+
+  @@schema("public")
+}
+
+enum AttendanceStatus {
+  PENDING // Waiting for clock out
+  COMPLETED // Clocked out
+  APPROVED // Verified by manager
+  REJECTED // Invalid entry
+  ABSENT // No clock in
+
+  @@schema("public")
+}
+
+enum ContractType {
+  FULLTIME_PERMANENT
+  FULLTIME_FIXED_TERM
+  PARTTIME_PERMANENT
+  PARTTIME_FIXED_TERM
+  CONTRACTOR
+  FREELANCE
+  INTERN
+
+  @@schema("public")
+}
+
+enum EmploymentType {
+  FULLTIME
+  PARTTIME
+  CONTRACT
+  INTERN
+  FREELANCE
+
+  @@schema("public")
+}
+
+//logs related, ignore for now
+enum AuditAction {
+  // User actions
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_INVITED
+  USER_ROLE_CHANGED
+
+  // Organization actions
+  ORGANIZATION_CREATED
+  ORGANIZATION_APPROVED
+  ORGANIZATION_REJECTED
+  ORGANIZATION_SUSPENDED
+  ORGANIZATION_UPDATED
+
+  // Department/Branch actions
+  DEPARTMENT_CREATED
+  DEPARTMENT_UPDATED
+  DEPARTMENT_DELETED
+  BRANCH_CREATED
+  BRANCH_UPDATED
+  BRANCH_DELETED
+
+  // Employment actions
+  EMPLOYEE_HIRED
+  EMPLOYEE_PROMOTED
+  EMPLOYEE_TRANSFERRED
+  EMPLOYEE_TERMINATED
+  CONTRACT_CREATED
+  CONTRACT_UPDATED
+  CONTRACT_ENDED
+
+  // Attendance actions
+  ATTENDANCE_CLOCKED_IN
+  ATTENDANCE_CLOCKED_OUT
+  ATTENDANCE_APPROVED
+  ATTENDANCE_REJECTED
+  ATTENDANCE_UPDATED
+
+  // Work schedule actions
+  SCHEDULE_CREATED
+  SCHEDULE_UPDATED
+  SCHEDULE_DELETED
+
+  // Document actions
+  DOCUMENT_UPLOADED
+  DOCUMENT_DELETED
+  DOCUMENT_ACCESSED
+
+  // Time off actions (for future use)
+  TIME_OFF_REQUESTED
+  TIME_OFF_APPROVED
+  TIME_OFF_REJECTED
+  TIME_OFF_CANCELLED
+
+  // General
+  SETTINGS_UPDATED
+  OTHER
+
+  @@schema("public")
+}
+
+// Audit log for tracking all organizational activities
+// beta leaving this for last idk what to add here
+model AuditLog {
+  id             String      @id @default(uuid())
+  organizationId String? // null for system-wide actions (e.g., org approval)
+  userId         String // Who performed the action
+  action         AuditAction
+  entityType     String // e.g., "User", "Department", "Attendance"
+  entityId       String? // ID of the affected entity
+  metadata       Json? // Additional context (old values, new values, etc.)
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime    @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@schema("public")
+}
+
+// Permission level for a resource section
+enum PermissionLevel {
+  NONE
+  VIEW
+  EDIT
+  VIEW_EDIT
+
+  @@schema("public")
+}
+
+// Predefined sections that can have permissions
+enum PermissionSection {
+  PROFILE_PICTURE
+  PERSONAL_INFO
+  ADDRESS
+  EMERGENCY_CONTACT
+  OFFBOARDING_DETAILS
+  BANK_INFO
+  JOB_INFORMATION
+  WORK_SCHEDULE
+  DOCUMENTS
+  ATTENDANCE
+  TIME_OFF
+  CONTRACTS
+
+  @@schema("public")
+}
+
+// Scope of data access for a role
+enum PermissionScope {
+  ALL_EMPLOYEES // Can access all employees in org
+  DEPARTMENT_ONLY // Can only access own department
+  DIRECT_REPORTS // Can only access direct reports
+  SELF_ONLY // Can only access own data
+
+  @@schema("public")
+}
+
+// Organization-specific roles (e.g., "Admin", "HR Manager", "Department Lead")
+model OrgRole {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String // e.g., "Admin", "HR Manager", "Department Lead"
+  description    String?         @db.Text
+  isDefault      Boolean         @default(false) // Default role for new employees
+  isSystemRole   Boolean         @default(false) // Cannot be deleted (e.g., Admin)
+  scope          PermissionScope @default(SELF_ONLY)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  OrgRolePermission[]
+  users        UserOrgRole[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([isDefault])
+  @@schema("public")
+}
+
+// Permission assignments for each role per section
+model OrgRolePermission {
+  id        String            @id @default(uuid())
+  roleId    String
+  section   PermissionSection
+  level     PermissionLevel   @default(NONE)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  role OrgRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, section])
+  @@index([roleId])
+  @@schema("public")
+}
+
+// Join table: Users assigned to org roles (users can have multiple roles)
+model UserOrgRole {
+  id         String   @id @default(uuid())
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String? // Who assigned this role
+
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role OrgRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@schema("public")
+}
+
+model Integration {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  description        String?             @db.Text
+  provider           IntegrationProvider
+  isIntegrated       Boolean             @default(false)
+  integrationDetails Json? // Store provider-specific details (e.g., access tokens, channel IDs)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
+}
+
+enum IntegrationProvider {
+  SLACK
+  MICROSOFT_TEAMS
+  GOOGLE_WORKSPACE
+  ZOOM
+  OTHER
+
+  @@schema("public")
+}
+
+model Subscription {
+  id              String             @id @default(uuid())
+  organizationId  String
+  planId          String
+  status          SubscriptionStatus
+  billingCycle    BillingCycle       @default(ANNUAL)
+  employeeCount   Int                @default(1) // Number of employees being billed
+  unitPrice       Decimal            @db.Decimal(10, 2) // Price per employee (monthly or yearly based on cycle)
+  subtotal        Decimal            @db.Decimal(10, 2) // unitPrice * employeeCount
+  discount        Decimal            @default(0) @db.Decimal(10, 2) // Discount amount from promo
+  total           Decimal            @db.Decimal(10, 2) // Final amount after discount
+  promoCodeId     String? // Applied promo code
+  startedAt       DateTime           @default(now())
+  expiresAt       DateTime
+  trialEndsAt     DateTime? // When free trial ends
+  autoRenew       Boolean            @default(true)
+  nextBillingDate DateTime? // Next payment due date
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         SubscriptionPlan      @relation(fields: [planId], references: [id])
+  promoCode    PromoCode?            @relation(fields: [promoCodeId], references: [id])
+  history      SubscriptionHistory[]
+  payments     Payment[]
+
+  @@index([organizationId])
+  @@index([planId])
+  @@index([promoCodeId])
+  @@index([status])
+  @@schema("public")
+}
+
+model SubscriptionHistory {
+  id             String             @id @default(uuid())
+  subscriptionId String
+  planId         String
+  status         SubscriptionStatus
+  billingCycle   BillingCycle?
+  employeeCount  Int?
+  total          Decimal?           @db.Decimal(10, 2)
+  changedAt      DateTime           @default(now())
+  reason         String?            @db.Text
+
+  subscription Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([planId])
+  @@index([changedAt])
+  @@schema("public")
+}
+
+model SubscriptionPlan {
+  id           String   @id @default(uuid())
+  name         String   @unique // e.g., "Free Plan", "Perform Plan", "Engage Plan"
+  description  String?  @db.Text
+  monthlyPrice Decimal  @db.Decimal(10, 2) // Price per employee per month (e.g., 6.00)
+  yearlyPrice  Decimal  @db.Decimal(10, 2) // Price per employee per year (e.g., 72.00)
+  features     Json? // List of features included in this plan
+  isFeatured   Boolean  @default(false) // "Best Value" badge
+  trialDays    Int      @default(14) // Free trial period
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0) // For ordering plans in UI
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+  history       SubscriptionHistory[]
+
+  @@schema("public")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  TRIALING
+  UNPAID
+  PAID_OFF
+
+  @@schema("public")
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+
+  @@schema("public")
+}
+
+model PromoCode {
+  id            String       @id @default(uuid())
+  code          String       @unique // e.g., "SAVE20"
+  description   String?      @db.Text
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Decimal      @db.Decimal(10, 2) // Percentage (e.g., 20) or fixed amount
+  maxUses       Int? // null = unlimited
+  usedCount     Int          @default(0)
+  validFrom     DateTime     @default(now())
+  validUntil    DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([code])
+  @@index([isActive])
+  @@schema("public")
+}
+
+enum DiscountType {
+  PERCENTAGE // e.g., 20% off
+  FIXED // e.g., $10 off
+
+  @@schema("public")
+}
+
+model Payment {
+  id                String         @id @default(uuid())
+  subscriptionId    String
+  amount            Decimal        @db.Decimal(10, 2)
+  currency          String         @default("USD")
+  status            PaymentStatus  @default(PENDING)
+  paymentMethod     PaymentMethod?
+  cardLast4         String? // Last 4 digits of card
+  cardBrand         String? // e.g., "Visa", "Mastercard"
+  billingEmail      String
+  billingName       String?
+  billingCountry    String?
+  billingAddress    String?
+  billingCity       String?
+  billingState      String?
+  billingPostalCode String?
+  externalPaymentId String? // Stripe payment ID or similar
+  failureReason     String?        @db.Text
+  paidAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([externalPaymentId])
+  @@schema("public")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELED
+
+  @@schema("public")
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  PAYPAL
+
+  @@schema("public")
+}
+
+// Organization notification settings (configured by org admins)
+model OrganizationNotificationSettings {
+  id                    String   @id @default(uuid())
+  organizationId        String   @unique
+  jobInterviewReminder  Boolean  @default(true) // Allow users to receive alerts regarding scheduled job interviews
+  emailInvitationToJoin Boolean  @default(false) // Allow users to receive alerts about team invitations
+  mentionInBoard        Boolean  @default(true) // Allow users to receive alerts when mentioned in boards
+  updateEmployeeStatus  Boolean  @default(true) // Allow users to receive alerts about employee status updates
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
   @@schema("public")
 }

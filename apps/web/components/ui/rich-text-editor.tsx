@@ -44,7 +44,7 @@ function ToolbarButton({
       onClick={onClick}
       title={title}
       className={cn(
-        'rounded p-1.5 transition-colors hover:bg-gray-100',
+        'cursor-pointer rounded p-1.5 transition-colors hover:bg-gray-100',
         active && 'bg-gray-200 text-gray-900',
         !active && 'text-gray-500',
       )}
@@ -133,7 +133,7 @@ export function RichTextEditor({
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 border-b border-gray-200 px-3 py-2">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-gray-200 px-2 py-1.5 sm:px-3 sm:py-2">
         <ToolbarButton
           title="Bold"
           active={editor.isActive('bold')}

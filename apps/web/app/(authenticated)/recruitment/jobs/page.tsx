@@ -164,7 +164,7 @@ function StatusDropdown({
 
   return (
     <Select value={job.status} onValueChange={handleChange}>
-      <SelectTrigger className="h-9 w-28 gap-1 rounded-lg border-gray-200 text-sm font-medium">
+      <SelectTrigger className="h-9 w-28 cursor-pointer gap-1 rounded-lg border-gray-200 text-sm font-medium">
         <SelectValue>
           {expired && job.status === 'CLOSED' ? 'Expired' : config.label}
         </SelectValue>
@@ -204,16 +204,16 @@ function JobCard({
   onDelete: (job: JobListItem) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 transition-colors hover:border-gray-300">
+    <div className="flex items-start justify-between gap-2 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 sm:items-center sm:p-5">
       <div
-        className="flex-1 cursor-pointer"
+        className="min-w-0 flex-1 cursor-pointer"
         onClick={onClick}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && onClick()}
       >
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-gray-900">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+          <span className="truncate text-lg font-semibold text-gray-900">
             {job.title}
           </span>
           <JobStatusBadge status={job.status} />
@@ -259,7 +259,7 @@ function JobCard({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <span className="hidden text-sm text-gray-400 sm:block">
           {formatTimeAgo(job.createdAt)}
         </span>

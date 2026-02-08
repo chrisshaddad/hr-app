@@ -60,6 +60,7 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+  managerId      String?
 
   // Review assignments
   reviewAssignmentsGiven     ReviewAssignment[] @relation("ReviewAssignmentsAsReviewer")
@@ -80,6 +81,10 @@ model User {
   // Meetings
   meetingsHosted        Meeting[] @relation("MeetingsAsHost")
   meetingsParticipating Meeting[] @relation("MeetingsAsParticipant")
+
+  // Manager relation
+  manager        User?  @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports  User[] @relation("UserManager")
 
   @@index([organizationId])
   @@index([departmentId])

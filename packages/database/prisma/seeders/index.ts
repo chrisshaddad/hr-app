@@ -1,14 +1,22 @@
 import { prisma } from '../../src/client';
 import { seedSuperAdmins, seedOrgAdmins } from './seedUsers';
 import { seedOrganizations } from './seedOrganizations';
+import { seedATS } from './seedATS';
 
 async function main() {
-  // Seed users first (org admins need to exist before organizations)
+  console.log('🌱 Starting full database seed...\n');
+
+  console.log('1️⃣ Seeding users...');
   await seedSuperAdmins(prisma);
   await seedOrgAdmins(prisma);
 
-  // Seed organizations (links org admins to their orgs)
+  console.log('\n2️⃣ Seeding organizations...');
   await seedOrganizations(prisma);
+
+  console.log('\n3️⃣ Seeding ATS data...');
+  await seedATS(prisma);
+
+  console.log('\n✅ All seeding completed successfully!');
 }
 main()
   .then(async () => {

@@ -18,6 +18,8 @@ enum UserRole {
   SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
   ORG_ADMIN // Manages a single organization (can also invite employees to their org)
   EMPLOYEE
+  ADMIN // Company admin with full ATS access
+  HR // HR staff managing jobs and applications
 
   @@schema("public")
 }
@@ -60,6 +62,12 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+
+  // ATS Relations
+  statusChanges        ApplicationStatusHistory[] @relation("UserStatusChanges")
+  interviewAssignments InterviewInterviewer[]     @relation("UserInterviewAssignments")
+  interviewFeedback    InterviewFeedback[]        @relation("UserInterviewFeedback")
+  communications       Communication[]            @relation("UserCommunications")
 
   @@index([organizationId])
   @@index([departmentId])
@@ -154,6 +162,11 @@ model Organization {
   branches   Branch[]
   users      User[]   @relation("OrganizationMembers")
 
+  // ATS Relations
+  jobs        Job[]            @relation("OrganizationJobs")
+  applications JobApplication[] @relation("OrganizationApplications")
+  candidates  Candidate[]      @relation("OrganizationCandidates")
+
   @@index([approvedById])
   @@index([status])
   @@schema("public")
@@ -193,5 +206,220 @@ model Department {
   users  User[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  FIRST_INTERVIEW
+  SECOND_INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+
+  @@schema("public")
+}
+
+enum CommunicationType {
+  EMAIL
+  PHONE
+  SMS
+  INTERNAL_NOTE
+
+  @@schema("public")
+}
+
+enum JobStatus {
+  draft
+  published
+  closed
+
+  @@schema("public")
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+
+  @@schema("public")
+}
+
+model Job {
+  id                  String          @id @default(uuid())
+  organizationId      String
+  title               String
+  description         String?         @db.Text
+  location            String?         // remote / onsite / hybrid
+  employmentType      String          // Full-time, Part-time, Contract, Internship
+  department          String?         // Static string from frontend
+  experienceLevel     String?         // Entry, Mid, Senior, Executive
+  expectedClosingDate String?         // Stored as string (e.g., "yyyy-MM-dd")
+  status              JobStatus       @default(draft)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  organization        Organization    @relation("OrganizationJobs", fields: [organizationId], references: [id], onDelete: Cascade)
+  applications        JobApplication[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([location])
+  @@index([employmentType])
+  @@index([experienceLevel])
+  @@schema("public")
+}
+
+model Candidate {
+  id            String          @id @default(uuid())
+  organizationId String
+  email         String
+  firstName     String
+  lastName      String
+  phone         String?
+  resumeUrl     String?
+  linkedInUrl   String?
+  portfolioUrl  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  organization Organization    @relation("OrganizationCandidates", fields: [organizationId], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+  communications Communication[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@schema("public")
+}
+
+model JobApplication {
+  id              String            @id @default(uuid())
+  organizationId  String            // Multi-tenancy: scoped to organization
+  jobId           String
+  candidateId     String
+  status          ApplicationStatus @default(APPLIED)
+  appliedAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  coverLetter     String?           @db.Text
+  notes           String?           @db.Text // Internal notes from HR
+
+  job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  organization    Organization      @relation("OrganizationApplications", fields: [organizationId], references: [id], onDelete: Cascade)
+  statusHistory   ApplicationStatusHistory[]
+  communications  Communication[]
+  interviews      Interview[]
+
+  @@unique([jobId, candidateId])
+  @@index([organizationId])
+  @@index([jobId])
+  @@index([candidateId])
+  @@index([status])
+  @@schema("public")
+}
+
+model ApplicationStatusHistory {
+  id            String            @id @default(uuid())
+  applicationId String
+  status        ApplicationStatus
+  changedAt     DateTime          @default(now())
+  changedById   String? // User who changed the status
+  notes         String?           @db.Text
+
+  application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User?          @relation("UserStatusChanges", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@index([changedById])
+  @@schema("public")
+}
+
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String
+  scheduledAt   DateTime
+  duration      Int // in minutes
+  location      String?
+  status        InterviewStatus @default(SCHEDULED)
+  notes         String?         @db.Text
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewers InterviewInterviewer[]
+  feedback     InterviewFeedback[]
+  communications Communication[]
+
+  @@index([applicationId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@schema("public")
+}
+
+model InterviewInterviewer {
+  id            String   @id @default(uuid())
+  interviewId   String
+  userId        String // The user who is the interviewer
+  createdAt     DateTime @default(now())
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user      User      @relation("UserInterviewAssignments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, userId])
+  @@index([interviewId])
+  @@index([userId])
+  @@schema("public")
+}
+
+model InterviewFeedback {
+  id            String   @id @default(uuid())
+  interviewId   String
+  userId        String // The interviewer who provided feedback
+  rating        Int // e.g., 1-5
+  notes         String?  @db.Text
+  strengths     String?  @db.Text
+  weaknesses    String?  @db.Text
+  recommendation String? // e.g., HIRE, NO_HIRE, CONSIDER
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user      User      @relation("UserInterviewFeedback", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, userId])
+  @@index([interviewId])
+  @@index([userId])
+  @@schema("public")
+}
+
+model Communication {
+  id              String          @id @default(uuid())
+  candidateId     String          // Required: who you're communicating with
+  applicationId  String?         // Optional: which job application context
+  interviewId     String?         // Optional: links email to specific interview
+  type            CommunicationType
+  subject         String?
+  body            String?         @db.Text
+  sentAt          DateTime        @default(now())
+  sentById        String?         // User who sent the communication (null = auto-generated)
+  isAutoGenerated Boolean         @default(false) // Track automated vs manual communications
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  candidate   Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  application JobApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  interview   Interview?      @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  sentBy      User?           @relation("UserCommunications", fields: [sentById], references: [id], onDelete: SetNull)
+
+  @@index([candidateId])
+  @@index([applicationId])
+  @@index([interviewId])
+  @@index([sentById])
+  @@index([type])
+  @@index([sentAt])
   @@schema("public")
 }

@@ -40,13 +40,21 @@ const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
 export async function seedSuperAdmins(prisma: PrismaClient) {
   console.log('Seeding super admins...');
 
-  await prisma.user.createMany({
-    data: SUPER_ADMINS.map((admin) => ({
-      ...admin,
-      isConfirmed: true,
-      role: 'SUPER_ADMIN',
-    })),
-  });
+  for (const admin of SUPER_ADMINS) {
+    await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {
+        name: admin.name,
+        role: 'SUPER_ADMIN',
+        isConfirmed: true,
+      },
+      create: {
+        ...admin,
+        isConfirmed: true,
+        role: 'SUPER_ADMIN',
+      },
+    });
+  }
 
   console.log(
     `Super admins: ${SUPER_ADMINS.map((u) => u.email).join(', ')} seeded.`,
@@ -56,13 +64,21 @@ export async function seedSuperAdmins(prisma: PrismaClient) {
 export async function seedOrgAdmins(prisma: PrismaClient) {
   console.log('Seeding org admins...');
 
-  await prisma.user.createMany({
-    data: ORG_ADMINS.map((admin) => ({
-      ...admin,
-      isConfirmed: true,
-      role: 'ORG_ADMIN',
-    })),
-  });
+  for (const admin of ORG_ADMINS) {
+    await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {
+        name: admin.name,
+        role: 'ORG_ADMIN',
+        isConfirmed: true,
+      },
+      create: {
+        ...admin,
+        isConfirmed: true,
+        role: 'ORG_ADMIN',
+      },
+    });
+  }
 
   console.log(
     `Org admins: ${ORG_ADMINS.map((u) => u.email).join(', ')} seeded.`,

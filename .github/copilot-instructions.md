@@ -363,44 +363,63 @@ z.iso.datetime();
 ```
 packages/contracts/src/
   index.ts                    # Re-exports only
+  common/
+    index.ts
+    date.schema.ts            # Shared date schema for Prisma compatibility
   auth/
-    index.ts                  # Re-exports auth schemas
-    request-magic-link.schema.ts
-    verify-magic-link.schema.ts
-    login.schema.ts
+    index.ts
+    magic-link.request.ts     # Request DTOs use .request.ts suffix
+    magic-link-verify.request.ts
   users/
     index.ts
-    user.schema.ts
-    user-profile.schema.ts
-    create-user.schema.ts
+    user-role.schema.ts       # Shared enums use .schema.ts suffix
+    user.response.ts          # Response DTOs use .response.ts suffix
   organizations/
     index.ts
-    organization.schema.ts    # Base schemas & types
-    organization-list.schema.ts
-    organization-actions.schema.ts
-    create-organization.schema.ts
+    organization-status.schema.ts
+    organization-list.response.ts
+    organization-detail.response.ts
+    organization-action.response.ts
 ```
 
 #### Naming Conventions
 
-1. **File names**: Use kebab-case with `.schema.ts` suffix
+1. **File names**: Use kebab-case with appropriate suffix:
+   - `.request.ts` for request/input DTOs
+   - `.response.ts` for response/output DTOs
+   - `.schema.ts` for shared schemas (enums, common types)
+
 2. **Schema names**: Use camelCase with `Schema` suffix
 3. **Type names**: Infer from schemas using `z.infer<>`
 
 ```typescript
-// organization.schema.ts
-export const organizationStatusSchema = z.enum([...]);
-export type OrganizationStatus = z.infer<typeof organizationStatusSchema>;
+// organization-detail.response.ts
+export const organizationDetailResponseSchema = z.object({...});
+export type OrganizationDetailResponse = z.infer<typeof organizationDetailResponseSchema>;
 
-export const organizationDetailSchema = z.object({...});
-export type OrganizationDetail = z.infer<typeof organizationDetailSchema>;
+// magic-link.request.ts
+export const magicLinkRequestSchema = z.object({...});
+export type MagicLinkRequest = z.infer<typeof magicLinkRequestSchema>;
 ```
 
 4. **Index files should only re-export**:
+
    ```typescript
    // auth/index.ts
-   export * from './request-magic-link.schema';
-   export * from './verify-magic-link.schema';
+   export * from './magic-link.request';
+   export * from './magic-link-verify.request';
+   ```
+
+5. **Use `dateSchema` for date fields** to handle Prisma `Date` objects:
+
+   ```typescript
+   import { dateSchema } from '../common';
+
+   const schema = z.object({
+     createdAt: dateSchema, // Accepts Date | string
+     updatedAt: dateSchema,
+     deletedAt: dateSchema.nullable(),
+   });
    ```
 
 ---
@@ -418,7 +437,10 @@ export type OrganizationDetail = z.infer<typeof organizationDetailSchema>;
 import useSWR, { mutate } from 'swr';
 import { useCallback } from 'react';
 import { apiPost, apiPatch, apiDelete } from '@/lib/api';
-import type { EntityResponse, CreateEntityDto } from '@repo/contracts';
+import type {
+  EntityDetailResponse,
+  UpdateEntityRequest,
+} from '@repo/contracts';
 
 interface UseEntityOptions {
   enabled?: boolean;
@@ -426,7 +448,7 @@ interface UseEntityOptions {
 }
 
 interface UseEntityReturn {
-  data: EntityResponse | undefined;
+  data: EntityDetailResponse | undefined;
   isLoading: boolean;
   error: Error | undefined;
   mutate: () => void;
@@ -444,12 +466,12 @@ export function useEntity(
     error,
     isLoading,
     mutate: swrMutate,
-  } = useSWR<EntityResponse>(enabled ? `/entities/${id}` : null);
+  } = useSWR<EntityDetailResponse>(enabled ? `/entities/${id}` : null);
 
   // Include related mutations with cache invalidation
   const update = useCallback(
-    async (updateData: UpdateEntityDto) => {
-      const result = await apiPatch<EntityResponse>(
+    async (updateData: UpdateEntityRequest) => {
+      const result = await apiPatch<EntityDetailResponse>(
         `/entities/${id}`,
         updateData,
       );
@@ -552,11 +574,29 @@ Use the shared `ZodValidationPipe` from `../common/pipes`:
 
 ```typescript
 import { ZodValidationPipe } from '../common/pipes';
-import { createFeatureSchema, type CreateFeatureDto } from '@repo/contracts';
+import { createFeatureRequestSchema, type CreateFeatureRequest } from '@repo/contracts';
 
 @Post()
-@UsePipes(new ZodValidationPipe(createFeatureSchema))
-async create(@Body() dto: CreateFeatureDto) { ... }
+@UsePipes(new ZodValidationPipe(createFeatureRequestSchema))
+async create(@Body() dto: CreateFeatureRequest) { ... }
+```
+
+#### Return Types with Contracts
+
+Always add return type annotations using contract response types:
+
+```typescript
+import type { FeatureListResponse, FeatureDetailResponse } from '@repo/contracts';
+
+@Get()
+async findAll(): Promise<FeatureListResponse> {
+  return this.featureService.findAll();
+}
+
+@Get(':id')
+async findOne(@Param('id') id: string): Promise<FeatureDetailResponse> {
+  return this.featureService.findOne(id);
+}
 ```
 
 ---

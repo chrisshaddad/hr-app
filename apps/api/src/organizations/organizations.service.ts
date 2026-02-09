@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import type { OrganizationStatus } from '@repo/db';
+import type {
+  OrganizationListResponse,
+  OrganizationDetailResponse,
+} from '@repo/contracts';
 
 @Injectable()
 export class OrganizationsService {
@@ -13,7 +17,7 @@ export class OrganizationsService {
     status?: OrganizationStatus;
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<OrganizationListResponse> {
     const { status, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
@@ -55,7 +59,7 @@ export class OrganizationsService {
   /**
    * Get a single organization by ID with full details
    */
-  async findOne(id: string) {
+  async findOne(id: string): Promise<OrganizationDetailResponse> {
     const organization = await this.prisma.organization.findUnique({
       where: { id },
       select: {
@@ -100,7 +104,10 @@ export class OrganizationsService {
   /**
    * Approve an organization (set status to ACTIVE)
    */
-  async approve(id: string, approvedById: string) {
+  async approve(
+    id: string,
+    approvedById: string,
+  ): Promise<OrganizationDetailResponse> {
     // Check if organization exists
     const existing = await this.prisma.organization.findUnique({
       where: { id },
@@ -155,7 +162,7 @@ export class OrganizationsService {
   /**
    * Reject an organization (set status to REJECTED)
    */
-  async reject(id: string) {
+  async reject(id: string): Promise<OrganizationDetailResponse> {
     // Check if organization exists
     const existing = await this.prisma.organization.findUnique({
       where: { id },

@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 import { PrismaService } from '../database/prisma.service';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 
 const SESSION_PREFIX = 'session:';
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days

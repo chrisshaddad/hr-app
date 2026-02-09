@@ -23,7 +23,7 @@ export const jobListingDetailResponseSchema = z.object({
   createdAt: dateSchema,
   updatedAt: dateSchema,
   closingDate: dateSchema.nullable(),
-  publishedAt: dateSchema.nullable(),
+  publishedAt: dateSchema.nullable().optional(),
   createdBy: z.object({
     id: z.string().uuid(),
     name: z.string(),

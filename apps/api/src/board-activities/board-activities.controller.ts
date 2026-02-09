@@ -2,7 +2,7 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 import { BoardActivitiesService } from './board-activities.service';
 
 @ApiTags('board-activities')

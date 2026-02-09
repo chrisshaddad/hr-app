@@ -20,7 +20,6 @@ export class TagsService {
     const skip = (page - 1) * limit;
 
     const where = {
-      organizationId,
       ...(search && {
         name: { contains: search, mode: 'insensitive' as const },
       }),
@@ -33,7 +32,7 @@ export class TagsService {
         take: limit,
         include: {
           _count: {
-            select: { tagOnCandidate: true },
+            select: { candidates: true },
           },
         },
         orderBy: { name: 'asc' },
@@ -58,12 +57,12 @@ export class TagsService {
       where: { id },
       include: {
         _count: {
-          select: { tagOnCandidate: true },
+          select: { candidates: true },
         },
       },
     });
 
-    if (!tag || tag.organizationId !== organizationId) {
+    if (!tag) {
       throw new NotFoundException('Tag not found');
     }
 
@@ -81,18 +80,15 @@ export class TagsService {
       description?: string;
     },
   ) {
-    // Check for name uniqueness within organization
+    // Check for name uniqueness
     const existing = await this.prisma.tagSetting.findFirst({
       where: {
-        organizationId,
         name: { equals: data.name, mode: 'insensitive' },
       },
     });
 
     if (existing) {
-      throw new BadRequestException(
-        'A tag with this name already exists in your organization',
-      );
+      throw new BadRequestException('A tag with this name already exists');
     }
 
     // Validate hex color if provided
@@ -104,14 +100,13 @@ export class TagsService {
 
     return this.prisma.tagSetting.create({
       data: {
-        organizationId,
         name: data.name,
         color: data.color || '#000000',
         description: data.description || null,
       },
       include: {
         _count: {
-          select: { tagOnCandidate: true },
+          select: { candidates: true },
         },
       },
     });
@@ -135,16 +130,13 @@ export class TagsService {
     if (data.name && data.name !== tag.name) {
       const existing = await this.prisma.tagSetting.findFirst({
         where: {
-          organizationId,
           name: { equals: data.name, mode: 'insensitive' },
           id: { not: id },
         },
       });
 
       if (existing) {
-        throw new BadRequestException(
-          'A tag with this name already exists in your organization',
-        );
+        throw new BadRequestException('A tag with this name already exists');
       }
     }
 
@@ -164,7 +156,7 @@ export class TagsService {
       },
       include: {
         _count: {
-          select: { tagOnCandidate: true },
+          select: { candidates: true },
         },
       },
     });
@@ -176,11 +168,7 @@ export class TagsService {
   async delete(id: string, organizationId: string) {
     const tag = await this.findOne(id, organizationId);
 
-    // Delete all tag-candidate associations first
-    await this.prisma.tagOnCandidate.deleteMany({
-      where: { tagId: id },
-    });
-
+    // Prisma will automatically handle cascade deletion of tag-candidate associations
     return this.prisma.tagSetting.delete({
       where: { id },
     });
@@ -196,13 +184,12 @@ export class TagsService {
 
     return this.prisma.tagSetting.findMany({
       where: {
-        organizationId,
         name: { contains: query, mode: 'insensitive' },
       },
       take,
       include: {
         _count: {
-          select: { tagOnCandidate: true },
+          select: { candidates: true },
         },
       },
     });

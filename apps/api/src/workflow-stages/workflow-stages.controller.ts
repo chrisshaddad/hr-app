@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 import { WorkflowStagesService } from './workflow-stages.service';
 import { ZodValidationPipe } from '../common/pipes';
 import { workflowStageSchema, type WorkflowStageSchema } from '@repo/contracts';
@@ -61,8 +61,7 @@ export class WorkflowStagesController {
       jobListingId,
       user.organizationId!,
       {
-        name: data.name,
-        description: data.description,
+        title: data.title,
         isLocked: data.isLocked,
       },
     );
@@ -80,8 +79,7 @@ export class WorkflowStagesController {
     @CurrentUser() user: User,
   ) {
     return this.workflowStagesService.update(id, user.organizationId!, {
-      name: data.name,
-      description: data.description,
+      title: data.title,
       isLocked: data.isLocked,
     });
   }

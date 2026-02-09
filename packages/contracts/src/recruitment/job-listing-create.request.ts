@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { employmentTypeSchema } from './enums.schema';
+import { employmentTypeSchema, jobListingStatusSchema } from './enums.schema';
 
 export const jobListingCreateRequestSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().min(1),
   departmentId: z.string().uuid(),
+  status: jobListingStatusSchema,
   officeId: z.string().uuid().optional(),
   employmentType: employmentTypeSchema,
   openingsQuantity: z.number().int().positive().default(1),

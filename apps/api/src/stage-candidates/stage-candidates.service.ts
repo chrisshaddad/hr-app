@@ -4,7 +4,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import type { WorkflowStageCandidateSchema } from '@repo/contracts';
 
 @Injectable()
 export class StageCandidatesService {
@@ -33,7 +32,7 @@ export class StageCandidatesService {
 
     const [stageCandidates, total] = await Promise.all([
       this.prisma.workflowStageCandidate.findMany({
-        where: { stageId, isDeleted: false },
+        where: { workflowStageId: stageId, isActive: true },
         include: {
           candidate: {
             select: {
@@ -43,17 +42,17 @@ export class StageCandidatesService {
               email: true,
               phoneNumber: true,
               source: true,
-              cVUrl: true,
+              cvUrl: true,
               photoUrl: true,
             },
           },
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { addedAt: 'asc' },
       }),
       this.prisma.workflowStageCandidate.count({
-        where: { stageId, isDeleted: false },
+        where: { workflowStageId: stageId, isActive: true },
       }),
     ]);
 
@@ -73,21 +72,21 @@ export class StageCandidatesService {
     // Verify candidate exists
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: candidateId },
-      select: { organizationId: true, id: true },
+      select: { id: true },
     });
 
-    if (!candidate || candidate.organizationId !== organizationId) {
+    if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }
 
     return this.prisma.workflowStageCandidate.findMany({
-      where: { candidateId, isDeleted: false },
+      where: { candidateId, isActive: true },
       include: {
-        stage: {
-          select: { id: true, name: true, rank: true, isLocked: true },
+        workflowStage: {
+          select: { id: true, title: true, rank: true, isLocked: true },
         },
       },
-      orderBy: { stage: { rank: 'asc' } },
+      orderBy: { workflowStage: { rank: 'asc' } },
     });
   }
 
@@ -104,10 +103,10 @@ export class StageCandidatesService {
     // Verify candidate exists
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: candidateId },
-      select: { organizationId: true, id: true },
+      select: { id: true },
     });
 
-    if (!candidate || candidate.organizationId !== organizationId) {
+    if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }
 
@@ -131,15 +130,15 @@ export class StageCandidatesService {
       await this.prisma.workflowStageCandidate.findMany({
         where: {
           candidateId,
-          stage: { jobListingId: stage.jobListingId },
-          isDeleted: false,
+          jobListingId: stage.jobListingId,
+          isActive: true,
         },
       });
 
     if (existingPlacements.length > 0) {
       await this.prisma.workflowStageCandidate.updateMany({
         where: { id: { in: existingPlacements.map((p) => p.id) } },
-        data: { isDeleted: true },
+        data: { isActive: false },
       });
     }
 
@@ -147,32 +146,25 @@ export class StageCandidatesService {
     const stagePlacement = await this.prisma.workflowStageCandidate.create({
       data: {
         candidateId,
-        stageId,
+        jobListingId: stage.jobListingId,
+        workflowStageId: stageId,
         notes: notes || null,
-        isDeleted: false,
+        isActive: true,
       },
       include: {
         candidate: true,
-        stage: true,
+        workflowStage: true,
       },
     });
 
     // Create board activity
     await this.prisma.boardActivity.create({
       data: {
-        jobListingId: stage.jobListingId,
         candidateId,
-        stageId,
-        activityType: 'MOVED',
-        fromStageName: existingPlacements[0]
-          ? (
-              await this.prisma.workflowStage.findUnique({
-                where: { id: existingPlacements[0].stageId },
-                select: { name: true },
-              })
-            )?.name || 'Unknown'
-          : 'New Candidate',
-        toStageName: stage.name,
+        fromStageId: existingPlacements[0]?.workflowStageId || null,
+        toStageId: stageId,
+        memberId: 'system',
+        activityType: 'ADDED',
       },
     });
 
@@ -224,7 +216,7 @@ export class StageCandidatesService {
     // Verify candidate is currently in from stage
     const currentPlacement = await this.prisma.workflowStageCandidate.findFirst(
       {
-        where: { candidateId, stageId: fromStageId, isDeleted: false },
+        where: { candidateId, workflowStageId: fromStageId, isActive: true },
       },
     );
 
@@ -235,20 +227,21 @@ export class StageCandidatesService {
     // Deactivate current placement
     await this.prisma.workflowStageCandidate.update({
       where: { id: currentPlacement.id },
-      data: { isDeleted: true },
+      data: { isActive: false, movedAt: new Date() },
     });
 
     // Create new placement
     const newPlacement = await this.prisma.workflowStageCandidate.create({
       data: {
         candidateId,
-        stageId: toStageId,
+        jobListingId: toStage.jobListingId,
+        workflowStageId: toStageId,
         notes: notes || null,
-        isDeleted: false,
+        isActive: true,
       },
       include: {
         candidate: true,
-        stage: true,
+        workflowStage: true,
       },
     });
 
@@ -257,10 +250,10 @@ export class StageCandidatesService {
       data: {
         jobListingId: toStage.jobListingId,
         candidateId,
-        stageId: toStageId,
+        fromStageId: fromStageId,
+        toStageId: toStageId,
+        memberId: 'system',
         activityType: 'MOVED',
-        fromStageName: fromStage.name,
-        toStageName: toStage.name,
       },
     });
 
@@ -287,7 +280,7 @@ export class StageCandidatesService {
     }
 
     const placement = await this.prisma.workflowStageCandidate.findFirst({
-      where: { candidateId, stageId, isDeleted: false },
+      where: { candidateId, workflowStageId: stageId, isActive: true },
     });
 
     if (!placement) {
@@ -299,7 +292,7 @@ export class StageCandidatesService {
       data: { notes },
       include: {
         candidate: true,
-        stage: true,
+        workflowStage: true,
       },
     });
   }
@@ -323,7 +316,7 @@ export class StageCandidatesService {
     }
 
     const placement = await this.prisma.workflowStageCandidate.findFirst({
-      where: { candidateId, stageId, isDeleted: false },
+      where: { candidateId, workflowStageId: stageId, isActive: true },
     });
 
     if (!placement) {
@@ -333,7 +326,7 @@ export class StageCandidatesService {
     // Soft delete
     return this.prisma.workflowStageCandidate.update({
       where: { id: placement.id },
-      data: { isDeleted: true },
+      data: { isActive: false },
     });
   }
 }

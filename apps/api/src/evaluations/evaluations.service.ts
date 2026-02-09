@@ -17,96 +17,91 @@ export class EvaluationsService {
     // Verify candidate exists
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: candidateId },
-      select: { organizationId: true, id: true },
+      select: { id: true },
     });
 
-    if (!candidate || candidate.organizationId !== organizationId) {
+    if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }
 
     const evaluations = await this.prisma.candidateStageEvaluation.findMany({
-      where: { candidateId },
+      where: {
+        stageCandidate: {
+          candidate: { id: candidateId },
+        },
+      },
       include: {
-        jobListingMember: {
+        evaluator: {
           select: {
             id: true,
-            canEvaluate: true,
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
+            name: true,
+            email: true,
           },
         },
-        workflowStageCandidate: {
+        stageCandidate: {
           include: {
-            stage: { select: { id: true, name: true } },
+            workflowStage: { select: { id: true, title: true } },
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { evaluatedAt: 'desc' },
     });
 
     return evaluations;
   }
 
   /**
-   * Find all evaluations for a job listing member
+   * Find all evaluations made by a specific evaluator/member
    */
   async findByMember(
-    jobListingMemberId: string,
+    memberId: string,
     organizationId: string,
     options: { page?: number; limit?: number } = {},
   ) {
     const { page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
-    // Verify member has evaluate permission
-    const member = await this.prisma.jobListingMember.findUnique({
-      where: { id: jobListingMemberId },
-      include: {
-        jobListing: { select: { organizationId: true } },
-        user: true,
-      },
+    // Verify member exists and belongs to this organization
+    const member = await this.prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true, organizationId: true },
     });
 
-    if (!member || member.jobListing.organizationId !== organizationId) {
-      throw new NotFoundException('Job listing member not found');
-    }
-
-    if (!member.canEvaluate) {
-      throw new ForbiddenException(
-        'This member does not have evaluation permission',
-      );
+    if (!member || member.organizationId !== organizationId) {
+      throw new NotFoundException('Member not found');
     }
 
     const [evaluations, total] = await Promise.all([
       this.prisma.candidateStageEvaluation.findMany({
-        where: { jobListingMemberId },
+        where: { memberId },
         include: {
-          candidate: {
+          evaluator: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
+              name: true,
               email: true,
             },
           },
-          workflowStageCandidate: {
+          stageCandidate: {
             include: {
-              stage: { select: { id: true, name: true } },
+              candidate: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+              workflowStage: { select: { id: true, title: true } },
             },
           },
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { evaluatedAt: 'desc' },
       }),
       this.prisma.candidateStageEvaluation.count({
-        where: { jobListingMemberId },
+        where: { memberId },
       }),
     ]);
 
@@ -120,18 +115,18 @@ export class EvaluationsService {
   }
 
   /**
-   * Create or update an evaluation (upsert pattern)
+   * Create or update an evaluation
    */
   async upsertEvaluation(
-    jobListingMemberId: string,
+    memberId: string,
     workflowStageCandidateId: string,
-    candidateId: string,
     organizationId: string,
     data: {
       rating: number;
       feedback?: string;
       strengths?: string;
       weaknesses?: string;
+      recommendation?: string;
     },
   ) {
     // Validate rating is 1-5
@@ -139,32 +134,14 @@ export class EvaluationsService {
       throw new Error('Rating must be between 1 and 5');
     }
 
-    // Verify member has evaluate permission
-    const member = await this.prisma.jobListingMember.findUnique({
-      where: { id: jobListingMemberId },
-      include: {
-        jobListing: { select: { organizationId: true } },
-      },
+    // Verify member exists and belongs to this organization
+    const member = await this.prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true, organizationId: true },
     });
 
-    if (!member || member.jobListing.organizationId !== organizationId) {
-      throw new NotFoundException('Job listing member not found');
-    }
-
-    if (!member.canEvaluate) {
-      throw new ForbiddenException(
-        'This member does not have evaluation permission',
-      );
-    }
-
-    // Verify candidate exists
-    const candidate = await this.prisma.candidate.findUnique({
-      where: { id: candidateId },
-      select: { organizationId: true, id: true },
-    });
-
-    if (!candidate || candidate.organizationId !== organizationId) {
-      throw new NotFoundException('Candidate not found');
+    if (!member || member.organizationId !== organizationId) {
+      throw new NotFoundException('Member not found');
     }
 
     // Verify stage candidate exists
@@ -177,33 +154,72 @@ export class EvaluationsService {
       throw new NotFoundException('Stage candidate placement not found');
     }
 
-    // Upsert evaluation
-    return this.prisma.candidateStageEvaluation.upsert({
-      where: {
-        jobListingMemberId_workflowStageCandidateId: {
-          jobListingMemberId,
+    // Check if evaluation already exists
+    const existingEvaluation =
+      await this.prisma.candidateStageEvaluation.findFirst({
+        where: {
           workflowStageCandidateId,
+          memberId,
         },
-      },
-      create: {
-        jobListingMemberId,
+      });
+
+    if (existingEvaluation) {
+      // Update existing evaluation
+      return this.prisma.candidateStageEvaluation.update({
+        where: { id: existingEvaluation.id },
+        data: {
+          rating: data.rating,
+          feedback: data.feedback || null,
+          strengths: data.strengths || null,
+          weaknesses: data.weaknesses || null,
+          recommendation: data.recommendation || null,
+        },
+        include: {
+          evaluator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          stageCandidate: {
+            include: {
+              candidate: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Create new evaluation
+    return this.prisma.candidateStageEvaluation.create({
+      data: {
         workflowStageCandidateId,
-        candidateId,
+        memberId,
         rating: data.rating,
         feedback: data.feedback || null,
         strengths: data.strengths || null,
         weaknesses: data.weaknesses || null,
-      },
-      update: {
-        rating: data.rating,
-        feedback: data.feedback || null,
-        strengths: data.strengths || null,
-        weaknesses: data.weaknesses || null,
+        recommendation: data.recommendation || null,
       },
       include: {
-        jobListingMember: {
+        evaluator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stageCandidate: {
           include: {
-            user: {
+            candidate: {
               select: {
                 id: true,
                 firstName: true,
@@ -221,18 +237,16 @@ export class EvaluationsService {
    * Calculate average rating for a candidate in a stage
    */
   async calculateAverageRating(
-    candidateId: string,
     workflowStageCandidateId: string,
     organizationId: string,
   ) {
-    // Verify candidate exists
-    const candidate = await this.prisma.candidate.findUnique({
-      where: { id: candidateId },
-      select: { organizationId: true, id: true },
+    // Verify stage candidate exists
+    const stageCandidate = await this.prisma.workflowStageCandidate.findUnique({
+      where: { id: workflowStageCandidateId },
     });
 
-    if (!candidate || candidate.organizationId !== organizationId) {
-      throw new NotFoundException('Candidate not found');
+    if (!stageCandidate) {
+      throw new NotFoundException('Stage candidate placement not found');
     }
 
     const result = await this.prisma.candidateStageEvaluation.aggregate({
@@ -258,24 +272,28 @@ export class EvaluationsService {
     const evaluation = await this.prisma.candidateStageEvaluation.findUnique({
       where: { id: evaluationId },
       include: {
-        jobListingMember: {
+        evaluator: { select: { id: true, organizationId: true } },
+        stageCandidate: {
           include: {
             jobListing: { select: { organizationId: true } },
-            user: { select: { id: true } },
           },
         },
       },
     });
 
+    if (!evaluation) {
+      throw new NotFoundException('Evaluation not found');
+    }
+
+    // Verify belongs to this organization
     if (
-      !evaluation ||
-      evaluation.jobListingMember.jobListing.organizationId !== organizationId
+      evaluation.stageCandidate.jobListing.organizationId !== organizationId
     ) {
       throw new NotFoundException('Evaluation not found');
     }
 
     // Only the evaluator can delete their own evaluation
-    if (evaluation.jobListingMember.user.id !== currentUserId) {
+    if (evaluation.evaluator.id !== currentUserId) {
       throw new ForbiddenException('You can only delete your own evaluations');
     }
 

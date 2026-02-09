@@ -38,13 +38,23 @@ export class BoardActivitiesService {
               email: true,
             },
           },
-          stage: {
-            select: { id: true, name: true },
+          fromStage: {
+            select: { id: true, title: true },
+          },
+          toStage: {
+            select: { id: true, title: true },
+          },
+          member: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { occurredAt: 'desc' },
       }),
       this.prisma.boardActivity.count({ where: { jobListingId } }),
     ]);
@@ -72,10 +82,10 @@ export class BoardActivitiesService {
     // Verify candidate exists
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: candidateId },
-      select: { organizationId: true, id: true },
+      select: { id: true },
     });
 
-    if (!candidate || candidate.organizationId !== organizationId) {
+    if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }
 
@@ -83,16 +93,26 @@ export class BoardActivitiesService {
       this.prisma.boardActivity.findMany({
         where: { candidateId },
         include: {
-          stage: {
-            select: { id: true, name: true },
-          },
           jobListing: {
             select: { id: true, title: true },
+          },
+          fromStage: {
+            select: { id: true, title: true },
+          },
+          toStage: {
+            select: { id: true, title: true },
+          },
+          member: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { occurredAt: 'desc' },
       }),
       this.prisma.boardActivity.count({ where: { candidateId } }),
     ]);
@@ -113,7 +133,6 @@ export class BoardActivitiesService {
     const activity = await this.prisma.boardActivity.findUnique({
       where: { id },
       include: {
-        jobListing: { select: { organizationId: true } },
         candidate: {
           select: {
             id: true,
@@ -122,8 +141,21 @@ export class BoardActivitiesService {
             email: true,
           },
         },
-        stage: {
-          select: { id: true, name: true },
+        jobListing: {
+          select: { id: true, title: true, organizationId: true },
+        },
+        fromStage: {
+          select: { id: true, title: true },
+        },
+        toStage: {
+          select: { id: true, title: true },
+        },
+        member: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
       },
     });

@@ -1,6 +1,21 @@
 import { z } from 'zod';
 import { dateSchema } from '../common';
 
+// Generic schema for create/update operations
+export const candidateEvaluationSchema = z.object({
+  jobListingMemberId: z.string().uuid(),
+  workflowStageCandidateId: z.string().uuid(),
+  candidateId: z.string().uuid(),
+  rating: z.number().int().min(1).max(5),
+  feedback: z.string().optional(),
+  strengths: z.string().optional(),
+  weaknesses: z.string().optional(),
+});
+
+export type CandidateEvaluationSchema = z.infer<
+  typeof candidateEvaluationSchema
+>;
+
 export const candidateEvaluationRequestSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
   feedback: z.string().optional(),

@@ -16,6 +16,8 @@ import {
   Settings,
   LogOut,
   Building2,
+  AlertCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -30,14 +32,29 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Button } from '@/ui/button';
+
+interface SubNavItem {
+  title: string;
+  url: string;
+}
 
 interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
   disabled?: boolean;
+  items?: SubNavItem[];
 }
 
 // Navigation items for ORG_ADMIN and EMPLOYEE roles
@@ -51,6 +68,11 @@ const orgNavItems: NavItem[] = [
     title: 'Employees',
     url: '/employees',
     icon: Users,
+    items: [
+      { title: 'Manage employees', url: '/employees/manage-employees' },
+      { title: 'Directory', url: '/employees/directory' },
+      { title: 'Org Chart', url: '/employees/org-chart' },
+    ],
   },
   {
     title: 'Checklist',
@@ -81,6 +103,15 @@ const orgNavItems: NavItem[] = [
     title: 'Recruitment',
     url: '/recruitment',
     icon: UserPlus,
+  },
+];
+
+// Navigation items for ORG_ADMIN with PENDING organization
+const pendingOrgNavItems: NavItem[] = [
+  {
+    title: 'Pending Approval',
+    url: '/pending-approval',
+    icon: AlertCircle,
   },
 ];
 
@@ -126,7 +157,16 @@ export function AppSidebar() {
   const { user } = useUser({ redirectOnUnauthenticated: false });
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-  const mainNavItems = isSuperAdmin ? superAdminNavItems : orgNavItems;
+
+  //will look into this later as im a professional zod hater and i dont want to deal with it for now
+  const isPendingOrg = false;
+  // user?.role === 'ORG_ADMIN' && user?.organization?.status === 'PENDING';
+
+  const mainNavItems = isSuperAdmin
+    ? superAdminNavItems
+    : isPendingOrg
+      ? pendingOrgNavItems
+      : orgNavItems;
   const secondaryNavItems = isSuperAdmin
     ? superAdminSecondaryNavItems
     : orgSecondaryNavItems;
@@ -138,57 +178,107 @@ export function AppSidebar() {
     return pathname.startsWith(url);
   };
 
+  const isParentActive = (item: NavItem) => {
+    if (item.items) {
+      return item.items.some((subItem) => isActive(subItem.url));
+    }
+    return isActive(item.url);
+  };
+
   return (
-    <Sidebar className="border-r border-gray-200 bg-white">
+    <Sidebar className="border-r">
       <SidebarHeader className="px-5 py-6">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-base">
-            <span className="text-lg font-bold text-white">✦</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <span className="text-lg font-bold text-primary-foreground">✦</span>
           </div>
-          <span className="text-xl font-semibold text-gray-900">Humanline</span>
+          <span className="text-xl font-semibold text-foreground">
+            Humanline
+          </span>
         </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-3">
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+          <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {isSuperAdmin ? 'Administration' : 'Main'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild={!item.disabled}
-                    isActive={isActive(item.url)}
-                    disabled={item.disabled}
-                    className={cn(
-                      'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                      item.disabled && 'cursor-not-allowed opacity-50',
-                      isActive(item.url)
-                        ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-                    )}
-                  >
-                    {item.disabled ? (
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-5 w-5 text-gray-400" />
-                        <span>{item.title}</span>
-                        <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                          Soon
-                        </span>
-                      </div>
-                    ) : (
-                      <Link href={item.url}>
-                        <item.icon className="h-5 w-5 text-gray-500" />
-                        <span>{item.title}</span>
-                      </Link>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNavItems.map((item) => {
+                const hasSubItems = item.items && item.items.length > 0;
+                const active = isParentActive(item);
+
+                // Simple nav item (no sub-items)
+                if (!hasSubItems) {
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild={!item.disabled}
+                        isActive={active}
+                        disabled={item.disabled}
+                        className={cn(
+                          'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
+                          item.disabled && 'cursor-not-allowed opacity-50',
+                        )}
+                      >
+                        {item.disabled ? (
+                          <div className="flex items-center gap-3">
+                            <item.icon className="h-5 w-5" />
+                            <span>{item.title}</span>
+                            <span className="ml-auto text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                              Soon
+                            </span>
+                          </div>
+                        ) : (
+                          <Link href={item.url}>
+                            <item.icon className="h-5 w-5" />
+                            <span>{item.title}</span>
+                          </Link>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
+
+                // Collapsible nav item with sub-items
+                return (
+                  <Collapsible key={item.title} asChild defaultOpen={active}>
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton className="h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors">
+                          <item.icon
+                            className={cn(
+                              'h-5 w-5 transition-colors',
+                              active && 'text-primary',
+                            )}
+                          />
+                          <span>{item.title}</span>
+                          <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items?.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={isActive(subItem.url)}
+                              >
+                                <Link href={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -197,7 +287,7 @@ export function AppSidebar() {
 
         {/* Secondary Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+          <SidebarGroupLabel className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Support
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -207,15 +297,10 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={isActive(item.url)}
-                    className={cn(
-                      'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                      isActive(item.url)
-                        ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-                    )}
+                    className="h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors"
                   >
                     <Link href={item.url}>
-                      <item.icon className="h-5 w-5 text-gray-500" />
+                      <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -229,13 +314,14 @@ export function AppSidebar() {
       <SidebarFooter className="p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
+            <Button
               onClick={() => logout()}
-              className="h-11 gap-3 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
+              variant={'destructive'}
+              className={cn('w-full')}
             >
-              <LogOut className="h-5 w-5 text-gray-500" />
+              <LogOut className="h-5 w-5" />
               <span>Logout</span>
-            </SidebarMenuButton>
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

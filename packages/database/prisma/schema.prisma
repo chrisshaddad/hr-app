@@ -354,7 +354,6 @@ model Candidate {
 
   stagePlacements   WorkflowStageCandidate[]
   boardActivities   BoardActivity[]
-  evaluations       CandidateStageEvaluation[]
 
   @@unique([email, phoneNumber]) // Prevent duplicate candidates
   @@index([email])
@@ -467,57 +466,5 @@ model EmailTemplateSetting {
   @@unique([workflowStageId, emailTemplateTypeId])
   @@index([workflowStageId])
   @@index([emailTemplateTypeId])
-  @@schema("public")
-}
-
-// ============================================================================
-// OPTIONAL: Interview Scheduling (Future Enhancement)
-// ============================================================================
-
-model Interview {
-  id                       String    @id @default(uuid())
-  workflowStageCandidateId String
-  scheduledAt              DateTime
-  duration                 Int // In minutes
-  location                 String? // Physical location or meeting link
-  meetingLink              String?
-  interviewerIds           String[] // Array of User IDs
-  status                   String    @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
-  notes                    String?   @db.Text
-  isDeleted                Boolean           @default(false)
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-
-  stageCandidate WorkflowStageCandidate @relation(fields: [workflowStageCandidateId], references: [id], onDelete: Cascade)
-
-  @@index([workflowStageCandidateId])
-  @@index([scheduledAt])
-  @@schema("public")
-}
-
-// ============================================================================
-// OPTIONAL: Offer Management (Future Enhancement)
-// ============================================================================
-
-model Offer {
-  id                       String    @id @default(uuid())
-  workflowStageCandidateId String    @unique
-  position                 String
-  salary                   Decimal   @db.Decimal(12, 2)
-  currency                 String    @default("USD")
-  startDate                DateTime?
-  benefits                 String?   @db.Text
-  terms                    String?   @db.Text
-  isDeleted                Boolean           @default(false)
-  status                   String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, WITHDRAWN
-  sentAt                   DateTime?
-  respondedAt              DateTime?
-  expiresAt                DateTime?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-
-  stageCandidate WorkflowStageCandidate @relation(fields: [workflowStageCandidateId], references: [id], onDelete: Cascade)
-
-  @@index([status])
   @@schema("public")
 }

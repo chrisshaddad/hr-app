@@ -41,6 +41,18 @@ enum OrganizationStatus {
   @@schema("public")
 }
 
+enum TeamRole {
+  TEAM_LEAD
+  MEMBER
+  @@schema("public")
+}
+
+enum GroupRole {
+  GROUP_LEAD
+  MEMBER
+  @@schema("public")
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -60,8 +72,8 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
-  teamMemberships       TeamMember[] //But if you are the org admin can you be in teams or groups?
-  groupMemberships      GroupMember[] //These were given in the module feature requirements
+  teamMemberships       TeamMember[]
+  groupMemberships      GroupMember[] 
   activityLogs          ActivityLog[]
 
   @@index([organizationId])
@@ -211,7 +223,7 @@ model Department {
 
 // Teams - Organization level, cross-department collaborative groups
 // Requirement: "Manage teams"
-// The Hr will manage teams etc
+// The HR will manage teams etc
 model Team {
   id             String   @id @default(uuid())
   organizationId String
@@ -231,7 +243,7 @@ model TeamMember {
   id       String   @id @default(uuid())
   teamId   String
   userId   String
-  role     String?  @default("Member") // e.g., "Team Lead", "Member"
+  role     TeamRole @default(MEMBER) // "Team Lead", "Member"
   joinedAt DateTime @default(now())
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -265,6 +277,7 @@ model GroupMember {
   id       String   @id @default(uuid())
   groupId  String
   userId   String
+  role     GroupRole @default(MEMBER)
   joinedAt DateTime @default(now())
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -283,7 +296,7 @@ model Holiday {
   organizationId String
   branchId       String? // Optional: for location-specific holidays
   name           String   // "New Year's Day", "Christmas", "Eid Mubarak"
-  date           DateTime
+  date           DateTime @db.Date
   isRecurring    Boolean  @default(false) // If true, repeats annually
   description    String?  @db.Text
   createdAt      DateTime @default(now())
@@ -295,6 +308,7 @@ model Holiday {
   @@index([organizationId])
   @@index([branchId])
   @@index([date])
+  @@unique([organizationId,branchId,date]) //To prevent duplicates
   @@schema("public")
 }
 
@@ -363,7 +377,7 @@ model ActivityLog {
   action         String   // e.g., "CREATE", "UPDATE", "DELETE", "REQUEST_TIME_OFF"
   entity         String   // e.g., "User", "Department", "Holiday", "Team", "Group"
   entityId       String?  // ID of the affected entity
-  details        String?  @db.Text // JSON string with additional context
+  details        Json? // JSON string with additional context
   ipAddress      String?
   userAgent      String?
   createdAt      DateTime @default(now())

@@ -264,9 +264,11 @@ model Contract {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([deletedAt])
   @@index([userId])
   @@index([contractNumber])
   @@index([isActive])
@@ -359,13 +361,14 @@ model Document {
   mimeType       String? // e.g., "application/pdf"
   uploadedAt     DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deletedAt      DateTime?
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
   @@index([documentType])
+  @@index([deletedAt])
   @@schema("public")
 }
 
@@ -388,6 +391,7 @@ model Attendance {
   notes            String?          @db.Text
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -395,6 +399,7 @@ model Attendance {
   @@index([userId, date, status])
   @@index([userId])
   @@index([date])
+  @@index([deletedAt])
   @@schema("public")
 }
 

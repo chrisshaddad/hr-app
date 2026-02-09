@@ -74,7 +74,7 @@ model User {
   createdOrganization   Organization?      @relation("OrganizationCreator")
   approvedOrganizations Organization[]     @relation("OrganizationApprover")
   contracts             Contract[]
-  documents             Documents[]
+  documents             Document[]
   employments           JobAssignment[]    @relation("employments")
   managedEmployees      JobAssignment[]    @relation("EmployeeLineManager")
   attendances           Attendance[]
@@ -104,7 +104,7 @@ model EmployeeProfile {
   postalCode String?
   country    String?
 
-  // Ensurance
+  // Insurance
   insuranceProvider String?
 
   // Tax Info
@@ -192,14 +192,15 @@ model Organization {
   approvedBy           User?                             @relation("OrganizationApprover", fields: [approvedById], references: [id])
   branches             Branch[]
   users                User[]                            @relation("OrganizationMembers")
-  documents            Documents[]
+  documents            Document[]
   workSchedules        WorkSchedule[]
   auditLogs            AuditLog[]
-  Department           Department[]
+  departments          Department[]
   roles                OrgRole[] // Organization-specific roles
-  Integration          Integration[]
-  Subscription         Subscription[]
+  integrations         Integration[]
+  subscriptions        Subscription[]
   notificationSettings OrganizationNotificationSettings?
+  JobTitle             JobTitle[]
 
   @@unique([contactEmail])
   @@unique([contactNumber])
@@ -246,6 +247,7 @@ model Department {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
   @@index([parentDepartmentId])
   @@schema("public")
 }
@@ -300,14 +302,20 @@ model JobAssignment {
 }
 
 model JobTitle {
-  id          String          @id @default(uuid())
-  title       String          @unique
-  isActive    Boolean         @default(true)
-  description String?         @db.Text
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  employments JobAssignment[]
+  id          String   @id @default(uuid())
+  title       String
+  isActive    Boolean  @default(true)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employments    JobAssignment[]
+
+  @@unique([organizationId, title])
+  @@index([organizationId])
+  @@index([title, organizationId])
   @@schema("public")
 }
 
@@ -340,7 +348,7 @@ enum DocumentType {
   @@schema("public")
 }
 
-model Documents {
+model Document {
   id             String       @id @default(uuid())
   userId         String
   organizationId String
@@ -371,10 +379,10 @@ model Attendance {
   clockOut         DateTime?
   clockOutLocation String?
   clockOutTimezone String?
-  scheduledHours   Decimal          @db.Decimal(5, 2) // From WorkSchedule
-  loggedHours      Decimal          @db.Decimal(5, 2) // Calculated
-  paidHours        Decimal          @db.Decimal(5, 2) // After deductions
-  deficitHours     Decimal          @db.Decimal(5, 2) // Difference
+  scheduledHours   Decimal          @default(0) @db.Decimal(5, 2) // From WorkSchedule
+  loggedHours      Decimal          @default(0) @db.Decimal(5, 2) // Calculated
+  paidHours        Decimal          @default(0) @db.Decimal(5, 2) // After deductions
+  deficitHours     Decimal          @default(0) @db.Decimal(5, 2) // Difference
   overtimeHours    Decimal          @default(0) @db.Decimal(5, 2)
   status           AttendanceStatus @default(PENDING)
   notes            String?          @db.Text
@@ -384,6 +392,7 @@ model Attendance {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([userId, date, status])
   @@index([userId])
   @@index([date])
   @@schema("public")
@@ -439,7 +448,7 @@ model UserWorkSchedule {
   userId     String
   scheduleId String
   assignedAt DateTime @default(now())
-  assignedBy String? // Who assigned this schedule
+  assignedBy String? // User ID who assigned this schedule
   isActive   Boolean  @default(true) // Current schedule vs historical
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -447,7 +456,7 @@ model UserWorkSchedule {
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   schedule WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, scheduleId]) // User can have same schedule only once
+  @@unique([userId, scheduleId])
   @@index([userId])
   @@index([scheduleId])
   @@index([isActive])

@@ -30,6 +30,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 
@@ -38,6 +41,7 @@ interface NavItem {
   url: string;
   icon: LucideIcon;
   disabled?: boolean;
+  children?: Omit<NavItem, 'icon' | 'children'>[];
 }
 
 // Navigation items for ORG_ADMIN and EMPLOYEE roles
@@ -81,6 +85,20 @@ const orgNavItems: NavItem[] = [
     title: 'Recruitment',
     url: '/recruitment',
     icon: UserPlus,
+    children: [
+      {
+        title: 'Jobs',
+        url: '/recruitment',
+      },
+      {
+        title: 'Candidates',
+        url: '/recruitment/candidates',
+      },
+      {
+        title: 'Settings',
+        url: '/recruitment/settings',
+      },
+    ],
   },
 ];
 
@@ -187,6 +205,21 @@ export function AppSidebar() {
                       </Link>
                     )}
                   </SidebarMenuButton>
+                  {item.children?.length ? (
+                    <SidebarMenuSub>
+                      {item.children.map((child) => (
+                        <SidebarMenuSubItem key={child.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === child.url}
+                            className="text-gray-600 data-[active=true]:bg-primary-100 data-[active=true]:text-gray-900"
+                          >
+                            <Link href={child.url}>{child.title}</Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  ) : null}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

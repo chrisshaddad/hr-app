@@ -248,7 +248,7 @@ export function AppSidebar() {
                   <Collapsible key={item.title} asChild defaultOpen={active}>
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors">
+                        <SidebarMenuButton className="h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors [&[data-state=open]>svg:last-child]:rotate-90">
                           <item.icon
                             className={cn(
                               'h-5 w-5 transition-colors',
@@ -256,7 +256,7 @@ export function AppSidebar() {
                             )}
                           />
                           <span>{item.title}</span>
-                          <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                          <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>

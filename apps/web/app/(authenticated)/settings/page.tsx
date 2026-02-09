@@ -4,13 +4,6 @@ import { Settings } from 'lucide-react';
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your account and organization settings
-        </p>
-      </div>
-
       <Card className="border-gray-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">

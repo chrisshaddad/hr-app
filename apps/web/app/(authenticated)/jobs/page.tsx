@@ -104,7 +104,7 @@ export default function JobsPage() {
   return (
     <>
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-10s pb-6">
+        <div className="sticky top-0 z-10 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
               <p className="text-2xl font-bold text-GreyScale-900">Jobs</p>

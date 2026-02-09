@@ -6,7 +6,14 @@ CREATE TYPE "JobStatus_new" AS ENUM ('draft', 'published', 'closed');
 ALTER TABLE "Job" ADD COLUMN "status_temp" TEXT;
 
 -- Step 3: Convert existing data to lowercase text
-UPDATE "Job" SET "status_temp" = LOWER("status"::text) WHERE "status"::text IN ('DRAFT', 'PUBLISHED', 'CLOSED');
+-- Handle all possible enum values: DRAFT, PUBLISHED, CLOSED, CANCELLED
+-- Map CANCELLED to 'closed' since it's being removed from the enum
+UPDATE "Job" SET "status_temp" =
+  CASE
+    WHEN "status"::text = 'CANCELLED' THEN 'closed'
+    WHEN "status"::text IN ('DRAFT', 'PUBLISHED', 'CLOSED') THEN LOWER("status"::text)
+    ELSE 'draft' -- Fallback for any unexpected values
+  END;
 
 -- Step 4: Drop the old status column
 ALTER TABLE "Job" DROP COLUMN "status";

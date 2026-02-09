@@ -435,6 +435,8 @@ export class ReviewsService {
     query: any,
   ): Promise<ListReviewTasksResponse> {
     const { page = 0, size = 20, cycleId, type } = query;
+    const pageInt = Number(page);
+    const sizeInt = Number(size);
 
     const where: any = {
       organizationId,
@@ -447,8 +449,8 @@ export class ReviewsService {
     const [assignments, total] = await Promise.all([
       this.prisma.reviewAssignment.findMany({
         where,
-        skip: page * size,
-        take: size,
+        skip: pageInt * sizeInt,
+        take: sizeInt,
         include: {
           cycle: true,
           reviewee: {

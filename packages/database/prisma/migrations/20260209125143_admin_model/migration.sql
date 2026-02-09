@@ -125,6 +125,7 @@ CREATE TABLE "Contract" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Contract_pkey" PRIMARY KEY ("id")
 );
@@ -155,12 +156,13 @@ CREATE TABLE "JobTitle" (
     "description" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "organizationId" TEXT NOT NULL,
 
     CONSTRAINT "JobTitle_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Documents" (
+CREATE TABLE "Document" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
@@ -171,8 +173,9 @@ CREATE TABLE "Documents" (
     "mimeType" TEXT,
     "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    CONSTRAINT "Documents_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Document_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -186,15 +189,16 @@ CREATE TABLE "Attendance" (
     "clockOut" TIMESTAMP(3),
     "clockOutLocation" TEXT,
     "clockOutTimezone" TEXT,
-    "scheduledHours" DECIMAL(5,2) NOT NULL,
-    "loggedHours" DECIMAL(5,2) NOT NULL,
-    "paidHours" DECIMAL(5,2) NOT NULL,
-    "deficitHours" DECIMAL(5,2) NOT NULL,
+    "scheduledHours" DECIMAL(5,2) NOT NULL DEFAULT 0,
+    "loggedHours" DECIMAL(5,2) NOT NULL DEFAULT 0,
+    "paidHours" DECIMAL(5,2) NOT NULL DEFAULT 0,
+    "deficitHours" DECIMAL(5,2) NOT NULL DEFAULT 0,
     "overtimeHours" DECIMAL(5,2) NOT NULL DEFAULT 0,
     "status" "AttendanceStatus" NOT NULL DEFAULT 'PENDING',
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
 );
@@ -436,6 +440,9 @@ CREATE UNIQUE INDEX "EmployeeProfile_userId_key" ON "EmployeeProfile"("userId");
 CREATE UNIQUE INDEX "Contract_contractNumber_key" ON "Contract"("contractNumber");
 
 -- CreateIndex
+CREATE INDEX "Contract_deletedAt_idx" ON "Contract"("deletedAt");
+
+-- CreateIndex
 CREATE INDEX "Contract_userId_idx" ON "Contract"("userId");
 
 -- CreateIndex
@@ -460,22 +467,37 @@ CREATE INDEX "JobAssignment_departmentId_idx" ON "JobAssignment"("departmentId")
 CREATE INDEX "JobAssignment_isActive_idx" ON "JobAssignment"("isActive");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "JobTitle_title_key" ON "JobTitle"("title");
+CREATE INDEX "JobTitle_organizationId_idx" ON "JobTitle"("organizationId");
 
 -- CreateIndex
-CREATE INDEX "Documents_userId_idx" ON "Documents"("userId");
+CREATE INDEX "JobTitle_title_organizationId_idx" ON "JobTitle"("title", "organizationId");
 
 -- CreateIndex
-CREATE INDEX "Documents_organizationId_idx" ON "Documents"("organizationId");
+CREATE UNIQUE INDEX "JobTitle_organizationId_title_key" ON "JobTitle"("organizationId", "title");
 
 -- CreateIndex
-CREATE INDEX "Documents_documentType_idx" ON "Documents"("documentType");
+CREATE INDEX "Document_userId_idx" ON "Document"("userId");
+
+-- CreateIndex
+CREATE INDEX "Document_organizationId_idx" ON "Document"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "Document_documentType_idx" ON "Document"("documentType");
+
+-- CreateIndex
+CREATE INDEX "Document_deletedAt_idx" ON "Document"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "Attendance_userId_date_status_idx" ON "Attendance"("userId", "date", "status");
 
 -- CreateIndex
 CREATE INDEX "Attendance_userId_idx" ON "Attendance"("userId");
 
 -- CreateIndex
 CREATE INDEX "Attendance_date_idx" ON "Attendance"("date");
+
+-- CreateIndex
+CREATE INDEX "Attendance_deletedAt_idx" ON "Attendance"("deletedAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Attendance_userId_date_key" ON "Attendance"("userId", "date");
@@ -598,6 +620,9 @@ CREATE UNIQUE INDEX "OrganizationNotificationSettings_organizationId_key" ON "Or
 CREATE INDEX "OrganizationNotificationSettings_organizationId_idx" ON "OrganizationNotificationSettings"("organizationId");
 
 -- CreateIndex
+CREATE INDEX "Department_organizationId_idx" ON "Department"("organizationId");
+
+-- CreateIndex
 CREATE INDEX "Department_parentDepartmentId_idx" ON "Department"("parentDepartmentId");
 
 -- CreateIndex
@@ -634,10 +659,13 @@ ALTER TABLE "JobAssignment" ADD CONSTRAINT "JobAssignment_jobTitleId_fkey" FOREI
 ALTER TABLE "JobAssignment" ADD CONSTRAINT "JobAssignment_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Documents" ADD CONSTRAINT "Documents_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "JobTitle" ADD CONSTRAINT "JobTitle_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Documents" ADD CONSTRAINT "Documents_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Document" ADD CONSTRAINT "Document_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Document" ADD CONSTRAINT "Document_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

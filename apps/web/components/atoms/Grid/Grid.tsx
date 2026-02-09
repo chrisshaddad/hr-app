@@ -38,7 +38,7 @@ const Grid = <T extends Record<string, any>>({
   return (
     <div
       className={cn(
-        'bg-Others-White rounded-[16px] overflow-hidden h-full flex flex-col',
+        'bg-others-white rounded-[16px] overflow-hidden h-full flex flex-col',
         className,
       )}
     >
@@ -49,7 +49,7 @@ const Grid = <T extends Record<string, any>>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr
                   key={headerGroup.id}
-                  className="bg-GreyScale-100 h-14 border-GreyScale-300"
+                  className="bg-greyscale-100 h-14 border-greyscale-300"
                 >
                   {headerGroup.headers.map((header, index) => {
                     const isFirst = index === 0;
@@ -58,7 +58,7 @@ const Grid = <T extends Record<string, any>>({
                       <th
                         key={header.id}
                         className={cn(
-                          'p-4 text-left text-xs font-bold text-GreyScale-600',
+                          'p-4 text-left text-xs font-bold text-greyscale-600',
                           isFirst && 'rounded-tl-[16px]',
                           isLast && 'rounded-tr-[16px]',
                         )}
@@ -88,7 +88,7 @@ const Grid = <T extends Record<string, any>>({
               {table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-GreyScale-300 hover:bg-GreyScale-50"
+                  className="border-b border-greyscale-300 hover:bg-greyscale-50"
                   style={{ height: rowHeight }}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -96,7 +96,7 @@ const Grid = <T extends Record<string, any>>({
                       {flexRender(
                         cell.column.columnDef.cell ||
                           ((info) => (
-                            <span className="text-GreyScale-900 text-xs font-medium">
+                            <span className="text-greyscale-900 text-xs font-medium">
                               {info.getValue() as string}
                             </span>
                           )),
@@ -110,12 +110,12 @@ const Grid = <T extends Record<string, any>>({
           </table>
         </div>
       </div>
-      <div className="flex items-center justify-between px-4 py-4 border-t border-GreyScale-300">
+      <div className="flex items-center justify-between px-4 py-4 border-t border-greyscale-300">
         <div className="flex items-center gap-2">
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="p-2 rounded-md border border-GreyScale-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-GreyScale-100"
+            className="p-2 rounded-md border border-greyscale-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-greyscale-100"
           >
             <ChevronUp className="h-4 w-4 -rotate-90" />
           </button>
@@ -128,8 +128,8 @@ const Grid = <T extends Record<string, any>>({
                   className={cn(
                     'px-3 py-1 rounded-md text-sm font-medium',
                     table.getState().pagination.pageIndex + 1 === page
-                      ? 'bg-GreyScale-900 text-Others-White'
-                      : 'text-GreyScale-600 hover:bg-GreyScale-100',
+                      ? 'bg-greyscale-900 text-others-white'
+                      : 'text-greyscale-600 hover:bg-greyscale-100',
                   )}
                 >
                   {page}
@@ -140,14 +140,14 @@ const Grid = <T extends Record<string, any>>({
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="p-2 rounded-md border border-GreyScale-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-GreyScale-100"
+            className="p-2 rounded-md border border-greyscale-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-greyscale-100"
           >
             <ChevronUp className="h-4 w-4 rotate-90" />
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-GreyScale-600">Show</span>
-          <button className="px-3 py-1 rounded-md border border-GreyScale-300 text-sm text-GreyScale-900 hover:bg-GreyScale-100">
+          <span className="text-sm text-greyscale-600">Show</span>
+          <button className="px-3 py-1 rounded-md border border-greyscale-300 text-sm text-greyscale-900 hover:bg-greyscale-100">
             {pageSize}
             <ChevronDown className="h-4 w-4 inline-block ml-1" />
           </button>

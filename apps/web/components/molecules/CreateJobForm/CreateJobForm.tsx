@@ -81,7 +81,7 @@ export const CreateJobForm = ({
   return (
     <div className="h-full flex flex-col p-8 gap-6">
       <div className="flex items-center justify-between">
-        <p className="text-2xl font-bold text-GreyScale-900">Create New Job</p>
+        <p className="text-2xl font-bold text-greyscale-900">Create New Job</p>
       </div>
       <div className="h-full flex flex-col">
         <div className="flex-1">

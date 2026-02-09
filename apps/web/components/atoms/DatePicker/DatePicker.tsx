@@ -69,9 +69,9 @@ const DatePicker = ({
     <>
       <div className={cn('w-full flex flex-col gap-[10px]', className)}>
         {label && (
-          <p className="text-GreyScale-900 text-sm font-medium select-none flex items-center gap-1">
+          <p className="text-greyscale-900 text-sm font-medium select-none flex items-center gap-1">
             {label}
-            {required && <span className="text-Alerts-Error-Base">*</span>}
+            {required && <span className="text-alerts-error-base">*</span>}
           </p>
         )}
         <div onClick={() => setIsOpen(true)} className="cursor-pointer">
@@ -83,7 +83,7 @@ const DatePicker = ({
             touched={touched}
             placeholder={placeholder}
             onChange={() => {}}
-            icon={<Calendar className="h-5 w-5 text-GreyScale-900" />}
+            icon={<Calendar className="h-5 w-5 text-greyscale-900" />}
           />
         </div>
       </div>
@@ -104,10 +104,10 @@ const DatePicker = ({
               selected={selectedDate}
               onSelect={handleDateSelect}
               classNames={{
-                today: 'text-Primary-Base',
-                selected: 'bg-Primary-Base !text-Others-White rounded-full',
-                chevron: 'text-GreyScale-900',
-                caption_label: 'text-GreyScale-900 text-[20px] font-bold',
+                today: 'text-primary-Base',
+                selected: 'bg-primary-Base !text-others-white rounded-full',
+                chevron: 'text-greyscale-900',
+                caption_label: 'text-greyscale-900 text-[20px] font-bold',
               }}
             />
           </div>

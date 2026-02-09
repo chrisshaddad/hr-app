@@ -3,11 +3,11 @@ import { ChipProps } from './Chip.types';
 
 const Chip = ({ variant = 'default', text, className }: ChipProps) => {
   const variantStyles = {
-    info: 'bg-Others-LightBlue text-Others-Blue',
-    default: 'bg-GreyScale-100 text-GreyScale-500',
-    success: 'bg-Primary-100 text-Alerts-Success-Base',
-    warning: 'bg-Secondary-200 text-Alerts-Warning-Dark',
-    error: 'bg-Alerts-Error-Light text-Alerts-Error-Base',
+    info: 'bg-others-lightblue text-others-blue',
+    default: 'bg-greyscale-100 text-greyscale-500',
+    success: 'bg-primary-100 text-alerts-success-base',
+    warning: 'bg-secondary-200 text-alerts-warning-dark',
+    error: 'bg-alerts-error-light text-alerts-error-base',
   };
 
   return (

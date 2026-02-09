@@ -58,11 +58,11 @@ const JobRow = ({
   return (
     <div
       onClick={handleClick}
-      className="p-6 rounded-[16px] w-full bg-Others-White gap-4 flex flex-col cursor-pointer"
+      className="p-6 rounded-[16px] w-full bg-others-white gap-4 flex flex-col cursor-pointer"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px] h-14">
-          <p className="text-GreyScale-900 text-[20px] font-bold">{title}</p>
+          <p className="text-greyscale-900 text-[20px] font-bold">{title}</p>
           <Chip
             variant={getChipTypeByJobStatus(jobStatus)}
             text={jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1)}
@@ -83,15 +83,15 @@ const JobRow = ({
           </div>
         </div>
       </div>
-      <p className="text-GreyScale-600 font-medium text-sm">
+      <p className="text-greyscale-600 font-medium text-sm">
         {department} . {companyName}
       </p>
       <div className="flex items-center justify-between">
-        <p className="text-GreyScale-600 font-medium text-sm select-none">
+        <p className="text-greyscale-600 font-medium text-sm select-none">
           {numberOfCandidates}{' '}
           {numberOfCandidates === 1 ? 'Candidate' : 'Candidates'} Applied
         </p>
-        <p className="text-GreyScale-600 font-medium text-sm select-none">
+        <p className="text-greyscale-600 font-medium text-sm select-none">
           Created{' '}
           {new Date(createdAt).toLocaleDateString('en-US', {
             month: 'short',

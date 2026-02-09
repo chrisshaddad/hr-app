@@ -13,15 +13,15 @@ const Button = ({
   variant = 'primary',
 }: ButtonProps) => {
   const variantStyles = {
-    primary: 'bg-GreyScale-900 text-Others-White',
-    secondary: 'bg-Others-White text-GreyScale-900 border border-GreyScale-900',
+    primary: 'bg-greyscale-900 text-others-white',
+    secondary: 'bg-others-white text-greyscale-900 border border-greyscale-900',
   };
   const sizeStyles = {
     sm: 'h-8 text-xs',
     md: 'h-12 text-sm',
     lg: 'h-14 text-base',
   };
-  const disabledStyles = 'bg-GreyScale-200 text-[#969696] border-0';
+  const disabledStyles = 'bg-greyscale-200 text-[#969696] border-0';
 
   return (
     <button

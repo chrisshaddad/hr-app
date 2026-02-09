@@ -3,6 +3,7 @@ import {
   Post,
   Query,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
   Controller,
@@ -18,6 +19,7 @@ import type {
   CreateJobRequest,
   JobResponse,
   JobListResponse,
+  JobApplicationsResponse,
 } from '@repo/contracts';
 import { createJobRequestSchema } from '@repo/contracts';
 
@@ -40,6 +42,20 @@ export class JobsController {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     });
+  }
+
+  // Get applications for a specific job
+  @Get(':jobId/applications')
+  @HttpCode(HttpStatus.OK)
+  async getJobApplications(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: User,
+  ): Promise<JobApplicationsResponse> {
+    if (!user.organizationId) {
+      throw new ForbiddenException('User must belong to an organization');
+    }
+
+    return this.jobsService.findApplicationsForJob(jobId, user.organizationId);
   }
 
   // Create job

@@ -18,6 +18,7 @@ const Input = ({
   placeholder,
   type = 'text',
   required = false,
+  autoComplete = 'off',
 }: InputProps) => {
   const showError = error && touched;
   const borderColor = showError
@@ -46,6 +47,7 @@ const Input = ({
           onBlur={onBlur}
           onChange={onChange}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className={cn(
             'h-full w-full px-5 rounded-[10px] font-medium text-sm border-0 outline-none focus:border-0 focus:outline-none focus:ring-0 text-GreyScale-900 placeholder:text-GreyScale-500 placeholder:font-normal',
             icon ? 'pr-0' : 'pr-5',

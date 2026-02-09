@@ -9,6 +9,7 @@ export type InputProps = {
   className?: string;
   placeholder?: string;
   icon?: React.ReactNode;
+  autoComplete?: string;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };

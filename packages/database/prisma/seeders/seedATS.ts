@@ -101,15 +101,22 @@ export async function seedATS(prisma: PrismaClient) {
   });
   console.log(`  ✓ Created/updated job: ${job.title}`);
 
-  // 4. Create a Candidate
+  // 4. Create a Candidate (scoped to Onramp organization)
   const candidate = await prisma.candidate.upsert({
-    where: { email: 'john.doe@example.com' },
+    where: {
+      organizationId_email: {
+        organizationId: onrampOrg.id,
+        email: 'john.doe@example.com',
+      },
+    },
     update: {
       firstName: 'John',
       lastName: 'Doe',
       phone: '+1234567890',
+      organizationId: onrampOrg.id,
     },
     create: {
+      organizationId: onrampOrg.id,
       email: 'john.doe@example.com',
       firstName: 'John',
       lastName: 'Doe',
@@ -167,5 +174,81 @@ export async function seedATS(prisma: PrismaClient) {
     console.log(`  ✓ Status history entry already exists`);
   }
 
+  // 7. Create an Interview with interviewer and feedback
+  const existingInterview = await prisma.interview.findFirst({
+    where: { applicationId: application.id },
+  });
+
+  if (!existingInterview) {
+    const interview = await prisma.interview.create({
+      data: {
+        applicationId: application.id,
+        scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        duration: 60, // 60 minutes
+        location: 'Virtual - Zoom',
+        status: 'SCHEDULED',
+        notes: 'Initial screening interview',
+      },
+    });
+    console.log(`  ✓ Created interview: ${interview.id}`);
+
+    // Assign interviewer (Dima - EMPLOYEE)
+    const interviewer = createdUsers.find((u) => u.role === 'EMPLOYEE');
+    if (interviewer) {
+      await prisma.interviewInterviewer.create({
+        data: {
+          interviewId: interview.id,
+          userId: interviewer.id,
+        },
+      });
+      console.log(`  ✓ Assigned interviewer: ${interviewer.email}`);
+
+      // Add interview feedback (simulate completed interview)
+      await prisma.interviewFeedback.create({
+        data: {
+          interviewId: interview.id,
+          userId: interviewer.id,
+          rating: 4,
+          notes:
+            'Strong candidate with relevant experience. Good communication skills.',
+          strengths: 'Technical skills, problem-solving ability',
+          weaknesses: 'Could improve on system design knowledge',
+          recommendation: 'HIRE',
+        },
+      });
+      console.log(`  ✓ Created interview feedback`);
+    }
+  } else {
+    console.log(`  ✓ Interview already exists`);
+  }
+
+  // 8. Create a Communication (email) record
+  const existingCommunication = await prisma.communication.findFirst({
+    where: { applicationId: application.id },
+  });
+
+  if (!existingCommunication) {
+    const hrUser = createdUsers.find((u) => u.role === 'HR');
+    await prisma.communication.create({
+      data: {
+        applicationId: application.id,
+        type: 'EMAIL',
+        subject: 'Application Received - Senior Software Engineer',
+        body: 'Thank you for your interest in the Senior Software Engineer position. We have received your application and will review it shortly.',
+        sentById: hrUser?.id,
+        sentAt: new Date(),
+      },
+    });
+    console.log(`  ✓ Created communication (email) record`);
+  } else {
+    console.log(`  ✓ Communication already exists`);
+  }
+
   console.log('\n✅ ATS seeding completed!');
+  console.log('\n📋 Onramp Team Login Credentials:');
+  console.log(`   Organization: ${onrampOrg.name}`);
+  console.log('   Ali:  ali@onramp.com (ADMIN)');
+  console.log('   Dana: dana@onramp.com (HR)');
+  console.log('   Dima: dima@onramp.com (EMPLOYEE - can conduct interviews)');
+  console.log('\n💡 Use magic link authentication to log in.');
 }

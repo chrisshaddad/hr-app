@@ -12,6 +12,7 @@ export const jobResponseSchema = z.object({
   updatedAt: dateSchema,
   createdAt: dateSchema,
   employmentType: z.string(),
+  applyUrl: z.string().url(),
   location: z.string().nullable(),
   department: z.string().nullable(),
   description: z.string().nullable(),

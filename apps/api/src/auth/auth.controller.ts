@@ -93,7 +93,7 @@ export class AuthController {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.role as UserResponse['role'], // Type assertion: Prisma UserRole matches contract
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,

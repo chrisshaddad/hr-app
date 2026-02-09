@@ -165,6 +165,7 @@ model Organization {
   // ATS Relations
   jobs        Job[]            @relation("OrganizationJobs")
   applications JobApplication[] @relation("OrganizationApplications")
+  candidates  Candidate[]      @relation("OrganizationCandidates")
 
   @@index([approvedById])
   @@index([status])
@@ -237,6 +238,16 @@ enum JobStatus {
   @@schema("public")
 }
 
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+
+  @@schema("public")
+}
+
 model Job {
   id                  String          @id @default(uuid())
   organizationId      String
@@ -263,19 +274,23 @@ model Job {
 }
 
 model Candidate {
-  id          String          @id @default(uuid())
-  email       String          @unique
-  firstName   String
-  lastName    String
-  phone       String?
-  resumeUrl   String?
-  linkedInUrl String?
-  portfolioUrl String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  organizationId String
+  email         String
+  firstName     String
+  lastName      String
+  phone         String?
+  resumeUrl     String?
+  linkedInUrl   String?
+  portfolioUrl  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
+  organization Organization    @relation("OrganizationCandidates", fields: [organizationId], references: [id], onDelete: Cascade)
   applications JobApplication[]
 
+  @@unique([organizationId, email])
+  @@index([organizationId])
   @@index([email])
   @@schema("public")
 }
@@ -323,20 +338,24 @@ model ApplicationStatusHistory {
 }
 
 model Interview {
-  id            String    @id @default(uuid())
+  id            String          @id @default(uuid())
   applicationId String
   scheduledAt   DateTime
   duration      Int // in minutes
   location      String?
-  notes         String?   @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status        InterviewStatus @default(SCHEDULED)
+  notes         String?         @db.Text
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   interviewers InterviewInterviewer[]
   feedback     InterviewFeedback[]
+  communications Communication[]
 
   @@index([applicationId])
+  @@index([status])
+  @@index([scheduledAt])
   @@schema("public")
 }
 
@@ -379,18 +398,21 @@ model InterviewFeedback {
 model Communication {
   id            String          @id @default(uuid())
   applicationId String
+  interviewId   String?         // Optional: links email to specific interview
   type          CommunicationType
   subject       String?
   body          String?         @db.Text
   sentAt        DateTime        @default(now())
-  sentById      String? // User who sent the communication
+  sentById      String?         // User who sent the communication
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  sentBy      User?          @relation("UserCommunications", fields: [sentById], references: [id], onDelete: SetNull)
+  interview   Interview?    @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  sentBy      User?         @relation("UserCommunications", fields: [sentById], references: [id], onDelete: SetNull)
 
   @@index([applicationId])
+  @@index([interviewId])
   @@index([sentById])
   @@schema("public")
 }

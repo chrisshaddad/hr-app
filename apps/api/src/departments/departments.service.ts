@@ -11,11 +11,19 @@ import type {
 export class DepartmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(branchId: string): Promise<DepartmentListResponse> {
+  async findAll(
+    branchId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<DepartmentListResponse> {
+    const skip = (page - 1) * limit;
+
     const [departments, total] = await Promise.all([
       this.prisma.department.findMany({
         where: { branchId },
         orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
         include: {
           _count: {
             select: { users: true },
@@ -31,6 +39,9 @@ export class DepartmentsService {
         userCount: d._count.users,
       })),
       total,
+      page,
+      limit,
+      hasMore: skip + limit < total,
     };
   }
 

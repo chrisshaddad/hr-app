@@ -15,11 +15,19 @@ import type {
 export class BranchesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(organizationId: string): Promise<BranchListResponse> {
+  async findAll(
+    organizationId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<BranchListResponse> {
+    const skip = (page - 1) * limit;
+
     const [branches, total] = await Promise.all([
       this.prisma.branch.findMany({
         where: { organizationId },
         orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
         include: {
           _count: {
             select: { departments: true },
@@ -29,12 +37,17 @@ export class BranchesService {
       this.prisma.branch.count({ where: { organizationId } }),
     ]);
 
+    const hasMore = skip + branches.length < total;
+
     return {
       data: branches.map((b) => ({
         ...b,
         departmentCount: b._count.departments,
       })),
       total,
+      page,
+      limit,
+      hasMore,
     };
   }
 

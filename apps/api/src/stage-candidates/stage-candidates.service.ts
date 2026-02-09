@@ -160,6 +160,7 @@ export class StageCandidatesService {
     // Create board activity
     await this.prisma.boardActivity.create({
       data: {
+        jobListingId: stage.jobListingId,
         candidateId,
         fromStageId: existingPlacements[0]?.workflowStageId || null,
         toStageId: stageId,

@@ -56,7 +56,12 @@ interface JobStage {
   orderIndex: number;
 }
 
-// Mapping from DB stage name → ApplicationStage enum value
+// Mapping from DB stage name → ApplicationStage enum value.
+// Default stages use these well-known names. Custom stages added via
+// Recruitment Settings won't have a matching enum value, so they map
+// to null and their pipeline column will show 0 candidates until the
+// Application model is migrated to store hiringStageId instead of the
+// ApplicationStage enum.
 const STAGE_NAME_TO_ENUM: Record<string, ApplicationStage> = {
   Applied: 'APPLIED',
   Screening: 'SCREENING',
@@ -67,15 +72,18 @@ const STAGE_NAME_TO_ENUM: Record<string, ApplicationStage> = {
   Rejected: 'REJECTED',
 };
 
-const STAGE_COLORS: Record<string, string> = {
-  APPLIED: 'bg-gray-50',
-  SCREENING: 'bg-blue-50/50',
-  INTERVIEW_1: 'bg-purple-50/50',
-  INTERVIEW_2: 'bg-indigo-50/50',
-  OFFERED: 'bg-amber-50/50',
-  HIRED: 'bg-green-50/50',
-  REJECTED: 'bg-red-50/50',
-};
+// Position-based colors so every stage (including custom ones) gets a color
+const STAGE_COLORS_BY_INDEX = [
+  'bg-gray-50',
+  'bg-blue-50/50',
+  'bg-purple-50/50',
+  'bg-indigo-50/50',
+  'bg-cyan-50/50',
+  'bg-teal-50/50',
+  'bg-amber-50/50',
+  'bg-green-50/50',
+  'bg-red-50/50',
+];
 
 function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -101,6 +109,10 @@ function getAvatarColor(name: string): string {
 
 function stageEnumForDbStage(stage: JobStage): ApplicationStage | null {
   return STAGE_NAME_TO_ENUM[stage.name] ?? null;
+}
+
+function stageColorByIndex(index: number): string {
+  return STAGE_COLORS_BY_INDEX[index % STAGE_COLORS_BY_INDEX.length]!;
 }
 
 // ─── Pipeline / Kanban View ────────────────────────────────
@@ -212,18 +224,15 @@ function PipelineView({
 }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {dbStages.map((stage) => {
+      {dbStages.map((stage, index) => {
         const enumVal = stageEnumForDbStage(stage);
-        const bgColor = enumVal
-          ? (STAGE_COLORS[enumVal] ?? 'bg-gray-50')
-          : 'bg-gray-50';
         return (
           <PipelineColumn
             key={stage.id}
             stageName={stage.name}
             stageEnum={enumVal}
             applications={applications}
-            bgColor={bgColor}
+            bgColor={stageColorByIndex(index)}
           />
         );
       })}

@@ -7,7 +7,7 @@ export class BranchesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(organizationId: string): Promise<BranchListResponse> {
-    const [branches, total] = await Promise.all([
+    const [branches, total] = await this.prisma.$transaction([
       this.prisma.branch.findMany({
         where: { organizationId },
         orderBy: { name: 'asc' },

@@ -87,13 +87,6 @@ const DEPARTMENT_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
-  FULL_TIME: 'Full Time',
-  PART_TIME: 'Part Time',
-  CONTRACT: 'Contract',
-  INTERNSHIP: 'Internship',
-};
-
 function formatTimeAgo(dateStr: string | Date): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -232,13 +225,13 @@ function JobCard({
             <span
               className={cn(
                 'flex items-center gap-1.5 text-xs',
-                new Date(job.expectedClosingDate) < new Date()
+                isJobExpired(job)
                   ? 'font-medium text-red-500'
                   : 'text-gray-400',
               )}
             >
               <CalendarClock className="h-3.5 w-3.5" />
-              {new Date(job.expectedClosingDate) < new Date()
+              {isJobExpired(job)
                 ? 'Expired'
                 : `Closes ${new Date(job.expectedClosingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
             </span>

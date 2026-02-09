@@ -510,12 +510,12 @@ export default function RecruitmentSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Setting Recruitment
+          Recruitment Settings
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          {activeTab === 'workflow' && 'Hiring Workflow Setting'}
-          {activeTab === 'tags' && 'Tag & Resource'}
-          {activeTab === 'email' && 'Email Template'}
+          {activeTab === 'workflow' && 'Manage your hiring workflow stages'}
+          {activeTab === 'tags' && 'Manage tags and resources'}
+          {activeTab === 'email' && 'Manage email templates'}
         </p>
       </div>
 

@@ -27,19 +27,7 @@ export class JobsService {
     const { organizationId, status, search, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
-    // Auto-close expired jobs before querying
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    await this.prisma.job.updateMany({
-      where: {
-        organizationId,
-        expectedClosingDate: { lt: now },
-        status: { in: ['ACTIVE', 'DRAFT'] },
-      },
-      data: { status: 'CLOSED', updatedAt: new Date() },
-    });
-
-    const where: Prisma.JobWhereInput = { organizationId };
+    const where: Prisma.JobWhereInput = { organizationId, deletedAt: null };
     if (status) where.status = status;
     if (search) {
       where.title = { contains: search, mode: 'insensitive' };
@@ -455,6 +443,9 @@ export class JobsService {
       throw new ForbiddenException('You do not have access to this job');
     }
 
-    await this.prisma.job.delete({ where: { id } });
+    await this.prisma.job.update({
+      where: { id },
+      data: { deletedAt: new Date(), updatedAt: new Date() },
+    });
   }
 }

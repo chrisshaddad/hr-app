@@ -56,6 +56,7 @@ model Application {
   rejectedReason  String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime
+  deletedAt       DateTime?
   Candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   Job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   Organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -106,6 +107,7 @@ model Candidate {
   notes          String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime
+  deletedAt      DateTime?
   Application    Application[]
   Organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   CandidateTag   CandidateTag[]
@@ -261,6 +263,7 @@ model HiringStage {
   isLocked       Boolean           @default(false)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime
+  deletedAt      DateTime?
   Organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   JobHiringStage JobHiringStage[]
 
@@ -298,6 +301,7 @@ model Job {
   location            String?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime
+  deletedAt           DateTime?
   Application         Application[]
   User                User?          @relation(fields: [hiringManagerId], references: [id])
   Organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -346,6 +350,7 @@ model Organization {
   createdAt                              DateTime            @default(now())
   updatedAt                              DateTime
   approvedAt                             DateTime?
+  deletedAt                              DateTime?
   Application                            Application[]
   Branch                                 Branch[]
   HiringStage                            HiringStage[]
@@ -457,6 +462,7 @@ model User {
   name                                           String
   createdAt                                      DateTime               @default(now())
   updatedAt                                      DateTime
+  deletedAt                                      DateTime?
   role                                           UserRole               @default(EMPLOYEE)
   departmentId                                   String?
   organizationId                                 String?

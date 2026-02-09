@@ -13,6 +13,16 @@ interface OrganizationSeed {
 // Sample organizations with varied statuses
 const ORGANIZATIONS: OrganizationSeed[] = [
   {
+    name: 'Merix',
+    description:
+      'A modern HR technology company building next-generation workforce management solutions.',
+    website: 'https://merixlb.com',
+    status: 'ACTIVE',
+    createdAt: new Date('2025-09-01'),
+    approvedAt: new Date('2025-09-02'),
+    adminEmail: 'mahmoud.kalekish@gmail.com',
+  },
+  {
     name: 'TechCorp Solutions',
     description:
       'A leading technology company specializing in enterprise software solutions and cloud infrastructure.',
@@ -99,13 +109,14 @@ export async function seedOrganizations(prisma: PrismaClient) {
 
     const createdOrg = await prisma.organization.create({
       data: {
+        id: crypto.randomUUID(),
         name: org.name,
         description: org.description,
         website: org.website,
         status: org.status,
         createdAt: org.createdAt,
+        updatedAt: new Date(),
         createdById: orgAdmin.id,
-        // Link approvedBy for ACTIVE and SUSPENDED orgs
         approvedById:
           org.status === 'ACTIVE' || org.status === 'SUSPENDED'
             ? superAdmin.id

@@ -141,8 +141,29 @@ export class HiringStagesService {
     organizationId: string,
     data: ReorderHiringStagesRequest,
   ): Promise<HiringStageListResponse> {
+    // Validate all stages belong to this org
+    const stageIds = data.stages.map((s) => s.id);
+    const existing = await this.prisma.hiringStage.findMany({
+      where: { id: { in: stageIds }, organizationId },
+      select: { id: true, isLocked: true, orderIndex: true },
+    });
+
+    const existingMap = new Map(existing.map((s) => [s.id, s]));
+    for (const s of data.stages) {
+      if (!existingMap.get(s.id)) {
+        throw new ForbiddenException(
+          `Stage ${s.id} not found or access denied`,
+        );
+      }
+    }
+
+    // Only update unlocked stages — locked stages keep their fixed positions
+    const unlocked = data.stages.filter(
+      (s) => !existingMap.get(s.id)!.isLocked,
+    );
+
     await this.prisma.$transaction(
-      data.stages.map((s) =>
+      unlocked.map((s) =>
         this.prisma.hiringStage.update({
           where: { id: s.id },
           data: { orderIndex: s.orderIndex, updatedAt: new Date() },

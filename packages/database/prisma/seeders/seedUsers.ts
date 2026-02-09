@@ -1,6 +1,6 @@
-import { PrismaClient, Prisma } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
-const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
+const SUPER_ADMINS: { email: string; name: string }[] = [
   {
     email: 'chris.haddad@humanline.com',
     name: 'Chris Haddad',
@@ -10,7 +10,7 @@ const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
 
 // Org admins - these will be linked to organizations in seedOrganizations.ts
 // The order here matches the order in seedOrganizations.ts
-const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
+const ORG_ADMINS: { email: string; name: string }[] = [
   {
     email: 'mahmoud.kalekish@gmail.com',
     name: 'Mahmoud Kalekish',
@@ -47,8 +47,10 @@ export async function seedSuperAdmins(prisma: PrismaClient) {
   await prisma.user.createMany({
     data: SUPER_ADMINS.map((admin) => ({
       ...admin,
+      id: crypto.randomUUID(),
       isConfirmed: true,
-      role: 'SUPER_ADMIN',
+      role: 'SUPER_ADMIN' as const,
+      updatedAt: new Date(),
     })),
   });
 
@@ -63,8 +65,10 @@ export async function seedOrgAdmins(prisma: PrismaClient) {
   await prisma.user.createMany({
     data: ORG_ADMINS.map((admin) => ({
       ...admin,
+      id: crypto.randomUUID(),
       isConfirmed: true,
-      role: 'ORG_ADMIN',
+      role: 'ORG_ADMIN' as const,
+      updatedAt: new Date(),
     })),
   });
 

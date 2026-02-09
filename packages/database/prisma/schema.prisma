@@ -41,6 +41,18 @@ enum OrganizationStatus {
   @@schema("public")
 }
 
+enum TeamRole {
+  TEAM_LEAD
+  MEMBER
+  @@schema("public")
+}
+
+enum GroupRole {
+  GROUP_LEAD
+  MEMBER
+  @@schema("public")
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -60,6 +72,9 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+  teamMemberships       TeamMember[]
+  groupMemberships      GroupMember[] 
+  activityLogs          ActivityLog[]
 
   @@index([organizationId])
   @@index([departmentId])
@@ -149,10 +164,17 @@ model Organization {
   updatedAt    DateTime           @updatedAt
   approvedAt   DateTime? // When super admin approved
 
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
-  branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
+  createdBy            User   @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy           User?   @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  branches             Branch[]
+  users                User[]     @relation("OrganizationMembers")
+  teams                Team[]
+  groups               Group[]
+  holidays             Holiday[]
+  statusTypes          StatusType[]
+  featureFlags         FeatureFlag[]
+  organizationSettings OrganizationSetting[]
+  activityLogs         ActivityLog[]
 
   @@index([approvedById])
   @@index([status])
@@ -176,6 +198,7 @@ model Branch {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   departments  Department[]
+  holidays     Holiday[]
 
   @@index([organizationId])
   @@schema("public")
@@ -193,5 +216,178 @@ model Department {
   users  User[]
 
   @@index([branchId])
+  @@schema("public")
+}
+
+// ADMIN DASHBOARD MODELS 
+
+// Teams - Organization level, cross-department collaborative groups
+// Requirement: "Manage teams"
+// The HR will manage teams etc
+model Team {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER) // "Team Lead", "Member"
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@schema("public")
+}
+
+// Groups - For committees, social groups, interest groups
+// Requirement: "Manage groups"
+// This is more optional and not MVP
+model Group {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      GroupMember[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@schema("public")
+}
+
+// Holidays - Organization-wide or branch-specific holidays
+// Requirement: "Manage holidays"
+model Holiday {
+  id             String   @id @default(uuid())
+  organizationId String
+  branchId       String? // Optional: for location-specific holidays
+  name           String   // "New Year's Day", "Christmas", "Eid Mubarak"
+  date           DateTime @db.Date
+  isRecurring    Boolean  @default(false) // If true, repeats annually
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([date])
+  @@unique([organizationId,branchId,date]) //To prevent duplicates
+  @@schema("public")
+}
+
+// Status Types - Configurable employee status types
+// Requirement: "Manage statuses"
+model StatusType {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String   // "Work From Home", "On Leave", "Sick", "Business Trip"
+  color          String   @default("#6B7280") // Hex color for UI display
+  icon           String?  // Icon identifier ("home", "airplane", "medical" etc, for UI)
+  isActive       Boolean  @default(true)
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+// Feature Flags - Enable/disable features per organization
+// Requirement: "Feature flagging"
+model FeatureFlag {
+  id             String   @id @default(uuid())
+  organizationId String
+  key            String   // "enable_time_tracking", "enable_performance_reviews"
+  name           String   // Human-readable name
+  description    String?  @db.Text
+  isEnabled      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+// Organization Settings - Key-value store for organization-wide settings
+// Requirement: "Company settings" and "Manage logo"
+model OrganizationSetting {
+  id             String   @id @default(uuid())
+  organizationId String
+  key            String   // "logo_url", "timezone", "working_hours_start", "company_website"
+  value          String   @db.Text // Stored as string, parse as needed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+// Activity Logs - Audit trail of all important actions
+// Requirement: "Access to logs (a general log of what's happening - who requested a day off..)"
+model ActivityLog {
+  id             String   @id @default(uuid())
+  organizationId String? // null for super admin actions
+  userId         String
+  action         String   // e.g., "CREATE", "UPDATE", "DELETE", "REQUEST_TIME_OFF"
+  entity         String   // e.g., "User", "Department", "Holiday", "Team", "Group"
+  entityId       String?  // ID of the affected entity
+  details        Json? // JSON string with additional context
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([entity])
+  @@index([createdAt])
   @@schema("public")
 }

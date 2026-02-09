@@ -1,6 +1,5 @@
 ### Description
 
-<!-- A clear description of what the pull request does, use present tense, use list format if necessary -->
 
 ### Link to issue or ticket
 

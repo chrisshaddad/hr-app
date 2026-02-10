@@ -14,10 +14,10 @@ datasource db {
   schemas  = ["public", "private"]
 }
 
-enum UserRole {
-  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
-  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
-  EMPLOYEE
+enum AccessScope {
+  ALL_EMPLOYEES
+  SAME_DEPARTMENT
+  SELF_ONLY
 
   @@schema("public")
 }
@@ -27,6 +27,26 @@ enum Gender {
   FEMALE
   OTHER
   PREFER_NOT_TO_SAY
+
+  @@schema("public")
+}
+
+enum LeaveType {
+  SICK
+  PTO
+  OTHER
+
+  @@schema("public")
+}
+
+enum LogAction {
+  CHECK_IN
+  CHECK_OUT
+  LEAVE_REQUESTED
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  SICK_REPORT
+  OTHER
 
   @@schema("public")
 }
@@ -41,6 +61,342 @@ enum OrganizationStatus {
   @@schema("public")
 }
 
+enum PermissionLevel {
+  NO_ACCESS
+  VIEW_ONLY
+  VIEW_AND_EDIT
+
+  @@schema("public")
+}
+
+enum ScheduleType {
+  DURATION_BASED // Duration without start/end time
+  CLOCK_BASED // Fixed start and end times
+
+  @@schema("public")
+}
+
+enum UserRole {
+  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
+  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
+  EMPLOYEE
+
+  @@schema("public")
+}
+
+model Branch {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  isHQ           Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  timezone       String?  @default("UTC")
+  street1        String?
+  street2        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  email          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departments  Department[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model CustomRole {
+  id             String      @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?     @db.Text
+  accessScope    AccessScope @default(ALL_EMPLOYEES)
+  isDefault      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  users        User[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  branchId    String
+  parentId    String?
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  branch   Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  parent   Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Department[] @relation("DepartmentHierarchy")
+
+  users User[]
+  teams Team[]
+
+  @@index([branchId])
+  @@index([parentId])
+  @@schema("public")
+}
+
+model Holiday {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model JobTitle {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users        User[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model LeaveRequest {
+  id             String    @id @default(uuid())
+  userId         String
+  organizationId String
+  departmentId   String?
+  type           LeaveType
+  startDate      DateTime
+  endDate        DateTime
+  reason         String?   @db.Text
+  approved       Boolean   @default(false)
+  approvedById   String?
+  approvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("LeaveApprover", fields: [approvedById], references: [id])
+  logs       Log[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Log {
+  id             String    @id @default(uuid())
+  userId         String
+  organizationId String
+  departmentId   String?
+  leaveRequestId String?
+  action         LogAction
+  note           String?   @db.Text
+  isSick         Boolean?
+  approved       Boolean?
+  actorId        String?
+  createdAt      DateTime  @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actor        User?         @relation("LogActor", fields: [actorId], references: [id])
+  leaveRequest LeaveRequest? @relation(fields: [leaveRequestId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model MagicLink {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique // securely generated random token, not a UUID
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@schema("private")
+}
+
+model NotificationSetting {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  notificationTypeId String
+  isEnabled          Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  notificationType NotificationType @relation(fields: [notificationTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, notificationTypeId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model NotificationType {
+  id             String   @id @default(uuid())
+  key            String   @unique // e.g., "JOB_INTERVIEW_REMINDER"
+  name           String
+  description    String?  @db.Text
+  defaultEnabled Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  settings NotificationSetting[]
+
+  @@schema("public")
+}
+
+model Organization {
+  id               String             @id @default(uuid())
+  name             String
+  status           OrganizationStatus @default(PENDING)
+  description      String?            @db.Text
+  website          String?
+  contactEmail     String?
+  phoneCountryCode String?            @default("+1")
+  contactPhone     String?
+  domain           String?            @unique // Subdomain (e.g., "unpixel" → unpixel.hrline.com)
+  companySize      String? // "1-10", "11-50", "51-100", "101-200", "201-500", "500+"
+  industry         String? // e.g., "Crypto", "E-Commerce", "Fintech"
+  creatorRole      String? // Creator's role from onboarding (e.g., "CEO/Owner/Founder", "HR Manager")
+  primaryUseCase   String? // Primary use from onboarding (e.g., "Onboarding new employees")
+  createdById      String             @unique // User can only create one organization
+  approvedById     String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  approvedAt       DateTime? // When super admin approved
+
+  createdBy  User  @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy User? @relation("OrganizationApprover", fields: [approvedById], references: [id])
+
+  branches Branch[]
+  users    User[]   @relation("OrganizationMembers")
+
+  // Org structure & HR config
+  teams    Team[]
+  settings OrganizationSettings?
+
+  // Advanced org config
+  jobTitles            JobTitle[]
+  workSchedules        WorkSchedule[]
+  customRoles          CustomRole[]
+  notificationSettings NotificationSetting[]
+  holidays             Holiday[]
+
+  @@index([approvedById])
+  @@index([status])
+  @@schema("public")
+}
+
+model OrganizationSettings {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  timezone       String?
+  locale         String?
+  workingDays    String[]
+  policies       Json?
+  leaveRules     Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Password {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  hashedPassword   String
+  failedLoginCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
+}
+
+model RolePermission {
+  id           String          @id @default(uuid())
+  customRoleId String
+  section      String // e.g., "PROFILE_PICTURE", "PERSONAL_INFO", "ADDRESS", etc.
+  permission   PermissionLevel @default(VIEW_AND_EDIT)
+
+  customRole CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([customRoleId, section])
+  @@schema("public")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("private")
+}
+
+model Team {
+  id             String   @id @default(uuid())
+  departmentId   String
+  organizationId String
+  name           String
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  department   Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users        TeamMember[]
+
+  @@index([departmentId])
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@schema("public")
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -49,20 +405,45 @@ model User {
   role           UserRole @default(EMPLOYEE)
   organizationId String? // null for SUPER_ADMIN users
   departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
+  jobTitleId     String?
+  workScheduleId String?
+  customRoleId   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  password              Password?
-  sessions              Session[]
-  magicLinks            MagicLink[]
-  profile               UserProfile?
-  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  password   Password?
+  sessions   Session[]
+  magicLinks MagicLink[]
+  profile    UserProfile?
+
+  organization Organization? @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
+  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  jobTitle     JobTitle?     @relation(fields: [jobTitleId], references: [id], onDelete: SetNull)
+  workSchedule WorkSchedule? @relation(fields: [workScheduleId], references: [id], onDelete: SetNull)
+  customRole   CustomRole?   @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
 
+  teams TeamMember[]
+
+  // Leave requests created by this user
+  leaveRequests LeaveRequest[]
+
+  // Leave requests approved by this user (as approver)
+  approvedLeaveRequests LeaveRequest[] @relation("LeaveApprover")
+
+  // Logs that pertain to this user (events about the user)
+  logs Log[]
+
+  // Logs where this user acted (approver, actor)
+  actedLogs Log[] @relation("LogActor")
+
   @@index([organizationId])
   @@index([departmentId])
+  @@index([jobTitleId])
+  @@index([workScheduleId])
+  @@index([customRoleId])
   @@schema("public")
 }
 
@@ -97,101 +478,38 @@ model UserProfile {
   @@schema("public")
 }
 
-model Password {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  hashedPassword   String
-  failedLoginCount Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+model WorkSchedule {
+  id                  String       @id @default(uuid())
+  organizationId      String
+  name                String
+  scheduleType        ScheduleType @default(DURATION_BASED)
+  effectiveFrom       DateTime
+  standardHoursPerDay Int // In minutes (e.g., 480 = 8h)
+  totalHoursPerWeek   Int // In minutes (e.g., 2400 = 40h)
+  isDefault           Boolean      @default(false)
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("private")
-}
-
-model Session {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@schema("private")
-}
-
-model MagicLink {
-  id        String    @id @default(uuid())
-  userId    String
-  token     String    @unique // securely generated random token, not a UUID
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@schema("private")
-}
-
-model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  status       OrganizationStatus @default(PENDING)
-  description  String?            @db.Text
-  website      String?
-  createdById  String             @unique // User can only create one organization
-  approvedById String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  approvedAt   DateTime? // When super admin approved
-
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
-  branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
-
-  @@index([approvedById])
-  @@index([status])
-  @@schema("public")
-}
-
-model Branch {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  street1        String?
-  street2        String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String
-  phoneNumber    String?
-  email          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  departments  Department[]
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  days         WorkScheduleDay[]
+  users        User[]
 
   @@index([organizationId])
   @@schema("public")
 }
 
-model Department {
-  id          String   @id @default(uuid())
-  branchId    String
-  name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model WorkScheduleDay {
+  id             String  @id @default(uuid())
+  workScheduleId String
+  dayOfWeek      Int // 0=Sunday, 1=Monday ... 6=Saturday
+  isWorkingDay   Boolean @default(true)
+  hours          Int // In minutes for duration-based (e.g., 480 = 8h)
+  startTime      String? // For clock-based (e.g., "09:00")
+  endTime        String? // For clock-based (e.g., "17:00")
 
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
+  workSchedule WorkSchedule @relation(fields: [workScheduleId], references: [id], onDelete: Cascade)
 
-  @@index([branchId])
+  @@unique([workScheduleId, dayOfWeek])
   @@schema("public")
 }

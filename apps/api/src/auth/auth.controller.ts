@@ -97,6 +97,7 @@ export class AuthController {
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,
+      employeeStatus: user.employeeStatus || null,
     };
   }
 }

@@ -73,8 +73,8 @@ export const userResponseSchema = z.object({
   organizationId: z.uuid().nullable(),
   departmentId: z.uuid().nullable(),
   isConfirmed: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
   profile: userProfileSchema.nullable().optional(),
 });
 

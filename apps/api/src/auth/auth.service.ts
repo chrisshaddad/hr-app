@@ -153,8 +153,8 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
-      organizationId: user.organizationId,
-      departmentId: user.departmentId,
+      organizationId: user.employee?.organizationId ?? null,
+      departmentId: user.employee?.departmentId ?? null,
       isConfirmed: user.isConfirmed,
     };
   }

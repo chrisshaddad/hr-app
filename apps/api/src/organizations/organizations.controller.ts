@@ -1,7 +1,8 @@
 import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import { Roles, CurrentUser } from '../auth/decorators';
-import type { User, OrganizationStatus } from '@repo/db';
+import type { OrganizationStatus } from '@repo/db';
+import type { AuthenticatedUser } from '../auth/guards/auth.guard';
 import type {
   OrganizationListResponse,
   OrganizationDetailResponse,
@@ -28,11 +29,13 @@ export class OrganizationsController {
 
   @Get('branches-and-job-titles')
   @Roles('ORG_ADMIN')
-  async getAllBranchesAndJobTitles(@CurrentUser() user: User): Promise<{
+  async getAllBranchesAndJobTitles(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{
     branches: Array<{ id: string; name: string }>;
     jobTitles: string[];
   }> {
-    const organizationId = user.organizationId ?? undefined;
+    const organizationId = user.employee?.organizationId ?? undefined;
 
     if (organizationId == null) {
       throw new Error('Organization ID required');
@@ -51,7 +54,7 @@ export class OrganizationsController {
   @Roles('SUPER_ADMIN')
   async approve(
     @Param('id') id: string,
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<OrganizationActionResponse> {
     const organization = await this.organizationsService.approve(id, user.id);
     return {

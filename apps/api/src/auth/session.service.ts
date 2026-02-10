@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 import { PrismaService } from '../database/prisma.service';
-import { User } from '@repo/db';
+import type { AuthenticatedUser } from './guards/auth.guard';
 
 const SESSION_PREFIX = 'session:';
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
@@ -53,7 +53,7 @@ export class SessionService {
    * Validates a session and returns the user if valid
    * Checks Redis first, falls back to DB on cache miss
    */
-  async validateSession(sessionId: string): Promise<User | null> {
+  async validateSession(sessionId: string): Promise<AuthenticatedUser | null> {
     // Try Redis first (fast path)
     const cachedSession = await this.redis.get(`${SESSION_PREFIX}${sessionId}`);
 
@@ -69,13 +69,14 @@ export class SessionService {
       // Get user from database
       return this.prisma.user.findUnique({
         where: { id: sessionData.userId },
+        include: { employee: true },
       });
     }
 
     // Cache miss - check database
     const dbSession = await this.prisma.session.findUnique({
       where: { id: sessionId },
-      include: { user: true },
+      include: { user: { include: { employee: true } } },
     });
 
     if (!dbSession) {

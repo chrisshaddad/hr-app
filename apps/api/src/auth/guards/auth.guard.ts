@@ -6,14 +6,18 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import type { User } from '@repo/db';
+import type { Prisma } from '@repo/db';
 import { SessionService } from '../session.service';
 import { IS_PUBLIC_KEY } from '../decorators';
 
 const SESSION_COOKIE_NAME = 'humanline_session';
 
+export type AuthenticatedUser = Prisma.UserGetPayload<{
+  include: { employee: true };
+}>;
+
 export interface AuthenticatedRequest extends Request {
-  user?: User;
+  user?: AuthenticatedUser;
   sessionId?: string;
 }
 

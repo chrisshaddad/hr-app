@@ -23,7 +23,7 @@ import {
   type MagicLinkVerifyRequest,
   type UserResponse,
 } from '@repo/contracts';
-import type { User } from '@repo/db';
+import type { AuthenticatedUser } from './guards/auth.guard';
 import { ZodValidationPipe } from '../common/pipes';
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -88,14 +88,14 @@ export class AuthController {
   }
 
   @Get('me')
-  getCurrentUser(@CurrentUser() user: User): UserResponse {
+  getCurrentUser(@CurrentUser() user: AuthenticatedUser): UserResponse {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      organizationId: user.organizationId,
-      departmentId: user.departmentId,
+      organizationId: user.employee?.organizationId ?? null,
+      departmentId: user.employee?.departmentId ?? null,
       isConfirmed: user.isConfirmed,
     };
   }

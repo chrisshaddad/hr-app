@@ -397,10 +397,25 @@ export class Seeder {
           `  Created organization: ${org.name} (${org.status}) - Admin: ${orgAdmin.email}`,
         );
 
-        await this.prisma.user.update({
-          where: { id: orgAdmin.id },
+        const findOrgAdminSeedInput = this.orgAdmins.find(
+          (admin) => admin.email === org.adminEmail,
+        );
+
+        await this.prisma.employee.create({
           data: {
-            organizationId: organization.id,
+            organization: { connect: { id: organization.id } },
+            user: { connect: { id: orgAdmin.id } },
+            jobTitle: 'Organization Admin',
+            joinDate: new Date(),
+            timezone: 'UTC',
+            status: 'ACTIVE',
+            personalInfo: {
+              create: {
+                firstName: findOrgAdminSeedInput?.name.split(' ')[0] || 'Org',
+                lastName: findOrgAdminSeedInput?.name.split(' ')[1] || 'Admin',
+                email: orgAdmin.email,
+              },
+            },
           },
         });
 

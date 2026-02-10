@@ -42,58 +42,20 @@ enum OrganizationStatus {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  isConfirmed    Boolean  @default(false)
-  name           String
-  role           UserRole @default(EMPLOYEE)
-  organizationId String? // null for SUPER_ADMIN users
-  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id          String   @id @default(uuid())
+  email       String   @unique
+  isConfirmed Boolean  @default(false)
+  name        String
+  role        UserRole @default(EMPLOYEE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   password              Password?
   sessions              Session[]
   magicLinks            MagicLink[]
-  profile               UserProfile?
-  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
   employee              Employee?
-
-  @@index([organizationId])
-  @@index([departmentId])
-  @@schema("public")
-}
-
-model UserProfile {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  dateOfBirth DateTime?
-  gender      Gender?
-  bio         String?   @db.Text
-  phoneNumber String?
-
-  // Address fields
-  street1    String?
-  street2    String?
-  city       String?
-  state      String?
-  postalCode String?
-  country    String?
-
-  // Emergency contact
-  emergencyContactName     String?
-  emergencyContactPhone    String?
-  emergencyContactRelation String?
-
-  nationality       String?
-  profilePictureUrl String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@schema("public")
 }
@@ -153,7 +115,6 @@ model Organization {
   createdBy  User       @relation("OrganizationCreator", fields: [createdById], references: [id])
   approvedBy User?      @relation("OrganizationApprover", fields: [approvedById], references: [id])
   branches   Branch[]
-  users      User[]     @relation("OrganizationMembers")
   employees  Employee[]
 
   @@index([approvedById])
@@ -193,7 +154,6 @@ model Department {
   updatedAt   DateTime @updatedAt
 
   branch    Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users     User[]
   employees Employee[]
 
   @@index([branchId])
@@ -219,19 +179,28 @@ model EmployeePersonalInfo {
   email     String
   phone     String?
 
-  @@schema("public")
-}
+  // Profile fields from UserProfile
+  dateOfBirth DateTime?
+  gender      Gender?
+  bio         String?   @db.Text
 
-model EmployeeAddress {
-  id         String   @id @default(uuid())
-  employeeId String   @unique
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  // Address fields
+  street1    String?
+  street2    String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?
 
-  primaryAddress String
-  country        String
-  state          String
-  city           String
-  postCode       String?
+  // Emergency contact
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+
+  nationality       String?
+  profilePictureUrl String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@schema("public")
 }
@@ -264,8 +233,6 @@ model Employee {
 
   personalInfoId String               @unique
   personalInfo   EmployeePersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
-
-  address EmployeeAddress?
 
   @@index([branchId])
   @@index([departmentId])

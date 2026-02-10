@@ -66,7 +66,7 @@ export class OrganizationsService {
           },
           _count: {
             select: {
-              users: true,
+              employees: true,
               branches: true,
             },
           },
@@ -109,7 +109,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },
@@ -171,7 +171,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },
@@ -224,7 +224,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },

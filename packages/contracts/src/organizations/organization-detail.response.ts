@@ -22,7 +22,7 @@ export const organizationDetailResponseSchema = z.object({
   createdBy: organizationUserSchema,
   approvedBy: organizationUserSchema.nullable(),
   _count: z.object({
-    users: z.number(),
+    employees: z.number(),
     branches: z.number(),
   }),
 });

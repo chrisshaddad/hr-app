@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import {
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import { Roles, CurrentUser } from '../auth/decorators';
 import type { OrganizationStatus } from '@repo/db';
@@ -38,7 +45,9 @@ export class OrganizationsController {
     const organizationId = user.employee?.organizationId ?? undefined;
 
     if (organizationId == null) {
-      throw new Error('Organization ID required');
+      throw new ForbiddenException(
+        'Organization context required. User must be part of an organization.',
+      );
     }
 
     return this.organizationsService.getAllBranchesAndJobTitles(organizationId);

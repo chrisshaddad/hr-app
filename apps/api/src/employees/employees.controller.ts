@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, ForbiddenException } from '@nestjs/common';
 
 import type { AuthenticatedUser } from '../auth/guards/auth.guard';
 import { ZodValidationPipe } from '../common/pipes';
@@ -23,7 +23,9 @@ export class EmployeesController {
     const organizationId = user.employee?.organizationId ?? undefined;
 
     if (organizationId == null) {
-      throw new Error('Organization ID required');
+      throw new ForbiddenException(
+        'Organization context required. User must be part of an organization.',
+      );
     }
 
     return this.employeesService.findAll({

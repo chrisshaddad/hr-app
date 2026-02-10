@@ -1,9 +1,9 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { User } from '@repo/db';
 import type { Request } from 'express';
+import type { AuthenticatedUser } from '../guards/auth.guard';
 
 interface AuthenticatedRequest extends Request {
-  user?: User;
+  user?: AuthenticatedUser;
 }
 
 /**
@@ -25,9 +25,9 @@ interface AuthenticatedRequest extends Request {
  */
 export const CurrentUser = createParamDecorator(
   (
-    data: keyof User | undefined,
+    data: keyof AuthenticatedUser | undefined,
     ctx: ExecutionContext,
-  ): User | User[keyof User] | null => {
+  ): AuthenticatedUser | AuthenticatedUser[keyof AuthenticatedUser] | null => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
 

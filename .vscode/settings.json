@@ -8,5 +8,17 @@
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
   },
-  "files.eol": "\n"
+  "files.eol": "\n",
+  //
+  "notebook.formatOnSave.enabled": true,
+  "editor.linkedEditing": true,
+  "editor.stickyScroll.scrollWithEditor": false,
+  "workbench.tree.enableStickyScroll": false,
+  "editor.stickyScroll.enabled": false,
+  "typescript.preferences.importModuleSpecifier": "shortest",
+  "javascript.suggest.autoImports": true,
+  "typescript.suggest.autoImports": true,
+  "prettier.bracketSameLine": true,
+  "explorer.compactFolders": false,
+  "eslint.enable": true
 }

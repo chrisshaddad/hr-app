@@ -10,6 +10,38 @@ import type {
 export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getAllBranchesAndJobTitles(organizationId: string): Promise<{
+    branches: Array<{ id: string; name: string }>;
+    jobTitles: string[];
+  }> {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        branches: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        employees: {
+          select: {
+            jobTitle: true,
+          },
+          distinct: ['jobTitle'],
+        },
+      },
+    });
+
+    const branches = organization?.branches ?? [];
+    const jobTitlesData = organization?.employees ?? [];
+
+    const jobTitles = jobTitlesData
+      .map((e) => e.jobTitle)
+      .filter((title): title is string => !!title);
+
+    return { branches, jobTitles };
+  }
+
   /**
    * Get all organizations with optional status filter
    */
@@ -44,7 +76,7 @@ export class OrganizationsService {
           },
           _count: {
             select: {
-              users: true,
+              employees: true,
               branches: true,
             },
           },
@@ -87,7 +119,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },
@@ -149,7 +181,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },
@@ -202,7 +234,7 @@ export class OrganizationsService {
         },
         _count: {
           select: {
-            users: true,
+            employees: true,
             branches: true,
           },
         },

@@ -26,7 +26,7 @@ const SideModal = ({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed top-0 z-50 h-full bg-Others-White shadow-[0_2px_8px_0_rgba(0,0,0,0.1)]',
+            'fixed top-0 z-50 h-full bg-others-white shadow-[0_2px_8px_0_rgba(0,0,0,0.1)]',
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             sideStyles[side],
             className,

@@ -107,8 +107,8 @@ export default function JobsPage() {
         <div className="sticky top-0 z-10 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
-              <p className="text-2xl font-bold text-GreyScale-900">Jobs</p>
-              <p className="text-GreyScale-600 text-sm font-medium">
+              <p className="text-2xl font-bold text-greyscale-900">Jobs</p>
+              <p className="text-greyscale-600 text-sm font-medium">
                 Manage your company's job postings
               </p>
             </div>
@@ -133,34 +133,34 @@ export default function JobsPage() {
               {[...Array(3)].map((_, index) => (
                 <div
                   key={index}
-                  className="p-6 rounded-[16px] w-full bg-Others-White gap-4 flex flex-col border border-GreyScale-300"
+                  className="p-6 rounded-[16px] w-full bg-others-white gap-4 flex flex-col border border-greyscale-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-[10px] h-14">
-                      <Skeleton className="h-6 w-48 bg-GreyScale-200" />
-                      <Skeleton className="h-6 w-20 rounded-full bg-GreyScale-200" />
+                      <Skeleton className="h-6 w-48 bg-greyscale-200" />
+                      <Skeleton className="h-6 w-20 rounded-full bg-greyscale-200" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Skeleton className="h-10 w-32 bg-GreyScale-200" />
-                      <Skeleton className="h-6 w-6 rounded-full bg-GreyScale-200" />
+                      <Skeleton className="h-10 w-32 bg-greyscale-200" />
+                      <Skeleton className="h-6 w-6 rounded-full bg-greyscale-200" />
                     </div>
                   </div>
-                  <Skeleton className="h-4 w-64 bg-GreyScale-200" />
+                  <Skeleton className="h-4 w-64 bg-greyscale-200" />
                   <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-40 bg-GreyScale-200" />
-                    <Skeleton className="h-4 w-48 bg-GreyScale-200" />
+                    <Skeleton className="h-4 w-40 bg-greyscale-200" />
+                    <Skeleton className="h-4 w-48 bg-greyscale-200" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center py-12 border border-GreyScale-300 bg-Others-White rounded-lg h-full flex flex-col items-center justify-center gap-6">
+            <div className="text-center py-12 border border-greyscale-300 bg-others-white rounded-lg h-full flex flex-col items-center justify-center gap-6">
               {searchTerm ? (
                 <>
-                  <p className="text-GreyScale-900 text-3xl font-bold">
+                  <p className="text-greyscale-900 text-3xl font-bold">
                     No jobs found
                   </p>
-                  <p className="text-GreyScale-600 text-lg">
+                  <p className="text-greyscale-600 text-lg">
                     Try adjusting your search term
                   </p>
                 </>
@@ -168,10 +168,10 @@ export default function JobsPage() {
                 <>
                   <img src="/icons/noJob.svg" alt="No jobs" />
                   <div className="flex flex-col gap-2">
-                    <p className="text-GreyScale-900 text-3xl font-bold">
+                    <p className="text-greyscale-900 text-3xl font-bold">
                       There is no jobs created yet
                     </p>
-                    <p className="text-GreyScale-900 text[18px]">
+                    <p className="text-greyscale-900 text[18px]">
                       Please add new jobs by clicking "Create Job" below
                     </p>
                   </div>

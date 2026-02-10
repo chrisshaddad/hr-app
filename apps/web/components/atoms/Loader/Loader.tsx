@@ -17,7 +17,7 @@ const Loader = () => {
           className="absolute left-0 top-0 w-12 h-12 rounded-full border-l-4 border-b-4 border-b-transparent"
           style={{
             animation: 'rotation 0.5s linear infinite reverse',
-            borderLeftColor: 'var(--color-Alerts-Success-Base)',
+            borderLeftColor: 'var(--color-alerts-success-base)',
           }}
         />
       </span>

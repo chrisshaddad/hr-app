@@ -20,15 +20,15 @@ const Textarea = ({
 }: TextareaProps) => {
   const showError = error && touched;
   const borderColor = showError
-    ? 'border-Alerts-Error-Base'
-    : 'border-GreyScale-300';
+    ? 'border-alerts-error-base'
+    : 'border-greyscale-300';
 
   return (
     <div className="flex flex-col gap-[10px] w-full">
       {label && (
-        <p className="text-GreyScale-900 text-sm font-medium select-none flex items-center gap-1">
+        <p className="text-greyscale-900 text-sm font-medium select-none flex items-center gap-1">
           {label}
-          {required && <span className="text-Alerts-Error-Base">*</span>}
+          {required && <span className="text-alerts-error-base">*</span>}
         </p>
       )}
       <div
@@ -45,13 +45,13 @@ const Textarea = ({
           onBlur={onBlur}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full px-6 py-5 rounded-[10px] font-medium text-sm border-0 outline-none focus:border-0 focus:outline-none focus:ring-0 text-GreyScale-900 placeholder:text-GreyScale-500 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="w-full px-6 py-5 rounded-[10px] font-medium text-sm border-0 outline-none focus:border-0 focus:outline-none focus:ring-0 text-greyscale-900 placeholder:text-greyscale-500 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         />
       </div>
       {showError && (
         <div className="flex items-center gap-1">
-          <AlertCircle className="h-4 w-4 text-Alerts-Error-Base" />
-          <p className="text-Alerts-Error-Base text-sm">{error}</p>
+          <AlertCircle className="h-4 w-4 text-alerts-error-base" />
+          <p className="text-alerts-error-base text-sm">{error}</p>
         </div>
       )}
     </div>

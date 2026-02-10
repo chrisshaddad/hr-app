@@ -1,6 +1,15 @@
 import { z } from 'zod';
 import { dateSchema } from '../common';
 
+export const emailTemplateSchema = z.object({
+  templateTypeId: z.string().uuid(),
+  subject: z.string().min(1),
+  htmlContent: z.string().min(1),
+  isActive: z.boolean().optional(),
+});
+
+export type EmailTemplateSchema = z.infer<typeof emailTemplateSchema>;
+
 export const emailTemplateSettingCreateRequestSchema = z.object({
   emailTemplateTypeId: z.string().uuid(),
   subject: z.string().min(1),

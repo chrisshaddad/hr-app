@@ -10,7 +10,7 @@ import {
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 import { EvaluationsService } from './evaluations.service';
 import { ZodValidationPipe } from '../common/pipes';
 import { candidateEvaluationSchema } from '@repo/contracts';
@@ -76,7 +76,6 @@ export class EvaluationsController {
     return this.evaluationsService.upsertEvaluation(
       body.jobListingMemberId,
       body.workflowStageCandidateId,
-      body.candidateId,
       user.organizationId!,
       {
         rating: body.rating,
@@ -97,7 +96,6 @@ export class EvaluationsController {
     @CurrentUser() user: User,
   ) {
     return this.evaluationsService.calculateAverageRating(
-      candidateId,
       workflowStageCandidateId,
       user.organizationId!,
     );

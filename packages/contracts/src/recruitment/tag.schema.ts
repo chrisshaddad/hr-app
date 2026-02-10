@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import { dateSchema } from '../common';
 
+// Generic schema for create/update operations
+export const tagSchema = z.object({
+  name: z.string().min(1).max(255),
+  color: z
+    .string()
+    .regex(/^#[0-9A-F]{6}$/i)
+    .optional(),
+  description: z.string().optional(),
+});
+
+export type TagSchema = z.infer<typeof tagSchema>;
+
 export const tagCreateRequestSchema = z.object({
   name: z.string().min(1).max(255),
   color: z

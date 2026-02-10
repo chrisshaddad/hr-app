@@ -4,10 +4,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import type {
-  WorkflowStageSchema,
-  WorkflowStageCandidateSchema,
-} from '@repo/contracts';
 
 @Injectable()
 export class WorkflowStagesService {
@@ -200,8 +196,6 @@ export class WorkflowStagesService {
    * Lock a workflow stage to prevent candidate movements
    */
   async lock(id: string, organizationId: string) {
-    const stage = await this.findOne(id, organizationId);
-
     return this.prisma.workflowStage.update({
       where: { id },
       data: { isLocked: true },
@@ -217,8 +211,6 @@ export class WorkflowStagesService {
    * Unlock a workflow stage to allow candidate movements
    */
   async unlock(id: string, organizationId: string) {
-    const stage = await this.findOne(id, organizationId);
-
     return this.prisma.workflowStage.update({
       where: { id },
       data: { isLocked: false },
@@ -235,8 +227,6 @@ export class WorkflowStagesService {
    * Candidate placements are preserved for audit trail
    */
   async delete(id: string, organizationId: string) {
-    const stage = await this.findOne(id, organizationId);
-
     return this.prisma.workflowStage.update({
       where: { id },
       data: { isDeleted: true },

@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 import { EmailTemplateTypesService } from './email-template-types.service';
 import { EmailTemplateSettingsService } from './email-template-settings.service';
 import { ZodValidationPipe } from '../common/pipes';

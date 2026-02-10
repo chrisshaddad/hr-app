@@ -19,19 +19,20 @@ export class EmailTemplateSettingsService {
     const { templateTypeId, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
-    const where = { organizationId, ...(templateTypeId && { templateTypeId }) };
+    const where = { ...(templateTypeId && { templateTypeId }) };
 
     const [templates, total] = await Promise.all([
       this.prisma.emailTemplateSetting.findMany({
-        where,
         include: {
-          templateType: { select: { id: true, name: true, description: true } },
+          templateType: {
+            select: { id: true, title: true, description: true },
+          },
         },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.emailTemplateSetting.count({ where }),
+      this.prisma.emailTemplateSetting.count({}),
     ]);
 
     return {
@@ -50,11 +51,11 @@ export class EmailTemplateSettingsService {
     const template = await this.prisma.emailTemplateSetting.findUnique({
       where: { id },
       include: {
-        templateType: { select: { id: true, name: true, description: true } },
+        templateType: { select: { id: true, title: true, description: true } },
       },
     });
 
-    if (!template || template.organizationId !== organizationId) {
+    if (!template) {
       throw new NotFoundException('Email template not found');
     }
 
@@ -82,30 +83,26 @@ export class EmailTemplateSettingsService {
       throw new NotFoundException('Template type not found');
     }
 
-    // Check if template already exists for this org and type
+    // Check if template already exists for this type
     const existing = await this.prisma.emailTemplateSetting.findFirst({
       where: {
-        organizationId,
         templateTypeId: data.templateTypeId,
       },
     });
 
     if (existing) {
-      throw new BadRequestException(
-        'Template for this type already exists for your organization',
-      );
+      throw new BadRequestException('Template for this type already exists');
     }
 
     return this.prisma.emailTemplateSetting.create({
       data: {
-        organizationId,
         templateTypeId: data.templateTypeId,
         subject: data.subject,
-        htmlContent: data.htmlContent,
+        body: data.htmlContent,
         isActive: data.isActive ?? true,
       },
       include: {
-        templateType: { select: { id: true, name: true, description: true } },
+        templateType: { select: { id: true, title: true, description: true } },
       },
     });
   }

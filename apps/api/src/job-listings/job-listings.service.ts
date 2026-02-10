@@ -54,7 +54,28 @@ export class JobListingsService {
 
     return {
       data: listings.map((l) => ({
-        ...l,
+        id: l.id,
+        organizationId: l.organizationId,
+        departmentId: l.departmentId,
+        officeId: l.officeId,
+        title: l.title,
+        description: l.description,
+        status: l.status,
+        employmentType: l.employmentType,
+        salaryMin: l.salaryMin ? Number(l.salaryMin) : null,
+        salaryMax: l.salaryMax ? Number(l.salaryMax) : null,
+        salaryCurrency: l.salaryCurrency || '',
+        remoteOption: l.remoteOption,
+        openingsQuantity: l.openingsQuantity,
+        experienceYears: l.experienceYears,
+        educationLevel: l.educationLevel,
+        skills: l.skills,
+        benefits: l.benefits,
+        createdAt: l.createdAt,
+        updatedAt: l.updatedAt,
+        publishedAt: l.publishedAt,
+        closingDate: l.closingDate,
+        createdBy: l.createdBy,
         memberCount: l._count.members,
         candidateCount: l._count.stageCandidates,
       })),
@@ -91,6 +112,9 @@ export class JobListingsService {
 
     return {
       ...listing,
+      salaryMin: listing.salaryMin ? Number(listing.salaryMin) : null,
+      salaryMax: listing.salaryMax ? Number(listing.salaryMax) : null,
+      salaryCurrency: listing.salaryCurrency ?? '',
       memberCount: listing._count.members,
       candidateCount: listing._count.stageCandidates,
     };
@@ -117,8 +141,8 @@ export class JobListingsService {
       data: {
         organizationId,
         createdById: userId,
-        status: 'DRAFT',
         ...data,
+        status: 'DRAFT',
       },
       include: {
         createdBy: {
@@ -132,6 +156,9 @@ export class JobListingsService {
 
     return {
       ...listing,
+      salaryMin: listing.salaryMin ? Number(listing.salaryMin) : null,
+      salaryMax: listing.salaryMax ? Number(listing.salaryMax) : null,
+      salaryCurrency: listing.salaryCurrency ?? '',
       memberCount: listing._count.members,
       candidateCount: listing._count.stageCandidates,
     };
@@ -159,6 +186,9 @@ export class JobListingsService {
 
     return {
       ...updated,
+      salaryMin: updated.salaryMin ? Number(updated.salaryMin) : null,
+      salaryMax: updated.salaryMax ? Number(updated.salaryMax) : null,
+      salaryCurrency: updated.salaryCurrency ?? '',
       memberCount: updated._count.members,
       candidateCount: updated._count.stageCandidates,
     };

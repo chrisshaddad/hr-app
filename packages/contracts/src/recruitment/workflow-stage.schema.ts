@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { dateSchema } from '../common';
 
+// Generic schema for create/update operations
+export const workflowStageSchema = z.object({
+  title: z.string().min(1).max(255),
+  isLocked: z.boolean().optional(),
+});
+
+export type WorkflowStageSchema = z.infer<typeof workflowStageSchema>;
+
 export const workflowStageCreateRequestSchema = z.object({
   title: z.string().min(1).max(255),
   rank: z.number().int().nonnegative(),

@@ -97,6 +97,8 @@ export class AuthController {
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }

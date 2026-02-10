@@ -275,6 +275,7 @@ model JobListing {
   members           JobListingMember[]
   workflowStages    WorkflowStage[]
   stageCandidates   WorkflowStageCandidate[]
+  boardActivities   BoardActivity[]
 
   @@index([organizationId])
   @@index([departmentId])
@@ -387,6 +388,7 @@ model WorkflowStageCandidate {
 model BoardActivity {
   id           String    @id @default(uuid())
   candidateId  String
+  jobListingId String
   fromStageId  String?
   toStageId    String
   memberId     String // User who performed the action
@@ -394,12 +396,14 @@ model BoardActivity {
   activityType String    @default("MOVED") // MOVED, ADDED, REJECTED, etc.
   occurredAt   DateTime  @default(now())
 
-  candidate Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  fromStage WorkflowStage? @relation("FromStage", fields: [fromStageId], references: [id], onDelete: SetNull)
-  toStage   WorkflowStage  @relation("ToStage", fields: [toStageId], references: [id], onDelete: Cascade)
-  member    User           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  candidate  Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobListing JobListing     @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+  fromStage  WorkflowStage? @relation("FromStage", fields: [fromStageId], references: [id], onDelete: SetNull)
+  toStage    WorkflowStage  @relation("ToStage", fields: [toStageId], references: [id], onDelete: Cascade)
+  member     User           @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@index([candidateId])
+  @@index([jobListingId])
   @@index([fromStageId])
   @@index([toStageId])
   @@index([memberId])
@@ -422,6 +426,7 @@ model CandidateStageEvaluation {
   stageCandidate WorkflowStageCandidate @relation(fields: [workflowStageCandidateId], references: [id], onDelete: Cascade)
   evaluator      User                   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
+  @@unique([workflowStageCandidateId, memberId])
   @@index([workflowStageCandidateId])
   @@index([memberId])
   @@schema("public")

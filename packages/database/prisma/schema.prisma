@@ -280,7 +280,6 @@ model Checklist {
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  status      ChecklistStatus @default(NOT_STARTED)
   startDate   DateTime?
   dueDate     DateTime?
   completedAt DateTime?
@@ -292,7 +291,6 @@ model Checklist {
 
   @@index([templateId])
   @@index([employeeId])
-  @@index([status])
   @@schema("public")
 }
 
@@ -300,24 +298,6 @@ enum TaskType {
   CHECKLIST
   UPLOAD
   EMPLOYEE_INFORMATION
-
-  @@schema("public")
-}
-
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
-  SKIPPED
-
-  @@schema("public")
-}
-
-enum ChecklistStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
 
   @@schema("public")
 }
@@ -337,6 +317,15 @@ model TemplateTask {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  SKIPPED
 
   @@schema("public")
 }

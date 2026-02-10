@@ -56,14 +56,14 @@ export function SettingsSidebar() {
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
               isActive
-                ? 'bg-white text-green-600 shadow-sm dark:bg-popover dark:text-green-400'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                ? 'bg-sidebar-accent text-sidebar-primary shadow-sm'
+                : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
             )}
           >
             <item.icon
               className={cn(
                 'h-4 w-4',
-                isActive ? 'text-green-600' : 'text-muted-foreground',
+                isActive ? 'text-sidebar-primary' : 'text-muted-foreground',
               )}
             />
             <span>{item.title}</span>

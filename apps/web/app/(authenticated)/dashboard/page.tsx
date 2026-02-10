@@ -57,12 +57,7 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back,{' '}
-          {user?.profile?.firstName ||
-            user?.name ||
-            user?.email?.split('@')[0] ||
-            'User'}
-          !
+          Welcome back, {user?.name || user?.email?.split('@')[0] || 'User'}!
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           Here&apos;s what&apos;s happening with your organization today.

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 
 export function SettingsHeader() {
   return (
-    <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="flex h-16 items-center justify-between gap-4 px-6 md:px-8">
         {/* Left side - Title and description */}
         <div className="flex flex-col">

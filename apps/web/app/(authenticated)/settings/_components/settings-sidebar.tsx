@@ -26,7 +26,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const menuItems = [
   { title: 'Company Info', url: '/settings/company-info', icon: Building2 },
@@ -41,9 +40,8 @@ const menuItems = [
   { title: 'Notification', url: '/settings/notification', icon: Bell },
 ];
 
-export function SettingsSidebar() {
+export function SettingsSidebar({ mobileOnly }: { mobileOnly?: boolean }) {
   const pathname = usePathname();
-  const isMobile = useIsMobile();
 
   const NavContent = () => (
     <nav className="flex flex-col gap-2">
@@ -73,18 +71,13 @@ export function SettingsSidebar() {
     </nav>
   );
 
-  if (isMobile) {
+  // Mobile-only mode: just return the trigger button
+  if (mobileOnly) {
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between md:hidden"
-          >
-            <span className="flex items-center gap-2">
-              <Menu className="h-4 w-4" />
-              Settings Menu
-            </span>
+          <Button variant="outline" size="icon">
+            <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[280px]">
@@ -97,5 +90,6 @@ export function SettingsSidebar() {
     );
   }
 
+  // Desktop mode: just return the nav content
   return <NavContent />;
 }

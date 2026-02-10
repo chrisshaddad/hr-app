@@ -1,8 +1,8 @@
 import { prisma } from '../../src/client';
-import { Seeder } from './SeederService';
+import { SeederService } from './SeederService';
 
 async function main() {
-  const seeder = new Seeder({ prisma });
+  const seeder = new SeederService({ prisma });
   await seeder.run();
 }
 main()

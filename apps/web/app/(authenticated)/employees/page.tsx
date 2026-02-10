@@ -495,7 +495,7 @@ export default function EmployeesPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Employees
             </h1>
-            <p className="mt-1 text-sm text-gray-500">Manage your Employee</p>
+            <p className="mt-1 text-sm text-gray-500">Manage your Employees</p>
           </div>
           <div className="w-full sm:w-auto">
             <Button

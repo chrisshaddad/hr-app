@@ -30,7 +30,7 @@ type IEmployeeSeed = (Except<
   personalInfo: Except<Prisma.EmployeePersonalInfoCreateInput, 'employee'>;
 };
 
-export class Seeder {
+export class SeederService {
   prisma: PrismaClient;
 
   constructor(args: { prisma: PrismaClient }) {

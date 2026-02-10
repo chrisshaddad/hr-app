@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UsePipes } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 
 import type { AuthenticatedUser } from '../auth/guards/auth.guard';
 import { ZodValidationPipe } from '../common/pipes';
@@ -13,10 +13,10 @@ export class EmployeesController {
 
   @Get()
   @Roles('ORG_ADMIN')
-  @UsePipes(new ZodValidationPipe(employeeListQuerySchema))
   async findAll(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() query: EmployeeListQuery,
+    @Query(new ZodValidationPipe(employeeListQuerySchema))
+    query: EmployeeListQuery,
   ): Promise<{ employees: Array<EmployeeListItem>; total: number }> {
     const { search, statuses, branchIds, jobTitles, page, limit } = query;
 

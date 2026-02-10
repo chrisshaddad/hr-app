@@ -1,20 +1,14 @@
 'use client';
 
 import useSWR from 'swr';
-import type { EmployeeListItem, EmployeeStatus } from '@repo/contracts';
+import type { EmployeeListItem } from '@repo/contracts';
+import type { EmployeeListQuery } from '@repo/contracts';
+import { buildQuery } from '@/lib/utils';
 
-type UseEmployeesOptions = {
-  search?: string;
-  statuses?: EmployeeStatus[];
-  branchIds?: string[];
-  jobTitles?: string[];
-  page?: number;
-  limit?: number;
-  enabled?: boolean;
-};
+type UseEmployeesOptions = Partial<EmployeeListQuery>;
 
 type UseEmployeesReturn = {
-  employees: Array<EmployeeListItem> | undefined;
+  employees: EmployeeListItem[] | undefined;
   total: number | undefined;
   isLoading: boolean;
   isValidating: boolean;
@@ -33,25 +27,18 @@ export function useEmployees(options: UseEmployeesOptions): UseEmployeesReturn {
     jobTitles,
     page = 1,
     limit = 20,
-    enabled = true,
   } = options;
 
   // Build query string
-  const params = new URLSearchParams();
-  if (search) params.append('search', search);
-  if (statuses?.length) {
-    statuses.forEach((status) => params.append('statuses', status));
-  }
-  if (branchIds?.length) {
-    branchIds.forEach((id) => params.append('branchIds', id));
-  }
-  if (jobTitles?.length) {
-    jobTitles.forEach((title) => params.append('jobTitles', title));
-  }
-  params.append('page', page.toString());
-  params.append('limit', limit.toString());
+  const queryString = buildQuery({
+    search,
+    statuses,
+    branchIds,
+    jobTitles,
+    page,
+    limit,
+  });
 
-  const queryString = params.toString();
   const endpoint = `/employees${queryString ? `?${queryString}` : ''}`;
 
   const {
@@ -60,9 +47,7 @@ export function useEmployees(options: UseEmployeesOptions): UseEmployeesReturn {
     isLoading,
     isValidating,
     mutate: swrMutate,
-  } = useSWR<{ employees: Array<EmployeeListItem>; total: number }>(
-    enabled ? endpoint : null,
-  );
+  } = useSWR<{ employees: EmployeeListItem[]; total: number }>(endpoint);
 
   return {
     employees: data?.employees,

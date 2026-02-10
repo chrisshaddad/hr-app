@@ -14,16 +14,26 @@ export class OrganizationsService {
     branches: Array<{ id: string; name: string }>;
     jobTitles: string[];
   }> {
-    const branches = await this.prisma.branch.findMany({
-      where: { organizationId },
-      select: { id: true, name: true },
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        branches: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        employees: {
+          select: {
+            jobTitle: true,
+          },
+          distinct: ['jobTitle'],
+        },
+      },
     });
 
-    const jobTitlesData = await this.prisma.employee.findMany({
-      where: { organizationId },
-      distinct: ['jobTitle'],
-      select: { jobTitle: true },
-    });
+    const branches = organization?.branches ?? [];
+    const jobTitlesData = organization?.employees ?? [];
 
     const jobTitles = jobTitlesData
       .map((e) => e.jobTitle)

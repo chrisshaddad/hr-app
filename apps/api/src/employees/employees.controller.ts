@@ -1,8 +1,11 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UsePipes } from '@nestjs/common';
+
+import type { User } from '@repo/db';
+import { ZodValidationPipe } from '../common/pipes';
 import { EmployeesService } from './employees.service';
 import { Roles, CurrentUser } from '../auth/decorators';
-import type { User, EmployeeStatus } from '@repo/db';
-import type { EmployeeListItem } from '@repo/contracts';
+import { employeeListQuerySchema } from '@repo/contracts';
+import type { EmployeeListItem, EmployeeListQuery } from '@repo/contracts';
 
 @Controller('employees')
 export class EmployeesController {
@@ -10,24 +13,12 @@ export class EmployeesController {
 
   @Get()
   @Roles('ORG_ADMIN')
+  @UsePipes(new ZodValidationPipe(employeeListQuerySchema))
   async findAll(
     @CurrentUser() user: User,
-    @Query('search') search?: string,
-    @Query('statuses') statuses?: string[],
-    @Query('branchIds') branchIds?: string[],
-    @Query('jobTitles') jobTitles?: string[],
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: EmployeeListQuery,
   ): Promise<{ employees: Array<EmployeeListItem>; total: number }> {
-    const statusList = (
-      Array.isArray(statuses) ? statuses : statuses ? [statuses] : []
-    ).filter(Boolean) as EmployeeStatus[];
-    const branchIdList = (
-      Array.isArray(branchIds) ? branchIds : branchIds ? [branchIds] : []
-    ).filter(Boolean);
-    const jobTitleList = (
-      Array.isArray(jobTitles) ? jobTitles : jobTitles ? [jobTitles] : []
-    ).filter(Boolean);
+    const { search, statuses, branchIds, jobTitles, page, limit } = query;
 
     const organizationId = user.organizationId ?? undefined;
 
@@ -38,11 +29,11 @@ export class EmployeesController {
     return this.employeesService.findAll({
       organizationId,
       search,
-      statuses: statusList.length ? statusList : undefined,
-      branchIds: branchIdList.length ? branchIdList : undefined,
-      jobTitles: jobTitleList.length ? jobTitleList : undefined,
-      page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 20,
+      statuses,
+      branchIds,
+      jobTitles,
+      page,
+      limit,
     });
   }
 }

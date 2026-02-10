@@ -50,7 +50,7 @@ export class Seeder {
   orgAdmins: Prisma.UserCreateManyInput[] = [
     {
       email: 'admin@techcorp.example.com',
-      name: 'Sarah Chen',
+      name: 'Sarah Chen (Admin)',
     },
   ];
   organizations: IOrganizationSeed[] = [

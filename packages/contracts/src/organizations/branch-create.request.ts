@@ -3,6 +3,8 @@ import { organizationStatusSchema } from './organization-status.schema';
 
 export const branchCreateRequestSchema = z.object({
   name: z.string().min(1).max(255),
+  organizationId: z.string().uuid(),
+  orgStatus: organizationStatusSchema,
   street1: z.string().optional(),
   street2: z.string().optional(),
   city: z.string().optional(),

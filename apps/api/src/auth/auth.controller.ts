@@ -89,6 +89,7 @@ export class AuthController {
 
   @Get('me')
   getCurrentUser(@CurrentUser() user: User): UserResponse {
+    console.log('hi');
     return {
       id: user.id,
       email: user.email,

@@ -41,6 +41,15 @@ export class OrganizationsController {
     return this.organizationsService.findOne(id);
   }
 
+  @Get(':id/org-details')
+  @Roles('SUPER_ADMIN', 'ORG_ADMIN')
+  @UseGuards(OrganizationGuard)
+  async getOrgDetails(
+    @Param('id') id: string,
+  ): Promise<OrganizationDetailResponse> {
+    return this.organizationsService.findOne(id);
+  }
+
   @Patch(':id/approve')
   @Roles('SUPER_ADMIN')
   async approve(

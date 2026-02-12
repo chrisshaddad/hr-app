@@ -47,7 +47,6 @@ export async function seedSuperAdmins(prisma: PrismaClient) {
   await prisma.user.createMany({
     data: SUPER_ADMINS.map((admin) => ({
       ...admin,
-      id: crypto.randomUUID(),
       isConfirmed: true,
       role: 'SUPER_ADMIN' as const,
       updatedAt: new Date(),
@@ -65,7 +64,6 @@ export async function seedOrgAdmins(prisma: PrismaClient) {
   await prisma.user.createMany({
     data: ORG_ADMINS.map((admin) => ({
       ...admin,
-      id: crypto.randomUUID(),
       isConfirmed: true,
       role: 'ORG_ADMIN' as const,
       updatedAt: new Date(),

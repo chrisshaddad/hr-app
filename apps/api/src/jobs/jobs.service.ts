@@ -190,13 +190,11 @@ export class JobsService {
     data: CreateJobRequest,
   ): Promise<JobDetailResponse> {
     const now = new Date();
-    const jobId = crypto.randomUUID();
     const { tagIds, hiringStages, ...jobData } = data;
 
     const job = await this.prisma.$transaction(async (tx) => {
       const created = await tx.job.create({
         data: {
-          id: jobId,
           organizationId,
           title: jobData.title,
           department: jobData.department,

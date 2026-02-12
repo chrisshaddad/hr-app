@@ -109,7 +109,6 @@ export async function seedOrganizations(prisma: PrismaClient) {
 
     const createdOrg = await prisma.organization.create({
       data: {
-        id: crypto.randomUUID(),
         name: org.name,
         description: org.description,
         website: org.website,

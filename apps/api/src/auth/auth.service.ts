@@ -53,7 +53,6 @@ export class AuthService {
     // Create new magic link
     await this.prisma.magicLink.create({
       data: {
-        id: crypto.randomUUID(),
         userId: user.id,
         token,
         expiresAt,

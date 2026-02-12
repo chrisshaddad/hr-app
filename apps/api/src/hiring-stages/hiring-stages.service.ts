@@ -58,7 +58,6 @@ export class HiringStagesService {
       const now = new Date();
       await this.prisma.hiringStage.createMany({
         data: DEFAULT_STAGES.map((s) => ({
-          id: crypto.randomUUID(),
           organizationId,
           name: s.name,
           orderIndex: s.orderIndex,
@@ -103,7 +102,6 @@ export class HiringStagesService {
 
     const stage = await this.prisma.hiringStage.create({
       data: {
-        id: crypto.randomUUID(),
         organizationId,
         name: data.name,
         orderIndex: data.orderIndex,

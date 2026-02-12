@@ -9,7 +9,7 @@ datasource db {
 }
 
 model MagicLink {
-  id        String    @id
+  id        String    @id @default(uuid())
   userId    String
   token     String    @unique
   expiresAt DateTime
@@ -23,7 +23,7 @@ model MagicLink {
 }
 
 model Password {
-  id               String   @id
+  id               String   @id @default(uuid())
   userId           String   @unique
   hashedPassword   String
   failedLoginCount Int      @default(0)
@@ -35,7 +35,7 @@ model Password {
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -46,7 +46,7 @@ model Session {
 }
 
 model Application {
-  id              String            @id
+  id              String            @id @default(uuid())
   organizationId  String
   jobId           String
   candidateId     String
@@ -73,7 +73,7 @@ model Application {
 }
 
 model Branch {
-  id             String       @id
+  id             String       @id @default(uuid())
   organizationId String
   name           String
   street1        String?
@@ -94,7 +94,7 @@ model Branch {
 }
 
 model Candidate {
-  id             String          @id
+  id             String          @id @default(uuid())
   organizationId String
   firstName      String
   lastName       String
@@ -131,7 +131,7 @@ model CandidateTag {
 }
 
 model Communication {
-  id                String                 @id
+  id                String                 @id @default(uuid())
   organizationId    String
   candidateId       String
   applicationId     String?
@@ -159,7 +159,7 @@ model Communication {
 }
 
 model Department {
-  id          String   @id
+  id          String   @id @default(uuid())
   branchId    String
   name        String
   description String?
@@ -173,7 +173,7 @@ model Department {
 }
 
 model FeedbackAnswer {
-  id                String            @id
+  id                String            @id @default(uuid())
   feedbackId        String
   questionId        String
   score             Int?
@@ -187,7 +187,7 @@ model FeedbackAnswer {
 }
 
 model Interview {
-  id                   String                 @id
+  id                   String                 @id @default(uuid())
   organizationId       String
   applicationId        String
   templateId           String?
@@ -221,7 +221,7 @@ model Interview {
 }
 
 model InterviewFeedback {
-  id             String           @id
+  id             String           @id @default(uuid())
   interviewId    String
   userId         String
   overallScore   Int?
@@ -255,7 +255,7 @@ model InterviewInterviewer {
 }
 
 model HiringStage {
-  id             String            @id
+  id             String            @id @default(uuid())
   organizationId String
   name           String
   orderIndex     Int
@@ -273,7 +273,7 @@ model HiringStage {
 }
 
 model InterviewTemplate {
-  id               String             @id
+  id               String             @id @default(uuid())
   organizationId   String
   name             String
   description      String?
@@ -288,7 +288,7 @@ model InterviewTemplate {
 }
 
 model Job {
-  id                  String         @id
+  id                  String         @id @default(uuid())
   organizationId      String
   title               String
   department          JobDepartment
@@ -340,7 +340,7 @@ model JobHiringStage {
 }
 
 model Organization {
-  id                                     String              @id
+  id                                     String              @id @default(uuid())
   name                                   String
   status                                 OrganizationStatus  @default(PENDING)
   description                            String?
@@ -372,7 +372,7 @@ model Organization {
 }
 
 model PipelineHistory {
-  id              String           @id
+  id              String           @id @default(uuid())
   applicationId   String
   changedByUserId String
   fromStage       ApplicationStage
@@ -388,7 +388,7 @@ model PipelineHistory {
 }
 
 model Question {
-  id               String             @id
+  id               String             @id @default(uuid())
   organizationId   String
   text             String
   type             QuestionType
@@ -404,7 +404,7 @@ model Question {
 }
 
 model Reminder {
-  id                String             @id
+  id                String             @id @default(uuid())
   organizationId    String
   interviewId       String
   targetType        ReminderTargetType
@@ -427,7 +427,7 @@ model Reminder {
 }
 
 model Tag {
-  id             String         @id
+  id             String         @id @default(uuid())
   organizationId String
   name           String
   type           String?
@@ -456,7 +456,7 @@ model TemplateQuestion {
 }
 
 model User {
-  id                                             String                 @id
+  id                                             String                 @id @default(uuid())
   email                                          String                 @unique
   isConfirmed                                    Boolean                @default(false)
   name                                           String
@@ -488,7 +488,7 @@ model User {
 }
 
 model UserProfile {
-  id                       String    @id
+  id                       String    @id @default(uuid())
   userId                   String    @unique
   dateOfBirth              DateTime?
   gender                   Gender?

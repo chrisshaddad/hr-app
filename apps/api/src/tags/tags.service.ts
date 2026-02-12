@@ -62,7 +62,6 @@ export class TagsService {
 
     const tag = await this.prisma.tag.create({
       data: {
-        id: crypto.randomUUID(),
         organizationId,
         name: data.name,
         type: data.type ?? null,

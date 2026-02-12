@@ -44,6 +44,7 @@ model ReviewCycle {
   endDate        DateTime              // Cycle end date
   organizationId String
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   performanceReviews PerformanceReview[]

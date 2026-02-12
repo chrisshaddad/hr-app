@@ -1,4 +1,4 @@
-import { userProfileResponseSchema } from '../../src/users/user-profile.response';
+import { userProfileResponseSchema } from '@repo/contracts/src/users/user-profile.response';
 
 const validUser = {
   id: '5f1d7e26-9c60-4c6c-b27e-123456789abc',

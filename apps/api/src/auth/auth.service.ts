@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -191,6 +192,84 @@ export class AuthService {
     const sessionId = await this.sessionService.createSession(user.id);
 
     this.logger.log(`User ${user.id} authenticated via password`);
+
+    return {
+      sessionId,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
+  /**
+   * Signup a new user and create their organization
+   */
+  async signup(
+    email: string,
+    password: string,
+    name: string,
+    organizationName: string,
+  ): Promise<{
+    sessionId: string;
+    user: { id: string; email: string; name: string; role: string };
+  }> {
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user and organization in a transaction
+    const { user } = await this.prisma.$transaction(async (tx) => {
+      // 1. Create the user
+      const newUser = await tx.user.create({
+        data: {
+          email: email.toLowerCase(),
+          name,
+          role: 'ORG_ADMIN',
+          isConfirmed: false, // Should probably verify email later
+        },
+      });
+
+      // 2. Create the password record
+      await tx.password.create({
+        data: {
+          userId: newUser.id,
+          hashedPassword,
+        },
+      });
+
+      // 3. Create the organization
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          status: 'PENDING',
+          createdById: newUser.id,
+        },
+      });
+
+      // 4. Link user to organization
+      const updatedUser = await tx.user.update({
+        where: { id: newUser.id },
+        data: { organizationId: organization.id },
+      });
+
+      return { user: updatedUser, organization };
+    });
+
+    // Create session
+    const sessionId = await this.sessionService.createSession(user.id);
+
+    this.logger.log(`New user ${user.id} signed up and created organization`);
 
     return {
       sessionId,

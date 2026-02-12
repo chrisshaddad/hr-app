@@ -201,6 +201,7 @@ model Organization {
   subscriptions        Subscription[]
   notificationSettings OrganizationNotificationSettings?
   JobTitle             JobTitle[]
+  Holidays             Holidays[]
 
   @@unique([contactEmail])
   @@unique([contactNumber])
@@ -892,6 +893,75 @@ model OrganizationNotificationSettings {
   updateEmployeeStatus  Boolean  @default(true) // Allow users to receive alerts about employee status updates
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Holiday {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  from           DateTime @db.Date
+  to             DateTime @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([date])
+  @@schema("public")
+}
+
+model PolicyType {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?         @db.Text
+  isPaid         Boolean         @default(false)
+  timeUnit       PolicyFrequency
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdByUser User         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  policies      Policy[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+enum PolicyFrequency {
+  DAY
+  HOUR
+  WEEK
+  MONTH
+  YEARLY
+  ONE_TIME
+
+  @@schema("public")
+}
+
+model Policy {
+  id                   String          @id @default(uuid())
+  organizationId       String
+  name                 String
+  typeId               String
+  description          String?         @db.Text
+  assignDate           DateTime
+  frequency            PolicyFrequency
+  entitledDays         Int
+  maximumCarryOverDays Int
+  carryOverExpiration  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 

@@ -44,12 +44,10 @@ import {
   Lock,
   MoreVertical,
   Trash2,
-  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTags } from '@/hooks/use-tags';
 import { useHiringStages } from '@/hooks/use-hiring-stages';
-import { useBranches } from '@/hooks/use-branches';
 import { cn } from '@/lib/utils';
 import type { HiringStageItem } from '@repo/contracts';
 
@@ -57,7 +55,7 @@ type SettingsTab = 'workflow' | 'tags' | 'email';
 
 const SETTINGS_TABS = [
   { id: 'workflow' as const, label: 'Hiring Workflow', icon: GitBranch },
-  { id: 'tags' as const, label: 'Tag & Resource', icon: TagIcon },
+  { id: 'tags' as const, label: 'Tags', icon: TagIcon },
   { id: 'email' as const, label: 'Email Template', icon: Mail },
 ];
 
@@ -283,14 +281,12 @@ function HiringWorkflowTab() {
   );
 }
 
-/* ─── Tag & Resource Tab ─── */
+/* ─── Tags Tab ─── */
 function TagResourceTab() {
   const { tags, isLoading, createTag, deleteTag } = useTags();
-  const { branches } = useBranches();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [creating, setCreating] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'tag' | 'resource'>('tag');
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) {
@@ -322,135 +318,67 @@ function TagResourceTab() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Tag & Resource</h2>
-        {activeSubTab === 'tag' && (
-          <Button
-            onClick={() => setShowAddDialog(true)}
-            className="gap-2 bg-gray-900 text-white hover:bg-gray-800"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Tag</span>
-          </Button>
-        )}
+        <h2 className="text-lg font-semibold text-gray-900">Tags</h2>
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="cursor-pointer gap-2 bg-gray-900 text-white hover:bg-gray-800"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">New Tag</span>
+        </Button>
       </div>
 
-      {/* Sub-tabs */}
-      <div className="mb-6 flex gap-6 border-b border-gray-200">
-        <button
-          onClick={() => setActiveSubTab('tag')}
-          className={cn(
-            'pb-3 text-sm font-medium transition-colors',
-            activeSubTab === 'tag'
-              ? 'border-b-2 border-primary-base text-primary-base'
-              : 'text-gray-500 hover:text-gray-700',
-          )}
-        >
-          Tag
-        </button>
-        <button
-          onClick={() => setActiveSubTab('resource')}
-          className={cn(
-            'pb-3 text-sm font-medium transition-colors',
-            activeSubTab === 'resource'
-              ? 'border-b-2 border-primary-base text-primary-base'
-              : 'text-gray-500 hover:text-gray-700',
-          )}
-        >
-          Resource
-        </button>
-      </div>
-
-      {activeSubTab === 'tag' && (
-        <>
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-20 rounded-lg" />
-              ))}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-lg" />
+          ))}
+        </div>
+      ) : !tags?.length ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <TagIcon className="mb-3 h-8 w-8 text-gray-300" />
+          <p className="text-sm text-gray-500">
+            No tags yet. Create your first tag to organize candidates.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {tags.map((tag) => (
+            <div
+              key={tag.id}
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-5 py-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-gray-900">
+                  {tag.name}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {tag._count.candidates} Candidate
+                  {tag._count.candidates !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 cursor-pointer text-gray-400 hover:text-gray-600"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600"
+                    onClick={() => handleDeleteTag(tag.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          ) : !tags?.length ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <TagIcon className="mb-3 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">
-                No tags yet. Create your first tag.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-gray-900">
-                      {tag.name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      {tag._count.candidates} Candidate
-                      {tag._count.candidates !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 text-gray-400 hover:text-gray-600"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => handleDeleteTag(tag.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeSubTab === 'resource' && (
-        <div>
-          <h3 className="mb-4 text-sm font-semibold text-gray-700">
-            Office Locations
-          </h3>
-          {!branches?.length ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <FileText className="mb-3 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">
-                No office locations configured yet.
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                Office locations are managed in Organization Settings.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {branches.map((branch) => (
-                <div
-                  key={branch.id}
-                  className="rounded-lg border border-gray-200 bg-white px-5 py-4"
-                >
-                  <p className="text-sm font-semibold text-gray-900">
-                    {branch.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {[branch.city, branch.country].filter(Boolean).join(', ') ||
-                      'No location details'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       )}
 
@@ -514,7 +442,7 @@ export default function RecruitmentSettingsPage() {
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           {activeTab === 'workflow' && 'Manage your hiring workflow stages'}
-          {activeTab === 'tags' && 'Manage tags and resources'}
+          {activeTab === 'tags' && 'Organize candidates with tags'}
           {activeTab === 'email' && 'Manage email templates'}
         </p>
       </div>
@@ -526,7 +454,7 @@ export default function RecruitmentSettingsPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+              'flex shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
               activeTab === tab.id
                 ? 'bg-gray-900 text-white'
                 : 'bg-white text-gray-600 border border-gray-200',
@@ -546,7 +474,7 @@ export default function RecruitmentSettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                'flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === tab.id
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-600 hover:bg-gray-100',

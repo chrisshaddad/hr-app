@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Search,
-  FileText,
-  Newspaper,
-  Receipt,
-  BarChart3,
-  Mail,
-  MessageSquare,
+  Bell,
+  CalendarClock,
+  Plus,
+  Briefcase,
+  Users,
   Settings,
   LogOut,
   ChevronDown,
@@ -24,20 +24,22 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
-// Menu items only shown to non-super-admin users
-const orgMenuItems = [
-  { title: 'Documents', icon: FileText, url: '/documents' },
-  { title: 'News', icon: Newspaper, url: '/news' },
-  { title: 'Payslip', icon: Receipt, url: '/payslip' },
-  { title: 'Report', icon: BarChart3, url: '/report' },
+// Quick navigation links for the Talent Pool module
+const quickNavItems = [
+  { title: 'Jobs', icon: Briefcase, url: '/recruitment/jobs' },
+  { title: 'Candidates', icon: Users, url: '/recruitment/candidates' },
+  { title: 'Interviews', icon: CalendarClock, url: '/recruitment/candidates' },
 ];
 
 export function TopNavbar() {
   const { user } = useUser({ redirectOnUnauthenticated: false });
   const { logout } = useAuth();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -59,32 +61,43 @@ export function TopNavbar() {
     return 'User';
   };
 
-  return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-      {/* Left Section - Sidebar Toggle & Search */}
-      <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-1 h-9 w-9 text-gray-500 hover:bg-gray-100 hover:text-gray-900" />
+  const isNavActive = (url: string) => pathname.startsWith(url);
 
-        <div className="relative">
+  return (
+    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+      {/* Left Section - Sidebar Toggle & Search */}
+      <div className="flex items-center gap-3">
+        <SidebarTrigger className="-ml-1 h-9 w-9 cursor-pointer text-gray-500 hover:bg-gray-100 hover:text-gray-900" />
+
+        <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="search"
-            placeholder={isSuperAdmin ? 'Search organizations...' : 'Search...'}
+            placeholder={
+              isSuperAdmin
+                ? 'Search organizations...'
+                : 'Search jobs, candidates...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 w-64 rounded-lg border-gray-200 bg-gray-50 pl-10 text-sm placeholder:text-gray-400 focus-visible:border-primary-base focus-visible:ring-primary-base/20"
+            className="h-9 w-52 rounded-lg border-gray-200 bg-gray-50 pl-9 text-sm placeholder:text-gray-400 focus-visible:border-primary-base focus-visible:ring-primary-base/20 lg:w-64"
           />
         </div>
       </div>
 
-      {/* Center Section - Menu Items (hidden for super admins) */}
+      {/* Center Section - Quick Nav (Talent Pool shortcuts) */}
       {!isSuperAdmin && (
         <nav className="hidden items-center gap-1 md:flex">
-          {orgMenuItems.map((item) => (
+          {quickNavItems.map((item) => (
             <Link
               key={item.title}
               href={item.url}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                isNavActive(item.url)
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700',
+              )}
             >
               <item.icon className="h-4 w-4" />
               <span>{item.title}</span>
@@ -93,34 +106,57 @@ export function TopNavbar() {
         </nav>
       )}
 
-      {/* Right Section - Notifications & User */}
-      <div className="flex items-center gap-3">
-        {/* Mail Notification (hidden for super admins) */}
+      {/* Right Section - Actions & User */}
+      <div className="flex items-center gap-2">
+        {/* Quick Add (hidden for super admins) */}
         {!isSuperAdmin && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Mail className="h-5 w-5" />
-            <span className="absolute right-2 top-2 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-base opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-base" />
-            </span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 cursor-pointer text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuLabel className="text-xs font-medium text-gray-400">
+                Quick Create
+              </DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/recruitment/jobs"
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Briefcase className="h-4 w-4" />
+                  <span>New Job</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/recruitment/candidates"
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Add Candidate</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
-        {/* Message Notification (hidden for super admins) */}
+        {/* Notifications */}
         {!isSuperAdmin && (
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="relative h-9 w-9 cursor-pointer text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           >
-            <MessageSquare className="h-5 w-5" />
-            <span className="absolute right-2 top-2 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-base opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-base" />
             </span>
           </Button>
         )}
@@ -130,7 +166,7 @@ export function TopNavbar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex h-10 items-center gap-2 rounded-lg px-2 hover:bg-gray-100"
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 hover:bg-gray-100"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={undefined} />
@@ -143,12 +179,22 @@ export function TopNavbar() {
                   {getDisplayName()}
                 </p>
               </div>
-              <ChevronDown className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-4 w-4 text-gray-400" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="pb-0">
+              <p className="text-sm font-medium text-gray-900">
+                {getDisplayName()}
+              </p>
+              <p className="text-xs font-normal text-gray-500">{user?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2">
+              <Link
+                href="/settings"
+                className="flex cursor-pointer items-center gap-2"
+              >
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
               </Link>
@@ -156,7 +202,7 @@ export function TopNavbar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => logout()}
-              className="flex items-center gap-2 text-red-600 focus:bg-red-50 focus:text-red-600"
+              className="flex cursor-pointer items-center gap-2 text-red-600 focus:bg-red-50 focus:text-red-600"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>

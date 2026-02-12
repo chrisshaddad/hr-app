@@ -223,6 +223,14 @@ a {
     @apply bg-background text-foreground;
   }
 
+  [data-sidebar='content'] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  [data-sidebar='content']::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Heading Styles - Manrope Bold */
   h1 {
     @apply text-6xl font-bold leading-tight tracking-tight;

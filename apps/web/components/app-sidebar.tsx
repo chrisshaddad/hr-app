@@ -7,16 +7,10 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   Users,
-  CheckSquare,
-  CalendarOff,
-  Clock,
-  DollarSign,
-  TrendingUp,
   UserPlus,
   Briefcase,
   Contact,
   Settings as SettingsIcon,
-  HelpCircle,
   Settings,
   LogOut,
   Building2,
@@ -60,36 +54,6 @@ const orgNavItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: 'Employees',
-    url: '/employees',
-    icon: Users,
-  },
-  {
-    title: 'Checklist',
-    url: '/checklist',
-    icon: CheckSquare,
-  },
-  {
-    title: 'Time Off',
-    url: '/time-off',
-    icon: CalendarOff,
-  },
-  {
-    title: 'Attendance',
-    url: '/attendance',
-    icon: Clock,
-  },
-  {
-    title: 'Payroll',
-    url: '/payroll',
-    icon: DollarSign,
-  },
-  {
-    title: 'Performance',
-    url: '/performance',
-    icon: TrendingUp,
-  },
-  {
     title: 'Recruitment',
     url: '/recruitment',
     icon: UserPlus,
@@ -112,18 +76,13 @@ const superAdminNavItems: NavItem[] = [
     title: 'Users',
     url: '/users',
     icon: Users,
-    disabled: true, // Placeholder for future implementation
+    disabled: true,
   },
 ];
 
 const orgSecondaryNavItems: NavItem[] = [
   {
-    title: 'Help Center',
-    url: '/help',
-    icon: HelpCircle,
-  },
-  {
-    title: 'Setting',
+    title: 'Settings',
     url: '/settings',
     icon: Settings,
   },
@@ -131,7 +90,7 @@ const orgSecondaryNavItems: NavItem[] = [
 
 const superAdminSecondaryNavItems: NavItem[] = [
   {
-    title: 'Setting',
+    title: 'Settings',
     url: '/settings',
     icon: Settings,
   },
@@ -195,7 +154,7 @@ export function AppSidebar() {
                         isActive={isActive(item.url)}
                         onClick={() => toggleExpand(item.title)}
                         className={cn(
-                          'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
+                          'h-11 cursor-pointer gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
                           isActive(item.url)
                             ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
                             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
@@ -221,7 +180,7 @@ export function AppSidebar() {
                                   pathname.startsWith(child.url + '/')
                                 }
                                 className={cn(
-                                  'h-9 gap-2.5 rounded-lg px-3 text-sm font-medium transition-colors',
+                                  'h-9 cursor-pointer gap-2.5 rounded-lg px-3 text-sm font-medium transition-colors',
                                   pathname === child.url ||
                                     pathname.startsWith(child.url + '/')
                                     ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
@@ -245,7 +204,9 @@ export function AppSidebar() {
                       disabled={item.disabled}
                       className={cn(
                         'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                        item.disabled && 'cursor-not-allowed opacity-50',
+                        item.disabled
+                          ? 'cursor-not-allowed opacity-50'
+                          : 'cursor-pointer',
                         isActive(item.url)
                           ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
@@ -288,7 +249,7 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive(item.url)}
                     className={cn(
-                      'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
+                      'h-11 cursor-pointer gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
                       isActive(item.url)
                         ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
@@ -311,7 +272,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => logout()}
-              className="h-11 gap-3 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="h-11 cursor-pointer gap-3 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <LogOut className="h-5 w-5 text-gray-500" />
               <span>Logout</span>

@@ -56,6 +56,7 @@ model User {
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
   employee              Employee?
+  tasks                 Task[]         @relation("TaskCreatedBy")
 
   @@schema("public")
 }
@@ -116,6 +117,7 @@ model Organization {
   approvedBy User?      @relation("OrganizationApprover", fields: [approvedById], references: [id])
   branches   Branch[]
   employees  Employee[]
+  templates  Template[]
 
   @@index([approvedById])
   @@index([status])
@@ -234,7 +236,128 @@ model Employee {
   personalInfoId String               @unique
   personalInfo   EmployeePersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
 
+  checklists    Checklist[]
+  tasks         Task[]
+  assignedTasks Task[]      @relation("TaskAssignee")
+
   @@index([branchId])
   @@index([departmentId])
+  @@schema("public")
+}
+
+enum TemplateType {
+  ONBOARDING
+  OFFBOARDING
+
+  @@schema("public")
+}
+
+model Template {
+  id          String       @id @default(uuid())
+  type        TemplateType
+  name        String
+  description String?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  templateTasks TemplateTask[]
+  checklists    Checklist[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Checklist {
+  id String @id @default(uuid())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  startDate   DateTime?
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([employeeId])
+  @@schema("public")
+}
+
+enum TaskType {
+  CHECKLIST
+  UPLOAD
+  EMPLOYEE_INFORMATION
+
+  @@schema("public")
+}
+
+model TemplateTask {
+  id         String   @id @default(uuid())
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  order       Int
+  name        String
+  taskType    TaskType
+  description String?
+  dueInDays   Int?
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  SKIPPED
+
+  @@schema("public")
+}
+
+model Task {
+  id String @id @default(uuid())
+
+  checklistId String?
+  checklist   Checklist? @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  assigneeId String?
+  assignee   Employee? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  templateTaskId String?
+  templateTask   TemplateTask? @relation(fields: [templateTaskId], references: [id], onDelete: SetNull)
+
+  order       Int
+  name        String
+  taskType    TaskType
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  description String?
+
+  createdById String?
+  createdBy   User?   @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([checklistId])
   @@schema("public")
 }

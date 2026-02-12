@@ -33,3 +33,13 @@ export function buildQuery(params: Record<string, unknown>) {
 
   return sp.toString();
 }
+
+export function formatDate(value: string | Date): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}

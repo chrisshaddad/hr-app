@@ -1,5 +1,5 @@
-import { userListResponseSchema } from '../../contracts/src/users/user-list.response';
-import { userProfileResponseSchema } from '../../contracts/src/users/user-profile.response';
+import { userListResponseSchema } from '@repo/contracts/src/users/user-list.response';
+import { userProfileResponseSchema } from '@repo/contracts/src/users/user-profile.response';
 
 const validUser = userProfileResponseSchema.parse({
   id: '5f1d7e26-9c60-4c6c-b27e-123456789abc',

@@ -1,4 +1,4 @@
-import { userCreateRequestSchema } from '../../contracts/src/users/user-create.request';
+import { userCreateRequestSchema } from '@repo/contracts/src/users/user-create.request';
 
 describe('userCreateRequestSchema', () => {
   it('should pass with valid data', () => {

@@ -5,7 +5,7 @@ import { userMinimalSchema } from './review-assignments.response';
 import { reviewCycleListItemSchema } from './review-cycles.response';
 
 export const reviewEditableDtoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   summary: z.string().nullable().optional(),
   strengths: z.string().nullable().optional(),
   areasToImprove: z.string().nullable().optional(),
@@ -18,7 +18,7 @@ export const reviewEditableDtoSchema = z.object({
 export type ReviewEditableDto = z.infer<typeof reviewEditableDtoSchema>;
 
 export const reviewTaskItemSchema = z.object({
-  assignmentId: z.string().uuid(),
+  assignmentId: z.uuid(),
   type: reviewTypeSchema,
   cycle: reviewCycleListItemSchema,
   reviewee: userMinimalSchema,
@@ -39,9 +39,9 @@ export const listReviewTasksResponseSchema = z.object({
 export type ListReviewTasksResponse = z.infer<typeof listReviewTasksResponseSchema>;
 
 export const reviewFullDtoSchema = z.object({
-  id: z.string().uuid(),
-  assignmentId: z.string().uuid(),
-  cycleId: z.string().uuid(),
+  id: z.uuid(),
+  assignmentId: z.uuid(),
+  cycleId: z.uuid(),
   type: reviewTypeSchema,
   reviewer: userMinimalSchema,
   reviewee: userMinimalSchema,
@@ -78,7 +78,7 @@ export const listAdminReviewsResponseSchema = z.object({
 export type ListAdminReviewsResponse = z.infer<typeof listAdminReviewsResponseSchema>;
 
 export const receivedReviewDtoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   type: reviewTypeSchema,
   cycle: reviewCycleListItemSchema,
   summary: z.string().nullable().optional(),

@@ -12,10 +12,10 @@ export const upsertReviewRequestSchema = z.object({
 export type UpsertReviewRequest = z.infer<typeof upsertReviewRequestSchema>;
 
 export const listAdminReviewsQuerySchema = z.object({
-  cycleId: z.string().uuid().optional(),
+  cycleId: z.uuid().optional(),
   type: reviewTypeSchema.optional(),
-  reviewerId: z.string().uuid().optional(),
-  revieweeId: z.string().uuid().optional(),
+  reviewerId: z.uuid().optional(),
+  revieweeId: z.uuid().optional(),
   page: z.coerce.number().int().min(0).default(0),
   size: z.coerce.number().int().min(1).default(20),
 });
@@ -23,7 +23,7 @@ export const listAdminReviewsQuerySchema = z.object({
 export type ListAdminReviewsQuery = z.infer<typeof listAdminReviewsQuerySchema>;
 
 export const getReceivedReviewsQuerySchema = z.object({
-  cycleId: z.string().uuid(),
+  cycleId: z.uuid(),
 });
 
 export type GetReceivedReviewsQuery = z.infer<typeof getReceivedReviewsQuerySchema>;

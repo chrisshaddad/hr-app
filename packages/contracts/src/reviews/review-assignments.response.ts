@@ -4,7 +4,7 @@ import { reviewTypeSchema } from './review-type.schema';
 import { reviewCycleListItemSchema } from './review-cycles.response';
 
 export const userMinimalSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
   email: z.email(),
 });
@@ -12,12 +12,12 @@ export const userMinimalSchema = z.object({
 export type UserMinimal = z.infer<typeof userMinimalSchema>;
 
 export const reviewAssignmentListItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   cycle: reviewCycleListItemSchema,
   type: reviewTypeSchema,
   reviewer: userMinimalSchema,
   reviewee: userMinimalSchema.extend({
-    departmentId: z.string().uuid().optional().nullable(),
+    departmentId: z.uuid().optional().nullable(),
   }),
   createdAt: dateSchema,
   updatedAt: dateSchema,
@@ -41,7 +41,7 @@ export const bulkCreateReviewAssignmentsResponseSchema = z.object({
   data: z.object({
     createdCount: z.number(),
     skippedCount: z.number(),
-    createdAssignmentIds: z.array(z.string().uuid()),
+    createdAssignmentIds: z.array(z.uuid()),
     warnings: z.array(z.object({
       code: z.string(),
       message: z.string(),

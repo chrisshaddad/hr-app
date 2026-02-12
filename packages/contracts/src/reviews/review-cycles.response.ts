@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { dateSchema } from '../common';
 
 export const reviewCycleDetailsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
   startDate: dateSchema,
   endDate: dateSchema,
@@ -13,7 +13,7 @@ export const reviewCycleDetailsSchema = z.object({
 export type ReviewCycleDetails = z.infer<typeof reviewCycleDetailsSchema>;
 
 export const reviewCycleListItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
   startDate: dateSchema,
   endDate: dateSchema,

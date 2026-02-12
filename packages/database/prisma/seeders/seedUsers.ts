@@ -125,13 +125,13 @@ export async function seedEmployees(prisma: PrismaClient) {
       create: {
         email: managerSeed.email,
         name: managerSeed.name,
-        role: 'EMPLOYEE',
+        role: UserRole.EMPLOYEE,
         isConfirmed: true,
         organization: { connect: { id: organizationId } },
       },
       update: {
         name: managerSeed.name,
-        role: 'EMPLOYEE',
+        role: UserRole.EMPLOYEE,
         isConfirmed: true,
         organization: { connect: { id: organizationId } },
         manager: { disconnect: true }, // keep null
@@ -148,14 +148,14 @@ export async function seedEmployees(prisma: PrismaClient) {
         create: {
           email: emp.email,
           name: emp.name,
-          role: 'EMPLOYEE',
+          role: UserRole.EMPLOYEE,
           isConfirmed: true,
           organization: { connect: { id: organizationId } },
           manager: { connect: { id: managerUser.id } },
         },
         update: {
           name: emp.name,
-          role: 'EMPLOYEE',
+          role: UserRole.EMPLOYEE,
           isConfirmed: true,
           organization: { connect: { id: organizationId } },
           manager: { connect: { id: managerUser.id } },

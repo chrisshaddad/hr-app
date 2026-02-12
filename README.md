@@ -12,10 +12,17 @@ Multi-tenant HR/Employee Management SaaS platform. Turborepo monorepo with NestJ
 ```bash
 # Copy environment files
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 cp packages/database/.env.example packages/database/.env
 
 # Start Docker services (PostgreSQL, Redis, Mailpit)
 npm run services:init
+
+# Install dependencies
+npm install
+
+# Run initial database setup (needed for prisma type generation when starting the app)
+npx turbo db:migrate
 
 # Run all apps in dev mode
 npm run dev

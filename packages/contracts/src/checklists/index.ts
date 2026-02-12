@@ -2,6 +2,8 @@ export * from './template-type.schema';
 export * from './task-type.schema';
 export * from './task-status.schema';
 export * from './template.schema';
+export * from './template-create.request';
+export * from './template-update.request';
 export * from './template-list.query';
 export * from './template-list.response';
 export * from './template-task.schema';

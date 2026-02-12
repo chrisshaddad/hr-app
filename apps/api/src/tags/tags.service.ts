@@ -206,8 +206,8 @@ export class TagsService {
       description?: string;
     }>,
   ) {
-    const created = [];
-    const errors = [];
+    const created = [] as any[];
+    const errors = [] as { name?: string; error?: string }[];
 
     for (const tag of tags) {
       try {

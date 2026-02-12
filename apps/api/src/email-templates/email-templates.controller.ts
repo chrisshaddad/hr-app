@@ -21,7 +21,7 @@ import { emailTemplateSchema, type EmailTemplateSchema } from '@repo/contracts';
 @Controller('email-templates')
 export class EmailTemplatesController {
   constructor(
-    private readonly templateTypesService: EmailTemplateTypesService,
+    private readonly emailTemplateTypesService: EmailTemplateTypesService,
     private readonly templateSettingsService: EmailTemplateSettingsService,
   ) {}
 
@@ -29,14 +29,14 @@ export class EmailTemplatesController {
   @ApiOperation({ summary: 'List all available email template types' })
   @ApiOkResponse({ description: 'Template types retrieved successfully' })
   async listTypes() {
-    return this.templateTypesService.findAll();
+    return this.emailTemplateTypesService.findAll();
   }
 
   @Get('types/:typeId')
   @ApiOperation({ summary: 'Get a specific email template type' })
   @ApiOkResponse({ description: 'Template type retrieved successfully' })
   async getType(@Param('typeId') typeId: string) {
-    return this.templateTypesService.findOne(typeId);
+    return this.emailTemplateTypesService.findOne(typeId);
   }
 
   @Get('settings')
@@ -44,7 +44,7 @@ export class EmailTemplatesController {
   @ApiOperation({ summary: 'List all email templates for organization' })
   @ApiOkResponse({ description: 'Templates retrieved successfully' })
   async listSettings(
-    @Query('templateTypeId') templateTypeId?: string,
+    @Query('emailTemplateTypeId') emailTemplateTypeId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @CurrentUser() user: User = {} as User,
@@ -52,7 +52,7 @@ export class EmailTemplatesController {
     return this.templateSettingsService.findByOrganization(
       user.organizationId!,
       {
-        templateTypeId,
+        emailTemplateTypeId,
         page: page ? parseInt(page) : 1,
         limit: limit ? parseInt(limit) : 20,
       },
@@ -83,9 +83,9 @@ export class EmailTemplatesController {
     @CurrentUser() user: User,
   ) {
     return this.templateSettingsService.create(user.organizationId!, {
-      templateTypeId: data.templateTypeId,
+      emailTemplateTypeId: data.emailTemplateTypeId,
       subject: data.subject,
-      htmlContent: data.htmlContent,
+      body: data.body,
       isActive: data.isActive,
     });
   }
@@ -105,7 +105,7 @@ export class EmailTemplatesController {
       user.organizationId!,
       {
         subject: data.subject,
-        htmlContent: data.htmlContent,
+        body: data.body,
         isActive: data.isActive,
       },
     );

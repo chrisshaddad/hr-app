@@ -13,18 +13,22 @@ export class EmailTemplateSettingsService {
    * Find all email templates for an organization
    */
   async findByOrganization(
-    organizationId: string,
-    options: { templateTypeId?: string; page?: number; limit?: number } = {},
+    workflowStageId: string,
+    options: {
+      emailTemplateTypeId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
   ) {
-    const { templateTypeId, page = 1, limit = 20 } = options;
+    const { emailTemplateTypeId, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
-    const where = { ...(templateTypeId && { templateTypeId }) };
+    const where = { ...(emailTemplateTypeId && { emailTemplateTypeId }) };
 
     const [templates, total] = await Promise.all([
       this.prisma.emailTemplateSetting.findMany({
         include: {
-          templateType: {
+          emailTemplateType: {
             select: { id: true, title: true, description: true },
           },
         },
@@ -47,11 +51,13 @@ export class EmailTemplateSettingsService {
   /**
    * Find a specific template setting
    */
-  async findOne(id: string, organizationId: string) {
+  async findOne(id: string, workflowStageId: string) {
     const template = await this.prisma.emailTemplateSetting.findUnique({
       where: { id },
       include: {
-        templateType: { select: { id: true, title: true, description: true } },
+        emailTemplateType: {
+          select: { id: true, title: true, description: true },
+        },
       },
     });
 
@@ -66,27 +72,27 @@ export class EmailTemplateSettingsService {
    * Create a new email template
    */
   async create(
-    organizationId: string,
+    workflowStageId: string,
     data: {
-      templateTypeId: string;
+      emailTemplateTypeId: string;
       subject: string;
-      htmlContent: string;
+      body: string;
       isActive?: boolean;
     },
   ) {
     // Verify template type exists
-    const templateType = await this.prisma.emailTemplateType.findUnique({
-      where: { id: data.templateTypeId },
+    const emailTemplateType = await this.prisma.emailTemplateType.findUnique({
+      where: { id: data.emailTemplateTypeId },
     });
 
-    if (!templateType) {
+    if (!emailTemplateType) {
       throw new NotFoundException('Template type not found');
     }
 
     // Check if template already exists for this type
     const existing = await this.prisma.emailTemplateSetting.findFirst({
       where: {
-        templateTypeId: data.templateTypeId,
+        emailTemplateTypeId: data.emailTemplateTypeId,
       },
     });
 
@@ -96,13 +102,16 @@ export class EmailTemplateSettingsService {
 
     return this.prisma.emailTemplateSetting.create({
       data: {
-        templateTypeId: data.templateTypeId,
+        workflowStageId,
+        emailTemplateTypeId: data.emailTemplateTypeId,
         subject: data.subject,
-        body: data.htmlContent,
+        body: data.body,
         isActive: data.isActive ?? true,
       },
       include: {
-        templateType: { select: { id: true, title: true, description: true } },
+        emailTemplateType: {
+          select: { id: true, title: true, description: true },
+        },
       },
     });
   }
@@ -112,24 +121,26 @@ export class EmailTemplateSettingsService {
    */
   async update(
     id: string,
-    organizationId: string,
+    workflowStageId: string,
     data: {
       subject?: string;
-      htmlContent?: string;
+      body?: string;
       isActive?: boolean;
     },
   ) {
-    const template = await this.findOne(id, organizationId);
+    const template = await this.findOne(id, workflowStageId);
 
     return this.prisma.emailTemplateSetting.update({
       where: { id },
       data: {
         subject: data.subject ?? template.subject,
-        htmlContent: data.htmlContent ?? template.htmlContent,
+        body: data.body ?? template.body,
         isActive: data.isActive ?? template.isActive,
       },
       include: {
-        templateType: { select: { id: true, name: true, description: true } },
+        emailTemplateType: {
+          select: { id: true, title: true, description: true },
+        },
       },
     });
   }
@@ -137,8 +148,8 @@ export class EmailTemplateSettingsService {
   /**
    * Delete an email template
    */
-  async delete(id: string, organizationId: string) {
-    const template = await this.findOne(id, organizationId);
+  async delete(id: string, workflowStageId: string) {
+    const template = await this.findOne(id, workflowStageId);
 
     return this.prisma.emailTemplateSetting.delete({
       where: { id },
@@ -148,11 +159,18 @@ export class EmailTemplateSettingsService {
   /**
    * Get default template for a type
    */
-  async getActiveTemplate(templateTypeId: string, organizationId: string) {
+  async getActiveTemplate(
+    emailTemplateTypeId: string,
+    workflowStageId: string,
+  ) {
     const template = await this.prisma.emailTemplateSetting.findFirst({
-      where: { templateTypeId, organizationId, isActive: true },
+      where: {
+        emailTemplateTypeId: emailTemplateTypeId,
+        workflowStageId,
+        isActive: true,
+      },
       include: {
-        templateType: { select: { id: true, name: true } },
+        emailTemplateType: { select: { id: true, title: true } },
       },
     });
 
@@ -168,14 +186,16 @@ export class EmailTemplateSettingsService {
   /**
    * Toggle template active status
    */
-  async toggleActive(id: string, organizationId: string) {
-    const template = await this.findOne(id, organizationId);
+  async toggleActive(id: string, workflowStageId: string) {
+    const template = await this.findOne(id, workflowStageId);
 
     return this.prisma.emailTemplateSetting.update({
       where: { id },
       data: { isActive: !template.isActive },
       include: {
-        templateType: { select: { id: true, name: true, description: true } },
+        emailTemplateType: {
+          select: { id: true, title: true, description: true },
+        },
       },
     });
   }

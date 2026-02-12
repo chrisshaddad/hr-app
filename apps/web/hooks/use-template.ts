@@ -4,14 +4,22 @@ import { useCallback } from 'react';
 import useSWR, { mutate } from 'swr';
 
 import { apiPatch } from '@/lib/api';
-import type { Template, TemplateUpdateRequest } from '@repo/contracts';
+import type {
+  Template,
+  TemplateTask,
+  TemplateUpdateRequest,
+} from '@repo/contracts';
+
+type TemplateWithTasks = Template & {
+  templateTasks?: TemplateTask[];
+};
 
 interface UseTemplateOptions {
   enabled?: boolean;
 }
 
 interface UseTemplateReturn {
-  template: Template | undefined;
+  template: TemplateWithTasks | undefined;
   isLoading: boolean;
   error: Error | undefined;
   mutate: () => void;
@@ -29,7 +37,7 @@ export function useTemplate(
     error,
     isLoading,
     mutate: swrMutate,
-  } = useSWR<Template>(enabled ? `/checklists/templates/${id}` : null);
+  } = useSWR<TemplateWithTasks>(enabled ? `/checklists/templates/${id}` : null);
 
   const invalidateAll = useCallback(() => {
     swrMutate();

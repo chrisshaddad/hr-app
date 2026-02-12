@@ -7,5 +7,7 @@ export * from './template-update.request';
 export * from './template-list.query';
 export * from './template-list.response';
 export * from './template-task.schema';
+export * from './template-task-create.request';
+export * from './template-task-update.request';
 export * from './checklist.schema';
 export * from './task.schema';

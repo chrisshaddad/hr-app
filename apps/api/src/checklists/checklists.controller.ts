@@ -18,11 +18,16 @@ import {
   templateCreateRequestSchema,
   templateListQuerySchema,
   templateUpdateRequestSchema,
+  templateTaskCreateRequestSchema,
+  templateTaskUpdateRequestSchema,
   type Template,
+  type TemplateTask,
   type TemplateCreateRequest,
   type TemplateListQuery,
   type TemplateListResponse,
   type TemplateUpdateRequest,
+  type TemplateTaskCreateRequest,
+  type TemplateTaskUpdateRequest,
 } from '@repo/contracts';
 
 @Controller('checklists')
@@ -145,5 +150,75 @@ export class ChecklistsController {
       name: body.name,
       description: body.description,
     });
+  }
+
+  @Post('templates/:templateId/tasks')
+  @Roles('ORG_ADMIN')
+  async createTemplateTask(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('templateId') templateId: string,
+    @Body(new ZodValidationPipe(templateTaskCreateRequestSchema))
+    body: TemplateTaskCreateRequest,
+  ): Promise<TemplateTask> {
+    const organizationId = user.employee?.organizationId ?? undefined;
+
+    if (organizationId == null) {
+      throw new ForbiddenException(
+        'Organization context required. User must be part of an organization.',
+      );
+    }
+
+    return this.checklistsService.createTemplateTask({
+      templateId,
+      organizationId,
+      data: body,
+    });
+  }
+
+  @Patch('templates/:templateId/tasks/:id')
+  @Roles('ORG_ADMIN')
+  async updateTemplateTask(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('templateId') templateId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(templateTaskUpdateRequestSchema))
+    body: TemplateTaskUpdateRequest,
+  ): Promise<TemplateTask> {
+    const organizationId = user.employee?.organizationId ?? undefined;
+
+    if (organizationId == null) {
+      throw new ForbiddenException(
+        'Organization context required. User must be part of an organization.',
+      );
+    }
+
+    return this.checklistsService.updateTemplateTask({
+      id,
+      templateId,
+      organizationId,
+      data: body,
+    });
+  }
+
+  @Delete('templates/:templateId/tasks/:id')
+  @Roles('ORG_ADMIN')
+  async deleteTemplateTask(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    const organizationId = user.employee?.organizationId ?? undefined;
+
+    if (organizationId == null) {
+      throw new ForbiddenException(
+        'Organization context required. User must be part of an organization.',
+      );
+    }
+
+    await this.checklistsService.deleteTemplateTask({
+      id,
+      organizationId,
+    });
+
+    return { message: 'Template task deleted successfully' };
   }
 }

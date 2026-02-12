@@ -5,7 +5,10 @@ import { PrismaService } from '../database/prisma.service';
 import type {
   Template,
   TemplateListResponse,
+  TemplateTask,
   TemplateUpdateRequest,
+  TemplateTaskCreateRequest,
+  TemplateTaskUpdateRequest,
 } from '@repo/contracts';
 
 @Injectable()
@@ -48,10 +51,12 @@ export class ChecklistsService {
     return { templates, total };
   }
 
-  async getTemplate(options: {
-    id: string;
-    organizationId: string;
-  }): Promise<Template | null> {
+  async getTemplate(options: { id: string; organizationId: string }): Promise<
+    | (Template & {
+        templateTasks: TemplateTask[];
+      })
+    | null
+  > {
     const { id, organizationId } = options;
 
     return this.prisma.template.findFirst({
@@ -59,14 +64,8 @@ export class ChecklistsService {
         id,
         organizationId,
       },
-      select: {
-        id: true,
-        type: true,
-        name: true,
-        description: true,
-        organizationId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        templateTasks: true,
       },
     });
   }
@@ -152,5 +151,107 @@ export class ChecklistsService {
         updatedAt: true,
       },
     });
+  }
+
+  async createTemplateTask(options: {
+    templateId: string;
+    organizationId: string;
+    data: TemplateTaskCreateRequest;
+  }): Promise<TemplateTask> {
+    const { templateId, organizationId, data } = options;
+
+    const template = await this.prisma.template.findFirst({
+      where: {
+        id: templateId,
+        organizationId,
+      },
+    });
+
+    if (!template) {
+      throw new NotFoundException(`Template with ID ${templateId} not found`);
+    }
+
+    return this.prisma.templateTask.create({
+      data: {
+        templateId,
+        order: data.order,
+        name: data.name,
+        taskType: data.taskType,
+        description: data.description ?? null,
+        dueInDays: data.dueInDays ?? null,
+      },
+    });
+  }
+
+  async updateTemplateTask(options: {
+    id: string;
+    templateId: string;
+    organizationId: string;
+    data: TemplateTaskUpdateRequest;
+  }): Promise<TemplateTask> {
+    const { id, templateId, organizationId, data } = options;
+
+    const templateTask = await this.prisma.templateTask.findFirst({
+      where: {
+        id,
+        templateId,
+      },
+      include: {
+        template: {
+          select: {
+            organizationId: true,
+          },
+        },
+      },
+    });
+
+    if (!templateTask) {
+      throw new NotFoundException(`Template task with ID ${id} not found`);
+    }
+
+    if (templateTask.template.organizationId !== organizationId) {
+      throw new NotFoundException(`Template with ID ${templateId} not found`);
+    }
+
+    return this.prisma.templateTask.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteTemplateTask(args: {
+    id: string;
+    organizationId: string;
+  }): Promise<void> {
+    const { id, organizationId } = args;
+
+    const templateTask = await this.prisma.templateTask.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        template: {
+          select: {
+            organizationId: true,
+          },
+        },
+      },
+    });
+
+    if (!templateTask) {
+      throw new NotFoundException(`Template task with ID ${id} not found`);
+    }
+
+    if (templateTask.template.organizationId !== organizationId) {
+      throw new NotFoundException(`Template task with ID ${id} not found`);
+    }
+
+    const res = await this.prisma.templateTask.delete({
+      where: { id },
+    });
+
+    if (res == null) {
+      throw new NotFoundException(`Template task with ID ${id} not found`);
+    }
   }
 }

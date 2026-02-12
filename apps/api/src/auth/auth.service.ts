@@ -1,7 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { SessionService } from './session.service';
 import { MAIL_QUEUE, MAIL_JOBS } from '../mail/mail.constants';
@@ -128,6 +134,71 @@ export class AuthService {
         email: magicLink.user.email,
         name: magicLink.user.name,
         role: magicLink.user.role,
+      },
+    };
+  }
+
+  /**
+   * Login user with email and password
+   */
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    sessionId: string;
+    user: { id: string; email: string; name: string; role: string };
+  }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: { password: true },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password.hashedPassword,
+    );
+
+    if (!isPasswordValid) {
+      // Increment failed login count
+      await this.prisma.password.update({
+        where: { userId: user.id },
+        data: { failedLoginCount: { increment: 1 } },
+      });
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Reset failed login count on success
+    if (user.password.failedLoginCount > 0) {
+      await this.prisma.password.update({
+        where: { userId: user.id },
+        data: { failedLoginCount: 0 },
+      });
+    }
+
+    // Confirm user email if not already confirmed (login with password proves ownership if password was set)
+    if (!user.isConfirmed) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { isConfirmed: true },
+      });
+    }
+
+    // Create session
+    const sessionId = await this.sessionService.createSession(user.id);
+
+    this.logger.log(`User ${user.id} authenticated via password`);
+
+    return {
+      sessionId,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
     };
   }

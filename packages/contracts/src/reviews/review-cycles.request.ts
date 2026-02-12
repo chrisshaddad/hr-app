@@ -34,3 +34,13 @@ export const updateReviewCycleRequestSchema = z.object({
 });
 
 export type UpdateReviewCycleRequest = z.infer<typeof updateReviewCycleRequestSchema>;
+
+export const listReviewTasksQuerySchema = z.object({
+  page: z.coerce.number().int().min(0).default(0),
+  size: z.coerce.number().int().min(1).max(100).default(20),
+
+  cycleId: z.uuid().optional(),
+  type: z.string().min(1).optional(),
+});
+
+export type ListReviewTasksQuery = z.infer<typeof listReviewTasksQuerySchema>;

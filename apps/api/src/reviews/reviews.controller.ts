@@ -20,6 +20,7 @@ import type { User } from '@repo/db';
 import { UserRole } from '@repo/db';
 
 import type {
+  ListReviewTasksQuery,
   ListReviewCyclesQuery,
   CreateReviewCycleRequest,
   UpdateReviewCycleRequest,
@@ -39,6 +40,7 @@ import type {
   ListReceivedReviewsResponse,
 } from '@repo/contracts';
 import {
+  listReviewTasksQuerySchema,
   listReviewCyclesQuerySchema,
   createReviewCycleRequestSchema,
   updateReviewCycleRequestSchema,
@@ -63,7 +65,7 @@ export class ReviewsController {
     @CurrentUser() user: User,
     @Query(new ZodValidationPipe(listReviewCyclesQuerySchema))
     query: ListReviewCyclesQuery,
-  ): Promise<{ data: any[]; meta: any }> {
+  ): Promise<ListReviewCyclesResponse> {
     return this.reviewsService.listReviewCycles(user.organizationId!, query);
   }
 
@@ -81,21 +83,21 @@ export class ReviewsController {
     return { data };
   }
 
-@Post('cycles')
-@Roles(UserRole.ORG_ADMIN)
-@ApiOperation({ summary: 'Create review cycle (ORG_ADMIN only)' })
-@ApiOkResponse({ description: 'Review cycle created' })
-async createReviewCycle(
-  @CurrentUser() user: User,
-  @Body(new ZodValidationPipe(createReviewCycleRequestSchema))
-  dto: CreateReviewCycleRequest,
-): Promise<ReviewCycleDetailResponse> {
-  const data = await this.reviewsService.createReviewCycle(
-    user.organizationId!,
-    dto,
-  );
-  return { data };
-}
+  @Post('cycles')
+  @Roles(UserRole.ORG_ADMIN)
+  @ApiOperation({ summary: 'Create review cycle (ORG_ADMIN only)' })
+  @ApiOkResponse({ description: 'Review cycle created' })
+  async createReviewCycle(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(createReviewCycleRequestSchema))
+    dto: CreateReviewCycleRequest,
+  ): Promise<ReviewCycleDetailResponse> {
+    const data = await this.reviewsService.createReviewCycle(
+      user.organizationId!,
+      dto,
+    );
+    return { data };
+  }
 
 
   @Patch('cycles/:id')
@@ -158,7 +160,7 @@ async createReviewCycle(
   @ApiOkResponse({ description: 'My review tasks retrieved' })
   async getMyReviewTasks(
     @CurrentUser() user: User,
-    @Query() query: any,
+    @Query(new ZodValidationPipe(listReviewTasksQuerySchema)) query: ListReviewTasksQuery
   ): Promise<ListReviewTasksResponse> {
     return this.reviewsService.getMyReviewTasks(user.organizationId!, user.id, query);
   }

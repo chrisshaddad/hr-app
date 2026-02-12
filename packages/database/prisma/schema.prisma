@@ -60,6 +60,7 @@ model User {
   department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
+  managerId      String?
 
   // Review assignments
   reviewAssignmentsGiven     ReviewAssignment[] @relation("ReviewAssignmentsAsReviewer")
@@ -80,6 +81,10 @@ model User {
   // Meetings
   meetingsHosted        Meeting[] @relation("MeetingsAsHost")
   meetingsParticipating Meeting[] @relation("MeetingsAsParticipant")
+
+  // Manager relation
+  manager        User?  @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports  User[] @relation("UserManager")
 
   @@index([organizationId])
   @@index([departmentId])
@@ -326,7 +331,7 @@ model Goal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deleted Boolean
+  deleted Boolean @default(false)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   owner        User         @relation("GoalsAsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -353,7 +358,7 @@ model Milestone {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deleted Boolean
+  deleted Boolean @default(false)
 
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 

@@ -83,6 +83,13 @@ enum OrganizationStatus {
 - **Session**: User authentication sessions
 - **Password**: Securely stored password hashes (private schema)
 - **MagicLink**: Passwordless authentication tokens (private schema)
+- **ReviewCycle**: Defines a performance review period for an organization, with a start and end date during which reviews are conducted.
+- **ReviewAssignment**: Represents a required review task that links a reviewer to a reviewee within a review cycle, and specifies the review type (manager, peer, or self).
+- **Review**: Stores the submitted performance review content for a specific assignment, including qualitative feedback and an optional rating.
+- **Goal**: Represents an employee performance goal within an organization, owned by a user and created by a user, optionally time-bound and broken down into milestones.
+- **Milestone**: A weighted, trackable sub-task within a goal, used to compute overall goal progress.
+- **MeetingSeries**: Defines a recurring 1-on-1 meeting schedule between two users, including recurrence rules such as weekday, time of day, and timezone.
+- **Meeting**: Represents a single scheduled 1-on-1 meeting instance, optionally generated from a meeting series, with an agenda and meeting notes.
 
 ### Database Schemas
 
@@ -350,6 +357,18 @@ z.iso.datetime();
    const ColorSchema = z.enum(Color);
    ```
 
+7. **avoid applying `ZodValidationPipe` at the method level in NestJS controllers**
+
+When using **Zod** with **NestJS**, avoid applying `ZodValidationPipe` at the method level using `@UsePipes`.
+Method-level pipes run on **all parameters** (e.g. `@CurrentUser`, `@Param`, `@Query`), which can cause unexpected validation errors.
+
+Instead, attach the Zod validation pipe **directly to the parameter being validated**:
+
+```typescript
+@Body(new ZodValidationPipe(schema)) dto
+@Query(new ZodValidationPipe(schema)) query
+@Param(new ZodValidationPipe(schema)) params
+```
 **Reference**: [Zod v4 Migration Guide](https://zod.dev/v4/changelog)
 
 ---

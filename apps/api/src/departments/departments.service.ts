@@ -1,26 +1,102 @@
-import { Injectable } from '@nestjs/common';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
+import type {
+  CreateDepartmentRequest,
+  UpdateDepartmentRequest,
+  DepartmentResponse,
+  DepartmentListResponse,
+} from '@repo/contracts';
 
 @Injectable()
 export class DepartmentsService {
-  create(createDepartmentDto: CreateDepartmentDto) {
-    return 'This action adds a new department';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(
+    organizationId: string,
+    data: CreateDepartmentRequest,
+  ): Promise<DepartmentResponse> {
+    return this.prisma.department.create({
+      data: {
+        ...data,
+        organizationId,
+      },
+      include: {
+        _count: {
+          select: { users: true },
+        },
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all departments`;
+  async findAll(organizationId: string): Promise<DepartmentListResponse> {
+    const [departments, total] = await Promise.all([
+      this.prisma.department.findMany({
+        where: { organizationId },
+        include: {
+          _count: {
+            select: { users: true },
+          },
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.department.count({
+        where: { organizationId },
+      }),
+    ]);
+
+    return { departments, total };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} department`;
+  async findOne(
+    organizationId: string,
+    id: string,
+  ): Promise<DepartmentResponse> {
+    const department = await this.prisma.department.findFirst({
+      where: { id, organizationId },
+      include: {
+        _count: {
+          select: { users: true },
+        },
+      },
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${id} not found`);
+    }
+
+    return department;
   }
 
-  update(id: number, updateDepartmentDto: UpdateDepartmentDto) {
-    return `This action updates a #${id} department`;
+  async update(
+    organizationId: string,
+    id: string,
+    data: UpdateDepartmentRequest,
+  ): Promise<DepartmentResponse> {
+    // Ensure department belongs to organization
+    const existing = await this.prisma.department.findUnique({
+      where: { id: id, organizationId: organizationId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Department with ID ${id} not found`);
+    }
+    return this.prisma.department.update({
+      where: { id: existing.id },
+      data,
+      include: {
+        _count: {
+          select: { users: true },
+        },
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} department`;
+  async remove(organizationId: string, id: string): Promise<void> {
+    // Ensure department belongs to organization
+    const existing = await this.findOne(organizationId, id);
+
+    await this.prisma.department.delete({
+      where: { id: existing.id },
+    });
   }
 }

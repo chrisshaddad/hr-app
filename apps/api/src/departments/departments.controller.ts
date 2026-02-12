@@ -7,44 +7,76 @@ import {
   Param,
   Delete,
   UseGuards,
+  UsePipes,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { Roles } from '../auth/decorators';
 import { OrganizationGuard } from '../auth/guards/organization.guard';
+import {
+  createDepartmentRequestSchema,
+  updateDepartmentRequestSchema,
+  type CreateDepartmentRequest,
+  type UpdateDepartmentRequest,
+  type DepartmentResponse,
+  type DepartmentListResponse,
+} from '@repo/contracts';
+import { ZodValidationPipe } from '../common';
 
-@Roles('ORG_ADMIN')
+@Controller('organizations/:organizationId/departments')
+@Roles('ORG_ADMIN', 'SUPER_ADMIN')
 @UseGuards(OrganizationGuard)
-@Controller('departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
   @Post()
-  create(@Body() createDepartmentDto: CreateDepartmentDto) {
-    return this.departmentsService.create(createDepartmentDto);
+  @UsePipes(new ZodValidationPipe(createDepartmentRequestSchema))
+  async create(
+    @Param('organizationId') organizationId: string,
+    @Body() createDepartmentRequest: CreateDepartmentRequest,
+  ): Promise<DepartmentResponse> {
+    return this.departmentsService.create(
+      organizationId,
+      createDepartmentRequest,
+    );
   }
 
   @Get()
-  findAll() {
-    return this.departmentsService.findAll();
+  async findAll(
+    @Param('organizationId') organizationId: string,
+  ): Promise<DepartmentListResponse> {
+    return this.departmentsService.findAll(organizationId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.departmentsService.findOne(+id);
+  async findOne(
+    @Param('organizationId') organizationId: string,
+    @Param('id') id: string,
+  ): Promise<DepartmentResponse> {
+    return this.departmentsService.findOne(organizationId, id);
   }
 
   @Patch(':id')
-  update(
+  @UsePipes(new ZodValidationPipe(updateDepartmentRequestSchema))
+  async update(
+    @Param('organizationId') organizationId: string,
     @Param('id') id: string,
-    @Body() updateDepartmentDto: UpdateDepartmentDto,
-  ) {
-    return this.departmentsService.update(+id, updateDepartmentDto);
+    @Body() updateDepartmentRequest: UpdateDepartmentRequest,
+  ): Promise<DepartmentResponse> {
+    return this.departmentsService.update(
+      organizationId,
+      id,
+      updateDepartmentRequest,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.departmentsService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(
+    @Param('organizationId') organizationId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return this.departmentsService.remove(organizationId, id);
   }
 }

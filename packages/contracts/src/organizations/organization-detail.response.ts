@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { organizationStatusSchema } from './organization-status.schema';
 import { dateSchema } from '../common';
+import { userRoleSchema } from '../users';
 
 // Minimal user info for creator/approver
 const organizationUserSchema = z.object({
   id: z.uuid(),
   email: z.email(),
   name: z.string(),
+  role: userRoleSchema,
 });
 
 // Response from GET /organizations/:id

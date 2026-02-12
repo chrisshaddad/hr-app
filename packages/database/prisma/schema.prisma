@@ -14,7 +14,7 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN // Manages all organizations (can also accept org registrations)
-  ORG_ADMIN   // Manages a single organization (can also invite employees to their org)
+  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
   EMPLOYEE
 
   @@schema("public")
@@ -30,9 +30,9 @@ enum Gender {
 }
 
 enum OrganizationStatus {
-  PENDING   // Awaiting super admin approval
-  ACTIVE    // Approved and operational
-  REJECTED  // Denied by super admin
+  PENDING // Awaiting super admin approval
+  ACTIVE // Approved and operational
+  REJECTED // Denied by super admin
   SUSPENDED
   INACTIVE
 
@@ -90,16 +90,16 @@ model User {
   sessions              Session[]
   magicLinks            MagicLink[]
   profile               UserProfile?
-  organization          Organization?        @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdOrganization   Organization?        @relation("OrganizationCreator")
-  approvedOrganizations Organization[]       @relation("OrganizationApprover")
+  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
+  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdOrganization   Organization?  @relation("OrganizationCreator")
+  approvedOrganizations Organization[] @relation("OrganizationApprover")
 
   // Recruitment system relations
-  createdJobListings    JobListing[]         @relation("JobListingCreator")
-  jobListingMembers     JobListingMember[]
-  boardActivities       BoardActivity[]
-  candidateEvaluations  CandidateStageEvaluation[]
+  createdJobListings   JobListing[]               @relation("JobListingCreator")
+  jobListingMembers    JobListingMember[]
+  boardActivities      BoardActivity[]
+  candidateEvaluations CandidateStageEvaluation[]
 
   @@index([organizationId])
   @@index([departmentId])
@@ -243,39 +243,39 @@ model Department {
 // ============================================================================
 
 model JobListing {
-  id                String            @id @default(uuid())
-  organizationId    String
-  departmentId      String
-  officeId          String? // Optional: specific office/branch location
-  title             String
-  description       String            @db.Text
-  status            JobListingStatus  @default(DRAFT)
-  employmentType    EmploymentType
-  openingsQuantity  Int               @default(1)
-  isDeleted         Boolean           @default(false)
-  closingDate       DateTime?
-  createdById       String
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  publishedAt       DateTime?
+  id               String           @id @default(uuid())
+  organizationId   String
+  departmentId     String
+  officeId         String? // Optional: specific office/branch location
+  title            String
+  description      String           @db.Text
+  status           JobListingStatus @default(DRAFT)
+  employmentType   EmploymentType
+  openingsQuantity Int              @default(1)
+  isDeleted        Boolean          @default(false)
+  closingDate      DateTime?
+  createdById      String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  publishedAt      DateTime?
 
   // Optional fields for job details
-  salaryMin         Decimal?          @db.Decimal(12, 2)
-  salaryMax         Decimal?          @db.Decimal(12, 2)
-  salaryCurrency    String?           @default("USD")
-  experienceYears   Int?
-  educationLevel    String?
-  skills            String[]          // Array of required skills
-  benefits          String[]          // Array of benefits
-  remoteOption      Boolean           @default(false)
+  salaryMin       Decimal? @db.Decimal(12, 2)
+  salaryMax       Decimal? @db.Decimal(12, 2)
+  salaryCurrency  String?  @default("USD")
+  experienceYears Int?
+  educationLevel  String?
+  skills          String[] // Array of required skills
+  benefits        String[] // Array of benefits
+  remoteOption    Boolean  @default(false)
 
-  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  department        Department                @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  createdBy         User                      @relation("JobListingCreator", fields: [createdById], references: [id])
-  members           JobListingMember[]
-  workflowStages    WorkflowStage[]
-  stageCandidates   WorkflowStageCandidate[]
-  boardActivities   BoardActivity[]
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department      Department               @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdBy       User                     @relation("JobListingCreator", fields: [createdById], references: [id])
+  members         JobListingMember[]
+  workflowStages  WorkflowStage[]
+  stageCandidates WorkflowStageCandidate[]
+  boardActivities BoardActivity[]
 
   @@index([organizationId])
   @@index([departmentId])
@@ -305,20 +305,20 @@ model JobListingMember {
 }
 
 model WorkflowStage {
-  id           String            @id @default(uuid())
+  id           String   @id @default(uuid())
   jobListingId String
   title        String
   rank         Int // Order in the workflow (0, 1, 2, etc.)
-  isLocked     Boolean           @default(false) // Prevent moving candidates out
-  isDeleted         Boolean           @default(false)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  isLocked     Boolean  @default(false) // Prevent moving candidates out
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  jobListing        JobListing               @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
-  candidates        WorkflowStageCandidate[]
-  boardActivitiesFrom BoardActivity[]        @relation("FromStage")
-  boardActivitiesTo   BoardActivity[]        @relation("ToStage")
-  emailTemplates    EmailTemplateSetting[]
+  jobListing          JobListing               @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+  candidates          WorkflowStageCandidate[]
+  boardActivitiesFrom BoardActivity[]          @relation("FromStage")
+  boardActivitiesTo   BoardActivity[]          @relation("ToStage")
+  emailTemplates      EmailTemplateSetting[]
 
   @@unique([jobListingId, rank])
   @@index([jobListingId])
@@ -326,20 +326,20 @@ model WorkflowStage {
 }
 
 model Candidate {
-  id                String           @id @default(uuid())
-  firstName         String
-  lastName          String
-  email             String
-  phoneNumber       String?
-  photoUrl          String?
-  cvUrl             String
-  attachmentUrl     String?
-  source            CandidateSource  @default(DIRECT_APPLICATION)
-  sourceDetails     String? // e.g., referrer name, agency name
-  coverLetter       String?          @db.Text
-  linkedinUrl       String?
-  portfolioUrl      String?
-  isDeleted         Boolean           @default(false)
+  id            String          @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String
+  phoneNumber   String?
+  photoUrl      String?
+  cvUrl         String
+  attachmentUrl String?
+  source        CandidateSource @default(DIRECT_APPLICATION)
+  sourceDetails String? // e.g., referrer name, agency name
+  coverLetter   String?         @db.Text
+  linkedinUrl   String?
+  portfolioUrl  String?
+  isDeleted     Boolean         @default(false)
 
   //  Optional if needed
 
@@ -349,12 +349,12 @@ model Candidate {
   //  expectedSalary    Decimal?         @db.Decimal(12, 2)
   //  noticePeriodDays  Int?
 
-  tags              TagSetting[]     @relation("CandidateTags")
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  tags      TagSetting[] @relation("CandidateTags")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  stagePlacements   WorkflowStageCandidate[]
-  boardActivities   BoardActivity[]
+  stagePlacements WorkflowStageCandidate[]
+  boardActivities BoardActivity[]
 
   @@unique([email, phoneNumber]) // Prevent duplicate candidates
   @@index([email])
@@ -372,9 +372,9 @@ model WorkflowStageCandidate {
   movedAt         DateTime? // When moved to another stage
   notes           String?   @db.Text
 
-  candidate     Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  jobListing    JobListing    @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
-  workflowStage WorkflowStage @relation(fields: [workflowStageId], references: [id], onDelete: Cascade)
+  candidate     Candidate                  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobListing    JobListing                 @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+  workflowStage WorkflowStage              @relation(fields: [workflowStageId], references: [id], onDelete: Cascade)
   evaluations   CandidateStageEvaluation[]
 
   @@unique([candidateId, jobListingId, workflowStageId, isActive]) // One active placement per stage
@@ -386,15 +386,15 @@ model WorkflowStageCandidate {
 }
 
 model BoardActivity {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   candidateId  String
   jobListingId String
   fromStageId  String?
   toStageId    String
   memberId     String // User who performed the action
-  notes        String?   @db.Text
-  activityType String    @default("MOVED") // MOVED, ADDED, REJECTED, etc.
-  occurredAt   DateTime  @default(now())
+  notes        String?  @db.Text
+  activityType String   @default("MOVED") // MOVED, ADDED, REJECTED, etc.
+  occurredAt   DateTime @default(now())
 
   candidate  Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobListing JobListing     @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
@@ -433,13 +433,13 @@ model CandidateStageEvaluation {
 }
 
 model TagSetting {
-  id          String      @id @default(uuid())
-  name        String      @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   color       String? // Hex color code for UI display
   description String?
-  createdAt   DateTime    @default(now())
+  createdAt   DateTime @default(now())
 
-  candidates  Candidate[] @relation("CandidateTags")
+  candidates Candidate[] @relation("CandidateTags")
 
   @@schema("public")
 }
@@ -456,14 +456,14 @@ model EmailTemplateType {
 }
 
 model EmailTemplateSetting {
-  id                 String   @id @default(uuid())
-  workflowStageId    String
+  id                  String   @id @default(uuid())
+  workflowStageId     String
   emailTemplateTypeId String
-  subject            String
-  body               String   @db.Text
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  subject             String
+  body                String   @db.Text
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   workflowStage     WorkflowStage     @relation(fields: [workflowStageId], references: [id], onDelete: Cascade)
   emailTemplateType EmailTemplateType @relation(fields: [emailTemplateTypeId], references: [id], onDelete: Cascade)

@@ -215,7 +215,7 @@ export default function OrganizationsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-600">
-                      {org._count.users}
+                      {org._count.employees}
                     </TableCell>
                     <TableCell className="text-gray-600">
                       {org._count.branches}

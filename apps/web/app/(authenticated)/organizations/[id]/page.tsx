@@ -265,7 +265,7 @@ export default function OrganizationDetailPage() {
             <InfoRow
               icon={Users}
               label="Members"
-              value={`${org._count.users} user${org._count.users !== 1 ? 's' : ''}`}
+              value={`${org._count.employees} user${org._count.employees !== 1 ? 's' : ''}`}
             />
             <InfoRow
               icon={GitBranch}
@@ -333,18 +333,20 @@ export default function OrganizationDetailPage() {
                     {org.approvedBy.email}
                   </div>
                 </div>
-              ) : isPending ? (
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center gap-2 text-yellow-700">
-                    <Clock className="h-5 w-5" />
-                    <span className="font-medium">Awaiting Approval</span>
+              ) : (
+                isPending && (
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="flex items-center gap-2 text-yellow-700">
+                      <Clock className="h-5 w-5" />
+                      <span className="font-medium">Awaiting Approval</span>
+                    </div>
+                    <p className="mt-1 text-sm text-yellow-600">
+                      This organization is waiting for a super admin to review
+                      and approve the registration.
+                    </p>
                   </div>
-                  <p className="mt-1 text-sm text-yellow-600">
-                    This organization is waiting for a super admin to review and
-                    approve the registration.
-                  </p>
-                </div>
-              ) : null}
+                )
+              )}
             </div>
           </CardContent>
         </Card>

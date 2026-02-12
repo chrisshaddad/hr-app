@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateSchema } from '../common';
 import { userRoleSchema } from './user-role.schema';
 
 // User profile (optional nested object)
@@ -24,3 +25,22 @@ export const userResponseSchema = z.object({
   profile: userProfileSchema.nullable().optional(),
 });
 export type UserResponse = z.infer<typeof userResponseSchema>;
+
+// Users list response for organization members
+export const usersListResponseSchema = z.object({
+  users: z.array(
+    z.object({
+      id: z.uuid(),
+      email: z.email(),
+      name: z.string(),
+      role: userRoleSchema,
+      isConfirmed: z.boolean(),
+      createdAt: dateSchema,
+      updatedAt: dateSchema,
+    }),
+  ),
+  total: z.number(),
+  page: z.number(),
+  limit: z.number(),
+});
+export type UsersListResponse = z.infer<typeof usersListResponseSchema>;

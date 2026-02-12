@@ -15,7 +15,7 @@ datasource db {
 }
 
 enum UserRole {
-  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
+  SUPER_ADMIN // Manages all organizations (can also accept org registrations)
   ORG_ADMIN // Manages a single organization (can also invite employees to their org)
   EMPLOYEE
 
@@ -50,12 +50,10 @@ enum ReviewType {
   @@schema("public")
 }
 
-enum ReviewCycle {
-  WEEKLY
-  BI_WEEKLY
-  MONTHLY
-  SEMI_ANNUAL
-  BI_ANNUAL
+enum OneOnOneStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
 
   @@schema("public")
 }
@@ -68,27 +66,18 @@ enum ReviewStatus {
   @@schema("public")
 }
 
-enum MeetingRecurrence {
-  NONE // One-time meeting
-  WEEKLY
-  BI_WEEKLY
-  MONTHLY
-  BI_ANNUAL
-
-  @@schema("public")
-}
-
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  isConfirmed    Boolean  @default(false)
+  id             String    @id @default(uuid())
+  email          String    @unique
+  isConfirmed    Boolean   @default(false)
   name           String
-  role           UserRole @default(EMPLOYEE)
+  role           UserRole  @default(EMPLOYEE)
   organizationId String? // null for SUPER_ADMIN users
   departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
   managerId      String? // Direct reporting structure: the manager this user reports to
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   password              Password?
   sessions              Session[]
@@ -104,6 +93,10 @@ model User {
   reviewsGiven    PerformanceReview[] @relation("ReviewsGiven")
   goals           Goal[]              @relation("GoalsOwned")
 
+  // One-on-One relations
+  oneOnOnesOrganized OneOnOne[] @relation("OneOnOnesOrganized")
+  oneOnOnesAttended  OneOnOne[] @relation("OneOnOnesAttended")
+
   // Direct reporting relations
   manager       User?  @relation("DirectReports", fields: [managerId], references: [id], onDelete: SetNull)
   directReports User[] @relation("DirectReports")
@@ -111,6 +104,8 @@ model User {
   @@index([organizationId])
   @@index([departmentId])
   @@index([managerId])
+  @@index([deletedAt])
+  @@index([email, deletedAt])
   @@schema("public")
 }
 
@@ -146,12 +141,13 @@ model UserProfile {
 }
 
 model Password {
-  id               String   @id @default(uuid())
-  userId           String   @unique
+  id               String    @id @default(uuid())
+  userId           String    @unique
   hashedPassword   String
-  failedLoginCount Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  failedLoginCount Int       @default(0)
+  lockoutUntil     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -205,6 +201,10 @@ model Organization {
   // Performance Review relations
   performanceReviews PerformanceReview[]
 
+  // Review Cycle relations
+  reviewCycles ReviewCycle[]
+  departments  Department[]
+
   @@index([approvedById])
   @@index([status])
   @@schema("public")
@@ -228,30 +228,77 @@ model Branch {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   departments  Department[]
 
+  @@unique([organizationId, name])
   @@index([organizationId])
   @@schema("public")
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  branchId    String
-  name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String    @id @default(uuid())
+  branchId       String
+  organizationId String
+  name           String
+  description    String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users        User[]
 
+  @@unique([branchId, name])
   @@index([branchId])
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@schema("public")
+}
+
+model ReviewCycle {
+  id             String   @id @default(uuid())
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  performanceReviews PerformanceReview[]
+
+  @@index([organizationId])
+  @@index([startDate])
+  @@index([endDate])
+  @@schema("public")
+}
+
+model OneOnOne {
+  id          String         @id @default(uuid())
+  organizerId String
+  attendeeId  String
+  scheduledAt DateTime
+  duration    Int // Duration in minutes
+  status      OneOnOneStatus @default(SCHEDULED)
+  location    String? // Physical location or video link
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  organizer User @relation("OneOnOnesOrganized", fields: [organizerId], references: [id], onDelete: Cascade)
+  attendee  User @relation("OneOnOnesAttended", fields: [attendeeId], references: [id], onDelete: Cascade)
+
+  @@index([organizerId])
+  @@index([attendeeId])
+  @@index([scheduledAt])
+  @@index([deletedAt])
   @@schema("public")
 }
 
 model PerformanceReview {
-  id          String       @id @default(uuid())
-  reviewType  ReviewType
-  reviewCycle ReviewCycle?
-  status      ReviewStatus @default(IN_PROGRESS)
+  id            String       @id @default(uuid())
+  reviewType    ReviewType
+  status        ReviewStatus @default(IN_PROGRESS)
+  reviewCycleId String
 
   // Who is being reviewed
   revieweeId String
@@ -263,31 +310,25 @@ model PerformanceReview {
   organizationId String
 
   // Review content
-  overallRating       Int?    @db.SmallInt // 1-5 scale
-  strengths           String? @db.Text
   areasForImprovement String? @db.Text
-  achievements        String? @db.Text
-  notes               String? @db.Text
 
-  // 1-on-1 meeting specific fields (used when reviewType = ONE_ON_ONE)
-  scheduledAt DateTime? // When meeting is scheduled
-  duration    Int? // Duration in minutes
-  location    String? // Physical location or video link
-  recurrence  MeetingRecurrence? @default(NONE) // Recurrence pattern
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  reviewCycle  ReviewCycle  @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
   reviewee     User         @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
   reviewer     User         @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([reviewCycleId, revieweeId, reviewerId, reviewType])
+  @@index([reviewCycleId])
   @@index([revieweeId])
   @@index([reviewerId])
   @@index([organizationId])
   @@index([status])
   @@index([reviewType])
-  @@index([scheduledAt])
+  @@index([deletedAt])
   @@schema("public")
 }
 
@@ -305,13 +346,15 @@ model Goal {
   targetDate    DateTime
   completedDate DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   owner User @relation("GoalsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([targetDate])
   @@index([isCompleted])
+  @@index([deletedAt])
   @@schema("public")
 }

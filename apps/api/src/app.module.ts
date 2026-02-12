@@ -8,6 +8,7 @@ import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { DatabaseModule } from './database/database.module';
 import { EmployeesModule } from './employees/employees.module';
+import { ChecklistsModule } from './checklists/checklists.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { EmployeesModule } from './employees/employees.module';
     MailModule,
     OrganizationsModule,
     EmployeesModule,
+    ChecklistsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -344,7 +344,7 @@ export default function TemplateDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-lg">Template Tasks</CardTitle>
           <Button size="sm" className="gap-2" onClick={handleCreateClick}>
             <Plus className="h-4 w-4" />

@@ -88,7 +88,7 @@ function EmployeeRow(props: {
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-linear-to-br from-blue-100 to-purple-100 flex-shrink-0">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-linear-to-br from-blue-100 to-purple-100 shrink-0">
             <span className="text-xs sm:text-sm font-medium text-gray-700">
               {employee.personalInfo?.firstName?.[0]}
               {employee.personalInfo?.lastName?.[0]}
@@ -189,7 +189,7 @@ function PaginationSection(props: {
             size="sm"
             disabled={currentPage === 1}
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -201,7 +201,7 @@ function PaginationSection(props: {
                 variant={currentPage === i + 1 ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onPageChange(i + 1)}
-                className="flex-shrink-0 text-xs sm:text-sm"
+                className="shrink-0 text-xs sm:text-sm"
               >
                 {i + 1}
               </Button>
@@ -214,7 +214,7 @@ function PaginationSection(props: {
                 variant="outline"
                 size="sm"
                 onClick={() => onPageChange(totalPages)}
-                className="flex-shrink-0 text-xs sm:text-sm"
+                className="shrink-0 text-xs sm:text-sm"
               >
                 {totalPages}
               </Button>
@@ -225,7 +225,7 @@ function PaginationSection(props: {
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             <ArrowRight className="h-4 w-4" />
           </Button>
@@ -484,11 +484,11 @@ export default function EmployeesPage() {
 
   return (
     <Card className="relative border-gray-200 bg-white shadow-sm">
-      {isRefreshing ? (
+      {isRefreshing && (
         <div className="absolute left-0 right-0 top-0 h-1 overflow-hidden rounded-t-lg bg-blue-50">
           <div className="loading-bar h-full bg-primary" />
         </div>
-      ) : null}
+      )}
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
           <div>
@@ -527,7 +527,7 @@ export default function EmployeesPage() {
                   className="w-full sm:w-40 justify-between text-sm"
                 >
                   <span className="truncate">{officeTriggerLabel}</span>
-                  <span className="ml-2 text-gray-400 flex-shrink-0">
+                  <span className="ml-2 text-gray-400 shrink-0">
                     <ChevronDown className="h-3 w-3" />
                   </span>
                 </Button>
@@ -559,7 +559,7 @@ export default function EmployeesPage() {
                   className="w-full sm:w-40 justify-between text-sm"
                 >
                   <span className="truncate">{jobTitleTriggerLabel}</span>
-                  <span className="ml-2 text-gray-400 flex-shrink-0">
+                  <span className="ml-2 text-gray-400 shrink-0">
                     <ChevronDown className="h-3 w-3" />
                   </span>
                 </Button>
@@ -591,7 +591,7 @@ export default function EmployeesPage() {
                   className="w-full sm:w-40 justify-between text-sm"
                 >
                   <span className="truncate">{statusTriggerLabel}</span>
-                  <span className="ml-2 text-gray-400 flex-shrink-0">
+                  <span className="ml-2 text-gray-400 shrink-0">
                     <ChevronDown className="h-3 w-3" />
                   </span>
                 </Button>
@@ -627,12 +627,12 @@ export default function EmployeesPage() {
                   key={`${filter.key}-${filter.label}`}
                   className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 sm:px-3 text-xs text-gray-700"
                 >
-                  <span className="truncate max-w-[120px] sm:max-w-none">
+                  <span className="truncate max-w-30 sm:max-w-none">
                     {filter.label}
                   </span>
                   <button
                     type="button"
-                    className="text-gray-400 hover:text-gray-700 flex-shrink-0"
+                    className="text-gray-400 hover:text-gray-700 shrink-0"
                     onClick={() => handleRemoveFilter(filter)}
                     aria-label={`Remove ${filter.label}`}
                   >

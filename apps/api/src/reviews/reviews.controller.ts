@@ -184,16 +184,6 @@ export class ReviewsController {
     return { data };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get review details' })
-  @ApiOkResponse({ description: 'Review retrieved' })
-  async getReview(
-    @CurrentUser() user: User,
-    @Param('id') reviewId: string,
-  ): Promise<ReviewFullDtoResponse> {
-    const data = await this.reviewsService.getReview(reviewId, user.organizationId!);
-    return { data };
-  }
 
   // ==================== Admin Reviews Routes ====================
 
@@ -220,5 +210,16 @@ export class ReviewsController {
     query: GetReceivedReviewsQuery,
   ): Promise<ListReceivedReviewsResponse> {
     return this.reviewsService.getReceivedReviews(user.organizationId!, user.id, query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get review details' })
+  @ApiOkResponse({ description: 'Review retrieved' })
+  async getReview(
+    @CurrentUser() user: User,
+    @Param('id') reviewId: string,
+  ): Promise<ReviewFullDtoResponse> {
+    const data = await this.reviewsService.getReview(reviewId, user.organizationId!, user);
+    return { data };
   }
 }

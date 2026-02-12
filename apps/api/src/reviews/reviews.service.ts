@@ -567,9 +567,13 @@ export class ReviewsService {
     };
   }
 
-  async getReview(reviewId: string, organizationId: string): Promise<ReviewFullDto> {
-    const review = await this.prisma.review.findFirst({
-      where: { id: reviewId, organizationId },
+  async getReview(reviewId: string, organizationId: string, user: User): Promise<ReviewFullDto> {
+    const where = user.role === UserRole.ORG_ADMIN
+      ? { id: reviewId, organizationId }
+      : { id: reviewId, organizationId, reviewerId: user.id };
+
+  const review = await this.prisma.review.findFirst({
+    where,
       include: {
         reviewer: { select: { id: true, name: true, email: true } },
         reviewee: { select: { id: true, name: true, email: true } },
@@ -730,7 +734,7 @@ export class ReviewsService {
   // ==================== Helper Methods ====================
 
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0]!;
+    return date.toISOString();
   }
 
   private getReviewerDisplay(

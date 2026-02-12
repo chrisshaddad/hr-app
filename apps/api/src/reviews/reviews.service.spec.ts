@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '../database/prisma.service';
 import { UserRole } from '@repo/db';
@@ -37,7 +37,6 @@ describe('ReviewsService', () => {
 
   const mockOrgId = 'org-123';
   const mockUserId = 'user-123';
-  const mockManagerId = 'manager-123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

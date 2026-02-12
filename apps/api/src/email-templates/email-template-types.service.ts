@@ -11,9 +11,9 @@ export class EmailTemplateTypesService {
   async findAll() {
     return this.prisma.emailTemplateType.findMany({
       include: {
-        _count: { select: { templateSettings: true } },
+        _count: { select: { settings: true } },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { title: 'asc' },
     });
   }
 
@@ -24,7 +24,7 @@ export class EmailTemplateTypesService {
     const templateType = await this.prisma.emailTemplateType.findUnique({
       where: { id },
       include: {
-        _count: { select: { templateSettings: true } },
+        _count: { select: { settings: true } },
       },
     });
 

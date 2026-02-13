@@ -204,6 +204,7 @@ model Organization {
   holidays             Holiday[]
   policyTypes          PolicyType[]
   policies             Policy[]
+  jobAssignments       JobAssignment[]
 
   @@unique([contactEmail])
   @@unique([contactNumber])
@@ -287,22 +288,28 @@ model JobAssignment {
   employmentType EmploymentType // Full-time, Part-time, Contract, Intern
   lineManagerId  String? // Reference to manager's User ID
   departmentId   String? // Can track department changes over time
-  effectiveDate  DateTime // When this position started
-  endDate        DateTime? // null for current position
-  isActive       Boolean        @default(true) // Is this the current position?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  branchId       String?
+  organizationId String
+  branch         Branch?        @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
-  user        User        @relation("employments", fields: [userId], references: [id], onDelete: Cascade)
-  lineManager User?       @relation("EmployeeLineManager", fields: [lineManagerId], references: [id], onDelete: SetNull)
-  jobTitle    JobTitle    @relation(fields: [jobTitleId], references: [id], onDelete: Restrict)
-  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  effectiveDate DateTime // When this position started
+  endDate       DateTime? // null for current position
+  isActive      Boolean   @default(true) // Is this the current position?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user         User         @relation("employments", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lineManager  User?        @relation("EmployeeLineManager", fields: [lineManagerId], references: [id], onDelete: SetNull)
+  jobTitle     JobTitle     @relation(fields: [jobTitleId], references: [id], onDelete: Restrict)
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([employeeId])
   @@index([lineManagerId])
   @@index([departmentId])
   @@index([isActive])
+  @@index([branchId])
   @@schema("public")
 }
 

@@ -1,7 +1,14 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { SessionService } from './session.service';
 import { MAIL_QUEUE, MAIL_JOBS } from '../mail/mail.constants';
@@ -128,6 +135,149 @@ export class AuthService {
         email: magicLink.user.email,
         name: magicLink.user.name,
         role: magicLink.user.role,
+      },
+    };
+  }
+
+  /**
+   * Login user with email and password
+   */
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    sessionId: string;
+    user: { id: string; email: string; name: string; role: string };
+  }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: { password: true },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password.hashedPassword,
+    );
+
+    if (!isPasswordValid) {
+      // Increment failed login count
+      await this.prisma.password.update({
+        where: { userId: user.id },
+        data: { failedLoginCount: { increment: 1 } },
+      });
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Reset failed login count on success
+    if (user.password.failedLoginCount > 0) {
+      await this.prisma.password.update({
+        where: { userId: user.id },
+        data: { failedLoginCount: 0 },
+      });
+    }
+
+    // Confirm user email if not already confirmed (login with password proves ownership if password was set)
+    if (!user.isConfirmed) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { isConfirmed: true },
+      });
+    }
+
+    // Create session
+    const sessionId = await this.sessionService.createSession(user.id);
+
+    this.logger.log(`User ${user.id} authenticated via password`);
+
+    return {
+      sessionId,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
+  /**
+   * Signup a new user and create their organization
+   */
+  async signup(
+    email: string,
+    password: string,
+    name: string,
+    organizationName: string,
+  ): Promise<{
+    sessionId: string;
+    user: { id: string; email: string; name: string; role: string };
+  }> {
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user and organization in a transaction
+    const { user } = await this.prisma.$transaction(async (tx) => {
+      // 1. Create the user
+      const newUser = await tx.user.create({
+        data: {
+          email: email.toLowerCase(),
+          name,
+          role: 'ORG_ADMIN',
+          isConfirmed: false, // Should probably verify email later
+        },
+      });
+
+      // 2. Create the password record
+      await tx.password.create({
+        data: {
+          userId: newUser.id,
+          hashedPassword,
+        },
+      });
+
+      // 3. Create the organization
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          status: 'PENDING',
+          createdById: newUser.id,
+        },
+      });
+
+      // 4. Link user to organization
+      const updatedUser = await tx.user.update({
+        where: { id: newUser.id },
+        data: { organizationId: organization.id },
+      });
+
+      return { user: updatedUser, organization };
+    });
+
+    // Create session
+    const sessionId = await this.sessionService.createSession(user.id);
+
+    this.logger.log(`New user ${user.id} signed up and created organization`);
+
+    return {
+      sessionId,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
     };
   }

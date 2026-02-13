@@ -1,6 +1,14 @@
-import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import { Roles, CurrentUser } from '../auth/decorators';
+import { OrganizationGuard } from '../auth/guards/organization.guard';
 import type { User, OrganizationStatus } from '@repo/db';
 import type {
   OrganizationListResponse,
@@ -27,8 +35,18 @@ export class OrganizationsController {
   }
 
   @Get(':id')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ORG_ADMIN')
+  @UseGuards(OrganizationGuard)
   async findOne(@Param('id') id: string): Promise<OrganizationDetailResponse> {
+    return this.organizationsService.findOne(id);
+  }
+
+  @Get(':id/org-details')
+  @Roles('SUPER_ADMIN', 'ORG_ADMIN')
+  @UseGuards(OrganizationGuard)
+  async getOrgDetails(
+    @Param('id') id: string,
+  ): Promise<OrganizationDetailResponse> {
     return this.organizationsService.findOne(id);
   }
 

@@ -19,12 +19,14 @@ import {
 import {
   magicLinkRequestSchema,
   magicLinkVerifyRequestSchema,
+  loginRequestSchema,
   type MagicLinkRequest,
   type MagicLinkVerifyRequest,
+  type LoginRequest,
   type UserResponse,
 } from '@repo/contracts';
 import type { User } from '@repo/db';
-import { ZodValidationPipe } from '../common/pipes';
+import { ZodValidationPipe } from '../common';
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -50,6 +52,31 @@ export class AuthController {
   ) {
     const { sessionId, user } = await this.authService.verifyMagicLink(
       body.token,
+    );
+
+    // Set session cookie
+    response.cookie(SESSION_COOKIE_NAME, sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_MAX_AGE_MS,
+      path: '/',
+    });
+
+    return { user };
+  }
+
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(loginRequestSchema))
+  async login(
+    @Body() body: LoginRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { sessionId, user } = await this.authService.login(
+      body.email,
+      body.password,
     );
 
     // Set session cookie
@@ -97,6 +124,7 @@ export class AuthController {
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,
+      employeeStatus: user.employeeStatus || null,
     };
   }
 }

@@ -44,12 +44,14 @@ enum OrganizationStatus {
 enum TeamRole {
   TEAM_LEAD
   MEMBER
+
   @@schema("public")
 }
 
 enum GroupRole {
   GROUP_LEAD
   MEMBER
+
   @@schema("public")
 }
 
@@ -73,7 +75,7 @@ model User {
   createdOrganization   Organization?  @relation("OrganizationCreator")
   approvedOrganizations Organization[] @relation("OrganizationApprover")
   teamMemberships       TeamMember[]
-  groupMemberships      GroupMember[] 
+  groupMemberships      GroupMember[]
   activityLogs          ActivityLog[]
 
   @@index([organizationId])
@@ -156,18 +158,19 @@ model Organization {
   id           String             @id @default(uuid())
   name         String
   status       OrganizationStatus @default(PENDING)
+  contactEmail String             @unique
   description  String?            @db.Text
   website      String?
-  createdById  String             @unique // User can only create one organization
+  createdById  String?            @unique // User can only create one organization
   approvedById String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   approvedAt   DateTime? // When super admin approved
 
-  createdBy            User   @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy           User?   @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  createdBy            User?                 @relation("OrganizationCreator", fields: [createdById], references: [id])
+  approvedBy           User?                 @relation("OrganizationApprover", fields: [approvedById], references: [id])
   branches             Branch[]
-  users                User[]     @relation("OrganizationMembers")
+  users                User[]                @relation("OrganizationMembers")
   teams                Team[]
   groups               Group[]
   holidays             Holiday[]
@@ -219,7 +222,7 @@ model Department {
   @@schema("public")
 }
 
-// ADMIN DASHBOARD MODELS 
+// ADMIN DASHBOARD MODELS
 
 // Teams - Organization level, cross-department collaborative groups
 // Requirement: "Manage teams"
@@ -266,7 +269,7 @@ model Group {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members      GroupMember[]
 
   @@index([organizationId])
@@ -274,11 +277,11 @@ model Group {
 }
 
 model GroupMember {
-  id       String   @id @default(uuid())
+  id       String    @id @default(uuid())
   groupId  String
   userId   String
   role     GroupRole @default(MEMBER)
-  joinedAt DateTime @default(now())
+  joinedAt DateTime  @default(now())
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -295,7 +298,7 @@ model Holiday {
   id             String   @id @default(uuid())
   organizationId String
   branchId       String? // Optional: for location-specific holidays
-  name           String   // "New Year's Day", "Christmas", "Eid Mubarak"
+  name           String // "New Year's Day", "Christmas", "Eid Mubarak"
   date           DateTime @db.Date
   isRecurring    Boolean  @default(false) // If true, repeats annually
   description    String?  @db.Text
@@ -305,10 +308,10 @@ model Holiday {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationId, branchId, date]) //To prevent duplicates
   @@index([organizationId])
   @@index([branchId])
   @@index([date])
-  @@unique([organizationId,branchId,date]) //To prevent duplicates
   @@schema("public")
 }
 
@@ -317,9 +320,9 @@ model Holiday {
 model StatusType {
   id             String   @id @default(uuid())
   organizationId String
-  name           String   // "Work From Home", "On Leave", "Sick", "Business Trip"
+  name           String // "Work From Home", "On Leave", "Sick", "Business Trip"
   color          String   @default("#6B7280") // Hex color for UI display
-  icon           String?  // Icon identifier ("home", "airplane", "medical" etc, for UI)
+  icon           String? // Icon identifier ("home", "airplane", "medical" etc, for UI)
   isActive       Boolean  @default(true)
   description    String?  @db.Text
   createdAt      DateTime @default(now())
@@ -337,8 +340,8 @@ model StatusType {
 model FeatureFlag {
   id             String   @id @default(uuid())
   organizationId String
-  key            String   // "enable_time_tracking", "enable_performance_reviews"
-  name           String   // Human-readable name
+  key            String // "enable_time_tracking", "enable_performance_reviews"
+  name           String // Human-readable name
   description    String?  @db.Text
   isEnabled      Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -356,7 +359,7 @@ model FeatureFlag {
 model OrganizationSetting {
   id             String   @id @default(uuid())
   organizationId String
-  key            String   // "logo_url", "timezone", "working_hours_start", "company_website"
+  key            String // "logo_url", "timezone", "working_hours_start", "company_website"
   value          String   @db.Text // Stored as string, parse as needed
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -374,9 +377,9 @@ model ActivityLog {
   id             String   @id @default(uuid())
   organizationId String? // null for super admin actions
   userId         String
-  action         String   // e.g., "CREATE", "UPDATE", "DELETE", "REQUEST_TIME_OFF"
-  entity         String   // e.g., "User", "Department", "Holiday", "Team", "Group"
-  entityId       String?  // ID of the affected entity
+  action         String // e.g., "CREATE", "UPDATE", "DELETE", "REQUEST_TIME_OFF"
+  entity         String // e.g., "User", "Department", "Holiday", "Team", "Group"
+  entityId       String? // ID of the affected entity
   details        Json? // JSON string with additional context
   ipAddress      String?
   userAgent      String?

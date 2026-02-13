@@ -27,12 +27,26 @@ function VerifyContent() {
 
     const verify = async () => {
       try {
-        await verifyMagicLink({ token });
-        setStatus('success');
-        toast.success('Successfully logged in!');
-        // Small delay to show success state before redirecting
+        // await verifyMagicLink({ token });
+        // setStatus('success');
+        // toast.success('Successfully logged in!');
+        // // Small delay to show success state before redirecting
+        // setTimeout(() => {
+        //   router.replace('/dashboard');
+        // }, 1000);
+        const { user } = await verifyMagicLink({ token });
+
         setTimeout(() => {
-          router.replace('/dashboard');
+          switch (user.role) {
+            case 'SUPER_ADMIN':
+              router.replace('/organizations');
+              break;
+            case 'ORG_ADMIN':
+              router.replace('/dashboard'); // later you can make /dashboard be org admin
+              break;
+            default:
+              router.replace('/dashboard'); // employee
+          }
         }, 1000);
       } catch (error) {
         setStatus('error');

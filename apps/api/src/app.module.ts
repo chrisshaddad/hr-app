@@ -10,6 +10,7 @@ import { DatabaseModule } from './database/database.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { HolidaysModule } from './holidays/holidays.module';
 import { DocumentsModule } from './documents/documents.module';
+import { StorageModule } from './storage';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DocumentsModule } from './documents/documents.module';
       },
     }),
     DatabaseModule,
+    StorageModule,
     AuthModule,
     MailModule,
     OrganizationsModule,

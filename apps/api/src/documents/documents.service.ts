@@ -1,43 +1,70 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { STORAGE_SERVICE, type StorageService } from '../storage';
 import type {
-  CreateDocumentRequest,
   UpdateDocumentRequest,
   DocumentResponse,
   DocumentListResponse,
+  DocumentType,
 } from '@repo/contracts';
+
+export interface UploadDocumentData {
+  userId: string;
+  documentType: DocumentType;
+  file: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+    size: number;
+  };
+}
 
 @Injectable()
 export class DocumentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(STORAGE_SERVICE) private readonly storageService: StorageService,
+  ) {}
 
   private async verifyDocumentExists(
     organizationId: string,
     id: string,
-  ): Promise<void> {
+  ): Promise<{ fileKey: string }> {
     const existing = await this.prisma.document.findFirst({
       where: { id, organizationId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, fileUrl: true },
     });
 
     if (!existing) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
+
+    // Extract file key from URL
+    const fileKey = existing.fileUrl.split('/').slice(-2).join('/');
+    return { fileKey };
   }
 
-  async create(
+  async upload(
     organizationId: string,
-    data: CreateDocumentRequest,
+    data: UploadDocumentData,
   ): Promise<DocumentResponse> {
+    // Upload file to storage
+    const uploaded = await this.storageService.upload(data.file.buffer, {
+      fileName: data.file.originalname,
+      mimeType: data.file.mimetype,
+      folder: `${organizationId}/${data.userId}`,
+    });
+
+    // Create document record
     return this.prisma.document.create({
       data: {
         userId: data.userId,
         organizationId,
         documentType: data.documentType,
-        fileName: data.fileName,
-        fileUrl: data.fileUrl,
-        fileSize: data.fileSize,
-        mimeType: data.mimeType,
+        fileName: data.file.originalname,
+        fileUrl: uploaded.key, // Store the key, not the full URL
+        fileSize: uploaded.size,
+        mimeType: uploaded.mimeType,
       },
     });
   }
@@ -75,6 +102,19 @@ export class DocumentsService {
     return document;
   }
 
+  async getDownloadUrl(
+    organizationId: string,
+    id: string,
+    expiresInSeconds = 3600,
+  ): Promise<{ url: string; fileName: string }> {
+    const document = await this.findOne(organizationId, id);
+    const url = await this.storageService.getSignedUrl(
+      document.fileUrl,
+      expiresInSeconds,
+    );
+    return { url, fileName: document.fileName };
+  }
+
   async update(
     organizationId: string,
     id: string,
@@ -89,9 +129,17 @@ export class DocumentsService {
   }
 
   async remove(organizationId: string, id: string): Promise<void> {
-    await this.verifyDocumentExists(organizationId, id);
+    const { fileKey } = await this.verifyDocumentExists(organizationId, id);
 
-    // Soft delete
+    // Delete from storage
+    try {
+      await this.storageService.delete(fileKey);
+    } catch (error) {
+      // Log but don't fail if storage deletion fails
+      console.error(`Failed to delete file from storage: ${fileKey}`, error);
+    }
+
+    // Soft delete record
     await this.prisma.document.update({
       where: { id },
       data: { deletedAt: new Date() },

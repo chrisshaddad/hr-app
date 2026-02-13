@@ -23,14 +23,17 @@ import {
   type MagicLinkVerifyRequest,
   type UserResponse,
 } from '@repo/contracts';
-import type { User } from '@repo/db';
+import type { User, Prisma } from '@repo/db';
 import { ZodValidationPipe } from '../common/pipes';
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+export type UserWithRoles = Prisma.UserGetPayload<{
+  include: { roles: true };
+}>;
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('magic-link')
@@ -88,12 +91,12 @@ export class AuthController {
   }
 
   @Get('me')
-  getCurrentUser(@CurrentUser() user: User): UserResponse {
+  getCurrentUser(@CurrentUser() user: UserWithRoles): UserResponse {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.roles.map(r => r.role), // now returns string[]
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,

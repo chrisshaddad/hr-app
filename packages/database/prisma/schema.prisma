@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,14 +5,465 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["public", "private"]
+  schemas  = ["private", "public"]
+}
+
+model User {
+  id                    String               @id @default(uuid())
+  email                 String               @unique
+  isConfirmed           Boolean              @default(false)
+  name                  String
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  departmentId          String?
+  organizationId        String?
+  magicLinks            MagicLink[]
+  password              Password?
+  sessions              Session[]
+  activityLogs          ActivityLog[]
+  checklistInstances    ChecklistInstance[]
+  uploadedDocs          Document[]
+  employments           Employment?
+  generatedReports      GeneratedReport[]
+  notifications         Notification[]
+  approvedOrganizations Organization[]       @relation("OrganizationApprover")
+  createdOrganization   Organization?        @relation("OrganizationCreator")
+  createdReports        ReportTemplate[]
+  assignedTasks         TaskInstance[]       @relation("TaskAssignee")
+  timeOffEntitlements   TimeOffEntitlement[]
+  timeOffRequests       TimeOffRequest[]
+  department            Department?          @relation(fields: [departmentId], references: [id])
+  organization          Organization?        @relation("OrganizationMembers", fields: [organizationId], references: [id])
+  profile               UserProfile?
+  roles                 UserRoleAssignment[]
+
+  @@index([organizationId])
+  @@index([departmentId])
+  @@schema("public")
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  role      UserRole
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@schema("public")
+}
+
+model UserProfile {
+  id                       String    @id @default(uuid())
+  userId                   String    @unique
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  bio                      String?
+  phoneNumber              String?
+  street1                  String?
+  street2                  String?
+  city                     String?
+  state                    String?
+  postalCode               String?
+  country                  String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  nationality              String?
+  profilePictureUrl        String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model Password {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  hashedPassword   String
+  failedLoginCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("private")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("private")
+}
+
+model MagicLink {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@schema("private")
+}
+
+model Organization {
+  id                 String              @id @default(uuid())
+  name               String
+  status             OrganizationStatus  @default(PENDING)
+  description        String?
+  website            String?
+  createdById        String              @unique
+  approvedById       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  approvedAt         DateTime?
+  deletedAt          DateTime?
+  logs               ActivityLog[]
+  branches           Branch[]
+  checklistTemplates ChecklistTemplate[]
+  widgets            DashboardWidget[]
+  departments        Department[]
+  generated          GeneratedReport[]
+  notifications      Notification[]
+  approvedBy         User?               @relation("OrganizationApprover", fields: [approvedById], references: [id])
+  createdBy          User                @relation("OrganizationCreator", fields: [createdById], references: [id])
+  reports            ReportTemplate[]
+  schedules          ScheduledReport[]
+  users              User[]              @relation("OrganizationMembers")
+
+  @@index([approvedById])
+  @@index([status])
+  @@schema("public")
+}
+
+model Branch {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  street1        String?
+  street2        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  email          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departments    Department[]
+  employments    Employment[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  branchId       String
+  name           String
+  description    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  organizationId String
+  branch         Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employments    Employment[]
+  users          User[]
+
+  @@index([branchId])
+  @@schema("public")
+}
+
+model TaskTemplate {
+  id                     String                  @id @default(uuid())
+  name                   String
+  description            String?
+  mandatory              Boolean                 @default(true)
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  checklistTemplateTasks ChecklistTemplateTask[]
+  taskInstances          TaskInstance[]
+  assignedRoles          TaskTemplateRole[]
+
+  @@schema("public")
+}
+
+model TaskTemplateRole {
+  id             String       @id @default(uuid())
+  taskTemplateId String
+  role           UserRole
+  createdAt      DateTime     @default(now())
+  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([taskTemplateId, role])
+  @@schema("public")
+}
+
+model ChecklistTemplate {
+  id                 String                  @id @default(uuid())
+  organizationId     String?
+  branchId           String?
+  departmentId       String?
+  name               String
+  type               ChecklistType
+  isActive           Boolean                 @default(true)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  checklistInstances ChecklistInstance[]
+  organization       Organization?           @relation(fields: [organizationId], references: [id])
+  tasks              ChecklistTemplateTask[]
+
+  @@schema("public")
+}
+
+model ChecklistTemplateTask {
+  id                  String            @id @default(uuid())
+  checklistTemplateId String
+  taskTemplateId      String
+  orderIndex          Int
+  checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
+  taskTemplate        TaskTemplate      @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([checklistTemplateId, taskTemplateId])
+  @@schema("public")
+}
+
+model ChecklistInstance {
+  id                  String            @id @default(uuid())
+  employeeId          String
+  checklistTemplateId String
+  type                ChecklistType
+  status              ChecklistStatus   @default(IN_PROGRESS)
+  startedAt           DateTime          @default(now())
+  completedAt         DateTime?
+  checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id])
+  employee            User              @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  notifications       Notification[]
+  taskInstances       TaskInstance[]
+
+  @@schema("public")
+}
+
+model TaskInstance {
+  id                  String            @id @default(uuid())
+  checklistInstanceId String
+  taskTemplateId      String
+  assignedToUserId    String
+  status              TaskStatus        @default(PENDING)
+  dueDate             DateTime?
+  completedAt         DateTime?
+  documents           Document[]
+  notifications       Notification[]
+  assignedToUser      User              @relation("TaskAssignee", fields: [assignedToUserId], references: [id])
+  checklistInstance   ChecklistInstance @relation(fields: [checklistInstanceId], references: [id], onDelete: Cascade)
+  taskTemplate        TaskTemplate      @relation(fields: [taskTemplateId], references: [id])
+
+  @@schema("public")
+}
+
+model Document {
+  id             String         @id @default(uuid())
+  taskInstanceId String
+  uploadedById   String
+  fileUrl        String
+  fileName       String
+  mimeType       String?
+  fileSize       Int?
+  status         DocumentStatus @default(UPLOADED)
+  createdAt      DateTime       @default(now())
+  taskInstance   TaskInstance   @relation(fields: [taskInstanceId], references: [id], onDelete: Cascade)
+  uploadedBy     User           @relation(fields: [uploadedById], references: [id])
+
+  @@schema("public")
+}
+
+model Employment {
+  id           String           @id @default(uuid())
+  userId       String           @unique
+  jobTitle     String
+  employeeType EmployeeType
+  status       EmploymentStatus
+  joinDate     DateTime
+  exitDate     DateTime?
+  departmentId String?
+  branchId     String?
+  deletedAt    DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  branch       Branch?          @relation(fields: [branchId], references: [id])
+  department   Department?      @relation(fields: [departmentId], references: [id])
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([joinDate])
+  @@schema("public")
+}
+
+model ReportTemplate {
+  id             String            @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  definition     Json
+  allowedFormats ReportFormat[]
+  createdById    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  widgets        DashboardWidget[]
+  runs           GeneratedReport[]
+  createdBy      User?             @relation(fields: [createdById], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  schedules      ScheduledReport[]
+
+  @@index([organizationId])
+  @@schema("public")
+}
+
+model GeneratedReport {
+  id                String           @id @default(uuid())
+  organizationId    String
+  reportTemplateId  String
+  scheduledReportId String?
+  status            ReportRunStatus  @default(QUEUED)
+  format            ReportFormat
+  fileUrl           String?
+  fileName          String?
+  error             String?
+  createdById       String?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  createdAt         DateTime         @default(now())
+  createdBy         User?            @relation(fields: [createdById], references: [id])
+  organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportTemplate    ReportTemplate   @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
+  scheduledReport   ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([status])
+  @@schema("public")
+}
+
+model ScheduledReport {
+  id               String            @id @default(uuid())
+  organizationId   String
+  reportTemplateId String
+  frequency        ReportFrequency
+  dayOfWeek        Int?
+  dayOfMonth       Int?
+  timeOfDay        String?
+  isEnabled        Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  generatedReports GeneratedReport[]
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportTemplate   ReportTemplate    @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([reportTemplateId])
+  @@schema("public")
+}
+
+model DashboardWidget {
+  id               String          @id @default(uuid())
+  organizationId   String
+  title            String
+  widgetType       WidgetType
+  reportTemplateId String?
+  config           Json?
+  orderIndex       Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportTemplate   ReportTemplate? @relation(fields: [reportTemplateId], references: [id])
+
+  @@index([organizationId, orderIndex])
+  @@schema("public")
+}
+
+model Notification {
+  id                  String             @id @default(uuid())
+  organizationId      String
+  userId              String
+  taskInstanceId      String?
+  checklistInstanceId String?
+  status              NotificationStatus @default(SCHEDULED)
+  message             String?
+  scheduledFor        DateTime
+  sentAt              DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  checklistInstance   ChecklistInstance? @relation(fields: [checklistInstanceId], references: [id], onDelete: Cascade)
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taskInstance        TaskInstance?      @relation(fields: [taskInstanceId], references: [id], onDelete: Cascade)
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId, status])
+  @@index([taskInstanceId])
+  @@index([checklistInstanceId])
+  @@schema("public")
+}
+
+model ActivityLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  actorUserId    String?
+  entityType     String
+  entityId       String
+  action         String
+  data           Json?
+  createdAt      DateTime     @default(now())
+  actor          User?        @relation(fields: [actorUserId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+  @@schema("public")
+}
+
+model TimeOffEntitlement {
+  id        String @id @default(uuid())
+  userId    String
+  year      Int
+  totalDays Int
+  carryOver Int    @default(0)
+  user      User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, year])
+  @@schema("public")
+}
+
+model TimeOffRequest {
+  id        String        @id @default(uuid())
+  userId    String
+  type      TimeOffType
+  status    TimeOffStatus
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@index([startDate, endDate])
+  @@schema("public")
 }
 
 enum UserRole {
-  SUPER_ADMIN // Manages all orgnaizations (can also accept org registrations)
-  ORG_ADMIN // Manages a single organization (can also invite employees to their org)
-  MANAGER
+  SUPER_ADMIN
+  ORG_ADMIN
   EMPLOYEE
+  MANAGER
 
   @@schema("public")
 }
@@ -33,11 +478,11 @@ enum Gender {
 }
 
 enum OrganizationStatus {
-  PENDING // Awaiting super admin approval
-  ACTIVE // Approved and operational
-  REJECTED // Denied by super admin
+  PENDING
+  ACTIVE
   SUSPENDED
   INACTIVE
+  REJECTED
 
   @@schema("public")
 }
@@ -146,553 +591,5 @@ enum WidgetType {
   TABLE
   NUMBER_CARD
 
-  @@schema("public")
-}
-
-model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  isConfirmed    Boolean  @default(false)
-  name           String
-
-  //role           UserRole @default(EMPLOYEE)
-  roles UserRoleAssignment[]
-  organizationId String? // null for SUPER_ADMIN users
-  departmentId   String? // null for SUPER_ADMIN and ORG_ADMIN users
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  password              Password?
-  sessions              Session[]
-  magicLinks            MagicLink[]
-  profile               UserProfile?
-  organization          Organization?  @relation("OrganizationMembers", fields: [organizationId], references: [id], onDelete: SetNull)
-  department            Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdOrganization   Organization?  @relation("OrganizationCreator")
-  approvedOrganizations Organization[] @relation("OrganizationApprover")
-
-  checklistInstances ChecklistInstance[]
-  assignedTasks      TaskInstance[]      @relation("TaskAssignee")
-  uploadedDocs       Document[]
-
-  timeOffEntitlements TimeOffEntitlement[]
-  timeOffRequests     TimeOffRequest[]
-  employments         Employment[]
-
-  createdReports   ReportTemplate[]
-  generatedReports GeneratedReport[]
-  activityLogs     ActivityLog[]
-  notifications    Notification[]
-
-  @@index([organizationId])
-  @@index([departmentId])
-  @@schema("public")
-}
-
-model UserRoleAssignment {
-  id     String   @id @default(uuid())
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-  role   UserRole
-  createdAt DateTime @default(now())
-
-  @@unique([userId, role])
-  @@schema("public")
-}
-
-model UserProfile {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  dateOfBirth DateTime?
-  gender      Gender?
-  bio         String?   @db.Text
-  phoneNumber String?
-
-  // Address fields
-  street1    String?
-  street2    String?
-  city       String?
-  state      String?
-  postalCode String?
-  country    String?
-
-  // Emergency contact
-  emergencyContactName     String?
-  emergencyContactPhone    String?
-  emergencyContactRelation String?
-
-  nationality       String?
-  profilePictureUrl String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("public")
-}
-
-model Password {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  hashedPassword   String
-  failedLoginCount Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("private")
-}
-
-model Session {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@schema("private")
-}
-
-model MagicLink {
-  id        String    @id @default(uuid())
-  userId    String
-  token     String    @unique // securely generated random token, not a UUID
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@schema("private")
-}
-
-model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  status       OrganizationStatus @default(PENDING)
-  description  String?            @db.Text
-  website      String?
-  createdById  String             @unique // User can only create one organization
-  approvedById String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  approvedAt   DateTime? // When super admin approved
-
-  createdBy  User     @relation("OrganizationCreator", fields: [createdById], references: [id])
-  approvedBy User?    @relation("OrganizationApprover", fields: [approvedById], references: [id])
-  branches   Branch[]
-  users      User[]   @relation("OrganizationMembers")
-
-  deletedAt          DateTime?
-  departments        Department[]
-  checklistTemplates ChecklistTemplate[]
-
-  reports       ReportTemplate[]
-  widgets       DashboardWidget[]
-  schedules     ScheduledReport[]
-  generated     GeneratedReport[]
-  notifications Notification[]
-  logs          ActivityLog[]
-
-  @@index([approvedById])
-  @@index([status])
-  @@schema("public")
-}
-
-model Branch {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  street1        String?
-  street2        String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String
-  phoneNumber    String?
-  email          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  departments        Department[]
-  deletedAt          DateTime?
-  employments        Employment[]
-
-  @@index([organizationId])
-  @@schema("public")
-}
-
-model Department {
-  id             String   @id @default(uuid())
-  branchId       String
-  organizationId String
-  name           String
-  description    String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  users  User[]
-
-  deletedAt          DateTime?
-  employments        Employment[]
-  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([branchId])
-  @@schema("public")
-}
-
-// =======================
-// TASKS & CHECKLISTS
-// =======================
-// Task templates define a reusable task
-// Example: "Submit ID", "Sign Contract"
-// Tasks can be assigned to roles and reused across multiple checklists
-model TaskTemplate {
-  id             String    @id @default(uuid())
-  name           String
-  description    String?
-  mandatory      Boolean   @default(true)
-  //assignedToRole UserRole?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-
-  checklistTemplateTasks ChecklistTemplateTask[]
-  taskInstances          TaskInstance[]
-  assignedRoles          TaskTemplateRole[]
-  @@schema("public")
-}
-
-model TaskTemplateRole {
-  id            String       @id @default(uuid())
-  taskTemplate  TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
-  taskTemplateId String
-  role          UserRole
-  createdAt     DateTime     @default(now())
-
-  @@unique([taskTemplateId, role])
-  @@schema("public")
-}
-
-// Checklist templates define reusable checklists
-// Example: "New Hire Checklist" or "Exit Checklist"
-model ChecklistTemplate {
-  id             String        @id @default(uuid())
-  organizationId String?
-  branchId       String?
-  departmentId   String?
-  name           String
-  type           ChecklistType
-  isActive       Boolean       @default(true)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  organization Organization? @relation(fields: [organizationId], references: [id])
-
-  tasks              ChecklistTemplateTask[]
-  checklistInstances ChecklistInstance[]
-
-  @@schema("public")
-}
-
-// Junction table linking tasks and checklist templates
-// Also maintains the order of tasks in a checklist
-model ChecklistTemplateTask {
-  id                  String @id @default(uuid())
-  checklistTemplateId String
-  taskTemplateId      String
-  orderIndex          Int
-
-  checklistTemplate ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
-  taskTemplate      TaskTemplate      @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
-
-  @@unique([checklistTemplateId, taskTemplateId])
-  @@schema("public")
-}
-
-// A real checklist assigned to an employee
-// Tracks progress and completion
-model ChecklistInstance {
-  id                  String          @id @default(uuid())
-  employeeId          String
-  checklistTemplateId String
-  type                ChecklistType
-  status              ChecklistStatus @default(IN_PROGRESS)
-  startedAt           DateTime        @default(now())
-  completedAt         DateTime?
-
-  employee          User              @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  checklistTemplate ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id])
-  taskInstances     TaskInstance[]
-  notifications     Notification[]
-
-  @@schema("public")
-}
-
-// Represents a task assigned to a real user
-// Tracks due dates, status, and attached documents
-model TaskInstance {
-  id                  String     @id @default(uuid())
-  checklistInstanceId String
-  taskTemplateId      String
-  assignedToUserId    String
-  status              TaskStatus @default(PENDING)
-  dueDate             DateTime?
-  completedAt         DateTime?
-
-  checklistInstance ChecklistInstance @relation(fields: [checklistInstanceId], references: [id], onDelete: Cascade)
-  taskTemplate      TaskTemplate      @relation(fields: [taskTemplateId], references: [id])
-  assignedToUser    User              @relation("TaskAssignee", fields: [assignedToUserId], references: [id])
-
-  documents     Document[]
-  notifications Notification[]
-
-  @@schema("public")
-}
-
-// =======================
-// DOCUMENTS
-// =======================
-
-// Files uploaded for tasks (e.g., ID proof, contract, certificates)
-// Tracks approval status for compliance
-model Document {
-  id             String         @id @default(uuid())
-  taskInstanceId String
-  uploadedById   String
-  fileUrl        String
-  fileName       String
-  mimeType       String?
-  fileSize       Int?
-  status         DocumentStatus @default(UPLOADED)
-  createdAt      DateTime       @default(now())
-
-  taskInstance TaskInstance @relation(fields: [taskInstanceId], references: [id], onDelete: Cascade)
-  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
-
-  @@schema("public")
-}
-
-// =======================
-// EMPLOYMENT & REPORTING DATA
-// =======================
-
-// Tracks an employee's job details
-// Important for reporting, payroll, and access control
-model Employment {
-  id           String           @id @default(uuid())
-  userId       String           @unique
-  jobTitle     String
-  employeeType EmployeeType
-  status       EmploymentStatus
-  joinDate     DateTime
-  exitDate     DateTime?
-  departmentId String?
-  branchId     String?
-  deletedAt    DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department Department? @relation(fields: [departmentId], references: [id])
-  branch     Branch?     @relation(fields: [branchId], references: [id])
-
-  @@index([status])
-  @@index([joinDate])
-  @@schema("public")
-}
-
-// Report template definition
-// Defines structure, filters, and formats for reports
-model ReportTemplate {
-  id             String         @id @default(uuid())
-  organizationId String
-  name           String
-  description    String?
-  definition     Json
-  allowedFormats ReportFormat[]
-  createdById    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
-
-  widgets   DashboardWidget[]
-  schedules ScheduledReport[]
-  runs      GeneratedReport[]
-
-  @@index([organizationId])
-  @@schema("public")
-}
-
-// Generated reports based on templates
-model GeneratedReport {
-  id                String          @id @default(uuid())
-  organizationId    String
-  reportTemplateId  String
-  scheduledReportId String?
-  status            ReportRunStatus @default(QUEUED)
-  format            ReportFormat
-  fileUrl           String?
-  fileName          String?
-  error             String?
-  createdById       String?
-
-  startedAt  DateTime?
-  finishedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  reportTemplate  ReportTemplate   @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
-  scheduledReport ScheduledReport? @relation(fields: [scheduledReportId], references: [id], onDelete: SetNull)
-  createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, createdAt])
-  @@index([status])
-  @@schema("public")
-}
-
-// Scheduled reports for automated generation
-model ScheduledReport {
-  id               String          @id @default(uuid())
-  organizationId   String
-  reportTemplateId String
-  frequency        ReportFrequency
-  dayOfWeek        Int?
-  dayOfMonth       Int?
-  timeOfDay        String?
-  isEnabled        Boolean         @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  reportTemplate ReportTemplate @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
-
-  generatedReports GeneratedReport[]
-
-  @@index([organizationId])
-  @@index([reportTemplateId])
-  @@schema("public")
-}
-
-// =======================
-// Dashboard Widgets
-// =======================
-// DashboardWidget:
-// Represents a visual component (widget) on the organization's dashboard.
-// Each widget can display data from a linked report (ReportTemplate) or custom configuration.
-// Fields include title, type (chart, table, number card), order for display, and optional configuration in JSON.
-// Widgets are linked to an organization and optionally to a report template for dynamic data visualization.
-
-model DashboardWidget {
-  id               String     @id @default(uuid())
-  organizationId   String
-  title            String
-  widgetType       WidgetType
-  reportTemplateId String?
-  config           Json?
-  orderIndex       Int        @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  reportTemplate ReportTemplate? @relation(fields: [reportTemplateId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, orderIndex])
-  @@schema("public")
-}
-
-// =======================
-// Notifications for users, tasks, checklists
-// Notifications are sent when a task is completed or when an employee's onboarding or offboarding process is finished.
-model Notification {
-  id                  String             @id @default(uuid())
-  organizationId      String
-  userId              String
-  taskInstanceId      String? // link to task (optional)
-  checklistInstanceId String? // link to checklist (optional)
-  status              NotificationStatus @default(SCHEDULED)
-  message             String?
-  scheduledFor        DateTime
-  sentAt              DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  taskInstance      TaskInstance?      @relation(fields: [taskInstanceId], references: [id], onDelete: Cascade)
-  checklistInstance ChecklistInstance? @relation(fields: [checklistInstanceId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([userId, status])
-  @@index([taskInstanceId])
-  @@index([checklistInstanceId])
-  @@schema("public")
-}
-
-// =======================
-// Acivity Logs (Added for Activity logs reports)
-// =======================
-// Activity logs for auditing and tracking changes
-model ActivityLog {
-  id             String   @id @default(uuid())
-  organizationId String
-  actorUserId    String?
-  entityType     String
-  entityId       String
-  action         String
-  data           Json?
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, createdAt])
-  @@index([entityType, entityId])
-  @@schema("public")
-}
-
-// =======================
-// TIME-OFF
-// Added to track employee time-off and to generate time-off reports.
-// Sample data can be added for testing report generation.
-// =======================
-
-// User entitlement for time-off per year
-model TimeOffEntitlement {
-  id        String @id @default(uuid())
-  userId    String
-  year      Int
-  totalDays Int
-  carryOver Int    @default(0)
-  user      User   @relation(fields: [userId], references: [id])
-
-  @@unique([userId, year])
-  @@schema("public")
-}
-
-// Requests for time-off by employees
-model TimeOffRequest {
-  id        String        @id @default(uuid())
-  userId    String
-  type      TimeOffType
-  status    TimeOffStatus
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime      @default(now())
-  user      User          @relation(fields: [userId], references: [id])
-
-  @@index([startDate, endDate])
   @@schema("public")
 }

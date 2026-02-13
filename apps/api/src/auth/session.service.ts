@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
+import { Prisma } from '@repo/db';
 import { PrismaService } from '../database/prisma.service';
 import { User } from '@repo/db';
 
@@ -12,6 +13,11 @@ export interface SessionData {
   expiresAt: Date;
 }
 
+type UserWithRoles = Prisma.UserGetPayload<{
+  include: { roles: true };
+}>;
+
+
 @Injectable()
 export class SessionService {
   private readonly logger = new Logger(SessionService.name);
@@ -19,7 +25,7 @@ export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
-  ) {}
+  ) { }
 
   /**
    * Creates a new session in both DB and Redis
@@ -53,42 +59,43 @@ export class SessionService {
    * Validates a session and returns the user if valid
    * Checks Redis first, falls back to DB on cache miss
    */
-  async validateSession(sessionId: string): Promise<User | null> {
-    // Try Redis first (fast path)
+
+  async validateSession(sessionId: string): Promise<UserWithRoles | null> {
     const cachedSession = await this.redis.get(`${SESSION_PREFIX}${sessionId}`);
 
     if (cachedSession) {
       const sessionData = JSON.parse(cachedSession) as SessionData;
 
-      // Check expiration
       if (new Date(sessionData.expiresAt) < new Date()) {
         await this.deleteSession(sessionId);
         return null;
       }
 
-      // Get user from database
       return this.prisma.user.findUnique({
         where: { id: sessionData.userId },
+        include: { roles: true }, // ✅ correct
       });
     }
 
     // Cache miss - check database
     const dbSession = await this.prisma.session.findUnique({
       where: { id: sessionId },
-      include: { user: true },
+      include: {
+        user: {
+          include: { roles: true }, // ✅ FIXED HERE
+        },
+      },
     });
 
     if (!dbSession) {
       return null;
     }
 
-    // Check expiration
     if (dbSession.expiresAt < new Date()) {
       await this.deleteSession(sessionId);
       return null;
     }
 
-    // Re-cache in Redis
     const remainingTtl = Math.floor(
       (dbSession.expiresAt.getTime() - Date.now()) / 1000,
     );
@@ -98,6 +105,7 @@ export class SessionService {
         userId: dbSession.userId,
         expiresAt: dbSession.expiresAt,
       };
+
       await this.redis.setex(
         `${SESSION_PREFIX}${sessionId}`,
         remainingTtl,
@@ -105,7 +113,7 @@ export class SessionService {
       );
     }
 
-    return dbSession.user;
+    return dbSession.user; // ✅ now includes roles
   }
 
   /**

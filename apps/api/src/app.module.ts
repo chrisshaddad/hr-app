@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { DatabaseModule } from './database/database.module';
+import { MenuModule } from './menu/menu.module';
 
 @Module({
   imports: [
@@ -20,8 +21,9 @@ import { DatabaseModule } from './database/database.module';
     AuthModule,
     MailModule,
     OrganizationsModule,
+    MenuModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

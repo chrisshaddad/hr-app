@@ -1,6 +1,7 @@
 import { prisma } from '../../src/client';
 import { seedSuperAdmins, seedOrgAdmins } from './seedUsers';
 import { seedOrganizations } from './seedOrganizations';
+import { seedChecklistTemplates } from './seedChecklistTemplates';
 
 async function main() {
   // Seed users first (org admins need to exist before organizations)
@@ -9,6 +10,7 @@ async function main() {
 
   // Seed organizations (links org admins to their orgs)
   await seedOrganizations(prisma);
+  await seedChecklistTemplates(prisma);
 }
 main()
   .then(async () => {

@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '../../src/generated/prisma/client';
+import { PrismaClient, Prisma, UserRole } from '../../src/generated/prisma/client';
 
 const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
   {
@@ -8,8 +8,7 @@ const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
   // Add more super admins as needed
 ];
 
-// Org admins - these will be linked to organizations in seedOrganizations.ts
-// The order here matches the order in seedOrganizations.ts
+// Org admins
 const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
   {
     email: 'admin@techcorp.example.com',
@@ -38,33 +37,61 @@ const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
 ];
 
 export async function seedSuperAdmins(prisma: PrismaClient) {
-  console.log('Seeding super admins...');
 
-  await prisma.user.createMany({
-    data: SUPER_ADMINS.map((admin) => ({
-      ...admin,
-      isConfirmed: true,
-      role: 'SUPER_ADMIN',
-    })),
-  });
+  for (const admin of SUPER_ADMINS) {
+    // Use upsert to avoid unique constraint errors
+    const user = await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {}, // Do nothing if exists
+      create: {
+        ...admin,
+        isConfirmed: true,
+      },
+    });
 
-  console.log(
-    `Super admins: ${SUPER_ADMINS.map((u) => u.email).join(', ')} seeded.`,
-  );
+    // Assign SUPER_ADMIN role if not already assigned
+    const existingRole = await prisma.userRoleAssignment.findUnique({
+      where: { userId_role: { userId: user.id, role: UserRole.SUPER_ADMIN } },
+    });
+
+    if (!existingRole) {
+      await prisma.userRoleAssignment.create({
+        data: {
+          userId: user.id,
+          role: UserRole.SUPER_ADMIN,
+        },
+      });
+    }
+
+  }
 }
 
 export async function seedOrgAdmins(prisma: PrismaClient) {
-  console.log('Seeding org admins...');
 
-  await prisma.user.createMany({
-    data: ORG_ADMINS.map((admin) => ({
-      ...admin,
-      isConfirmed: true,
-      role: 'ORG_ADMIN',
-    })),
-  });
+  for (const admin of ORG_ADMINS) {
+    // Upsert user
+    const user = await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {}, // Do nothing if exists
+      create: {
+        ...admin,
+        isConfirmed: true,
+      },
+    });
 
-  console.log(
-    `Org admins: ${ORG_ADMINS.map((u) => u.email).join(', ')} seeded.`,
-  );
+    // Assign ORG_ADMIN role if not already assigned
+    const existingRole = await prisma.userRoleAssignment.findUnique({
+      where: { userId_role: { userId: user.id, role: UserRole.ORG_ADMIN } },
+    });
+
+    if (!existingRole) {
+      await prisma.userRoleAssignment.create({
+        data: {
+          userId: user.id,
+          role: UserRole.ORG_ADMIN,
+        },
+      });
+    }
+
+  }
 }

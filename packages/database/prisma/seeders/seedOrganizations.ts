@@ -72,11 +72,17 @@ const ORGANIZATIONS: OrganizationSeed[] = [
 ];
 
 export async function seedOrganizations(prisma: PrismaClient) {
-  console.log('Seeding organizations...');
+
 
   // Get the super admin who will approve organizations
   const superAdmin = await prisma.user.findFirst({
-    where: { role: 'SUPER_ADMIN' },
+    where: {
+      roles: {
+        some: {
+          role: 'SUPER_ADMIN',
+        },
+      },
+    },
   });
 
   if (!superAdmin) {
@@ -88,14 +94,33 @@ export async function seedOrganizations(prisma: PrismaClient) {
     // Find the org admin by email
     const orgAdmin = await prisma.user.findUnique({
       where: { email: org.adminEmail },
+      include: { roles: true },
     });
 
     if (!orgAdmin) {
       console.warn(
-        `  Warning: Org admin ${org.adminEmail} not found. Skipping ${org.name}.`,
+        `  Warning: Org admin ${org.adminEmail} not found. Skipping ${org.name}.`
       );
       continue;
     }
+
+    // Check if they actually have the ORG_ADMIN role
+    const hasOrgAdminRole = orgAdmin.roles.some(r => r.role === 'ORG_ADMIN');
+    /* if (!hasOrgAdminRole) {
+       console.warn(
+         `  Warning: User ${org.adminEmail} does not have ORG_ADMIN role. Skipping ${org.name}.`
+       );
+       continue;
+     }*/
+    if (!hasOrgAdminRole) {
+      await prisma.userRoleAssignment.create({
+        data: {
+          userId: orgAdmin.id,
+          role: 'ORG_ADMIN',
+        },
+      });
+    }
+
 
     const createdOrg = await prisma.organization.create({
       data: {
@@ -114,16 +139,15 @@ export async function seedOrganizations(prisma: PrismaClient) {
       },
     });
 
+
     // Update the org admin to be a member of their organization
     await prisma.user.update({
       where: { id: orgAdmin.id },
       data: { organizationId: createdOrg.id },
     });
 
-    console.log(
-      `  Created organization: ${org.name} (${org.status}) - Admin: ${orgAdmin.email}`,
-    );
+
   }
 
-  console.log(`Organizations seeded: ${ORGANIZATIONS.length} total`);
+
 }

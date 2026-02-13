@@ -17,7 +17,7 @@ export const userResponseSchema = z.object({
   id: z.uuid(),
   email: z.email(),
   name: z.string().nullable(),
-  role: userRoleSchema,
+  role: z.array(z.string()),
   organizationId: z.uuid().nullable(),
   departmentId: z.uuid().nullable(),
   isConfirmed: z.boolean(),

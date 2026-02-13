@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../database/prisma.service';
 import { SessionService } from './session.service';
 import { MAIL_QUEUE, MAIL_JOBS } from '../mail/mail.constants';
+import { UserRole } from '@repo/db';
 
 const MAGIC_LINK_EXPIRY_MINUTES = 15;
 
@@ -16,7 +17,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly sessionService: SessionService,
     @InjectQueue(MAIL_QUEUE) private readonly mailQueue: Queue,
-  ) {}
+  ) { }
 
   /**
    * Request a magic link for the given email
@@ -26,6 +27,8 @@ export class AuthService {
     // Find user by email
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
+      include: { roles: true }, // ✅ include the roles relation
+
     });
 
     if (!user) {
@@ -80,12 +83,12 @@ export class AuthService {
    */
   async verifyMagicLink(token: string): Promise<{
     sessionId: string;
-    user: { id: string; email: string; name: string; role: string };
+    user: { id: string; email: string; name: string; role: UserRole[] };
   }> {
     // Find the magic link
     const magicLink = await this.prisma.magicLink.findUnique({
       where: { token },
-      include: { user: true },
+      include: { user: { include: { roles: true } } },
     });
 
     if (!magicLink) {
@@ -127,7 +130,7 @@ export class AuthService {
         id: magicLink.user.id,
         email: magicLink.user.email,
         name: magicLink.user.name,
-        role: magicLink.user.role,
+        role: magicLink.user.roles?.map(r => r.role) ?? [],
       },
     };
   }
@@ -152,7 +155,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      roles: user.roles?.map(r => r.role) ?? [], // ✅ plural
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       isConfirmed: user.isConfirmed,

@@ -4,3 +4,4 @@ export * from './users';
 export * from './organizations';
 export * from './departments';
 export * from './holidays';
+export * from './documents';

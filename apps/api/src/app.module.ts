@@ -9,6 +9,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { DatabaseModule } from './database/database.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { HolidaysModule } from './holidays/holidays.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HolidaysModule } from './holidays/holidays.module';
     OrganizationsModule,
     DepartmentsModule,
     HolidaysModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

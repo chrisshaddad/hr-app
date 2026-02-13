@@ -80,7 +80,7 @@ model User {
   assignedSchedules     UserWorkSchedule[] // Many-to-many
   auditLogs             AuditLog[]
   orgRoles              UserOrgRole[] // Organization-specific role assignments
-  policyTypes           PolicyType[]
+  policyTypes           PolicyType[]       @relation("PolicyTypeCreator")
 
   @@index([organizationId])
   @@index([departmentId])
@@ -703,7 +703,7 @@ model Integration {
   updatedAt          DateTime            @updatedAt
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@schema("private")
+  @@schema("public")
 }
 
 enum IntegrationProvider {
@@ -918,6 +918,17 @@ model Holiday {
   @@schema("public")
 }
 
+enum PolicyFrequency {
+  DAY
+  HOUR
+  WEEK
+  MONTH
+  YEARLY
+  ONE_TIME
+
+  @@schema("public")
+}
+
 model PolicyType {
   id             String  @id @default(uuid())
   organizationId String
@@ -929,23 +940,13 @@ model PolicyType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdByUser User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdByUser User         @relation("PolicyTypeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   policies      Policy[]
 
   @@unique([name, organizationId])
   @@index([organizationId])
-  @@schema("public")
-}
-
-enum PolicyFrequency {
-  DAY
-  HOUR
-  WEEK
-  MONTH
-  YEARLY
-  ONE_TIME
-
+  @@index([createdBy])
   @@schema("public")
 }
 
@@ -966,9 +967,10 @@ model Policy {
   updatedAt DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  PolicyType   PolicyType?  @relation(fields: [policyTypeId], references: [id])
+  policyType   PolicyType?  @relation(fields: [policyTypeId], references: [id], onDelete: SetNull)
 
   @@unique([name, organizationId])
   @@index([organizationId])
+  @@index([policyTypeId])
   @@schema("public")
 }

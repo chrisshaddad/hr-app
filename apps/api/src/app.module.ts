@@ -11,6 +11,7 @@ import { DepartmentsModule } from './departments/departments.module';
 import { HolidaysModule } from './holidays/holidays.module';
 import { DocumentsModule } from './documents/documents.module';
 import { StorageModule } from './storage';
+import { JobTitlesModule } from './job-titles/job-titles.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { StorageModule } from './storage';
     DepartmentsModule,
     HolidaysModule,
     DocumentsModule,
+    JobTitlesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

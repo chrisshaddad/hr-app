@@ -228,7 +228,8 @@ model Branch {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  jobAssignments JobAssignment[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@schema("public")
@@ -947,7 +948,7 @@ model PolicyType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdByUser User         @relation("PolicyTypeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdByUser User?        @relation("PolicyTypeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   policies      Policy[]
 

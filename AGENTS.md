@@ -97,7 +97,7 @@ Unit tests are out of scope of this project
 
 Quick reference for the monorepo layout:
 
-```
+```diagram
 hr-app/
 ├── apps/
 │   ├── api/          # NestJS backend (port 3001)

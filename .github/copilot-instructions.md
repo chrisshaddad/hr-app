@@ -46,7 +46,7 @@ packages/
 
 ### Infrastructure (Docker Compose)
 
-- PostgreSQL on port 5433
+- PostgreSQL on port 5434
 - Redis on port 6380
 - Mailpit on ports 8025 (UI) and 1025 (SMTP)
 

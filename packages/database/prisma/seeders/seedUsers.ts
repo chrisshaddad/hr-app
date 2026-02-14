@@ -16,6 +16,10 @@ const ORG_ADMINS: { email: string; name: string }[] = [
     name: 'Mahmoud Kalekish',
   },
   {
+    email: 'laylaabosaad@gmail.com',
+    name: 'Layla Abo Saad',
+  },
+  {
     email: 'admin@techcorp.example.com',
     name: 'Sarah Chen',
   },

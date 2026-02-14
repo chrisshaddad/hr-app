@@ -23,6 +23,16 @@ const ORGANIZATIONS: OrganizationSeed[] = [
     adminEmail: 'mahmoud.kalekish@gmail.com',
   },
   {
+    name: 'Merix',
+    description:
+      'A modern HR technology company building next-generation workforce management solutions.',
+    website: 'https://merixlb.com',
+    status: 'ACTIVE',
+    createdAt: new Date('2025-09-01'),
+    approvedAt: new Date('2025-09-02'),
+    adminEmail: 'laylaabosaad@gmail.com',
+  },
+  {
     name: 'TechCorp Solutions',
     description:
       'A leading technology company specializing in enterprise software solutions and cloud infrastructure.',

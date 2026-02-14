@@ -78,8 +78,10 @@ model User {
   managedEmployees      JobAssignment[]    @relation("EmployeeLineManager")
   attendances           Attendance[]
   assignedSchedules     UserWorkSchedule[] // Many-to-many
+  scheduleAssignments   UserWorkSchedule[] @relation("UserWorkScheduleAssigner")
   auditLogs             AuditLog[]
   orgRoles              UserOrgRole[] // Organization-specific role assignments
+  orgRoleAssignments    UserOrgRole[]      @relation("UserOrgRoleAssigner")
   policyTypes           PolicyType[]       @relation("PolicyTypeCreator")
 
   @@index([organizationId])
@@ -231,6 +233,7 @@ model Branch {
   jobAssignments JobAssignment[]
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationId, name])
   @@index([organizationId])
   @@schema("public")
 }
@@ -252,6 +255,7 @@ model Department {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationId, name])
   @@index([organizationId])
   @@index([parentDepartmentId])
   @@schema("public")
@@ -284,7 +288,7 @@ model Contract {
 model JobAssignment {
   id             String         @id @default(uuid())
   userId         String
-  employeeId     String // Employee ID (e.g., "UNI203")
+  employeeId     String? // Employee ID (optional for now, e.g., "UNI203")
   jobTitleId     String // e.g., "UI UX Designer"
   employmentType EmploymentType // Full-time, Part-time, Contract, Intern
   lineManagerId  String? // Reference to manager's User ID
@@ -305,6 +309,7 @@ model JobAssignment {
   jobTitle     JobTitle     @relation(fields: [jobTitleId], references: [id], onDelete: Restrict)
   department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
+  @@unique([organizationId, employeeId])
   @@index([userId])
   @@index([employeeId])
   @@index([lineManagerId])
@@ -469,12 +474,14 @@ model UserWorkSchedule {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  schedule WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule       WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  assignedByUser User?        @relation("UserWorkScheduleAssigner", fields: [assignedBy], references: [id], onDelete: SetNull)
 
   @@unique([userId, scheduleId])
   @@index([userId])
   @@index([scheduleId])
+  @@index([assignedBy])
   @@index([isActive])
   @@schema("public")
 }
@@ -691,12 +698,14 @@ model UserOrgRole {
   assignedAt DateTime @default(now())
   assignedBy String? // Who assigned this role
 
-  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role OrgRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrgRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedByUser User?   @relation("UserOrgRoleAssigner", fields: [assignedBy], references: [id], onDelete: SetNull)
 
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
+  @@index([assignedBy])
   @@schema("public")
 }
 
@@ -711,6 +720,8 @@ model Integration {
   updatedAt          DateTime            @updatedAt
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationId, provider])
+  @@index([organizationId])
   @@schema("public")
 }
 

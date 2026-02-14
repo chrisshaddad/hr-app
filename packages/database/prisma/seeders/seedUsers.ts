@@ -1,70 +1,132 @@
-import { PrismaClient, Prisma } from '../../src/generated/prisma/client';
+import { faker } from '@faker-js/faker';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
-const SUPER_ADMINS: Prisma.UserCreateManyInput[] = [
-  {
-    email: 'chris.haddad@humanline.com',
-    name: 'Chris Haddad',
-  },
-  // Add more super admins as needed
-];
+const DEFAULT_PASSWORD_HASH =
+  '$2b$10$HDRkGk8GxHkbii.6kCCQ7.qEM5U60GXq5tkP9jOtWRvQSVW0ZjEde'; // Password123!
 
-// Org admins - these will be linked to organizations in seedOrganizations.ts
-// The order here matches the order in seedOrganizations.ts
-const ORG_ADMINS: Prisma.UserCreateManyInput[] = [
-  {
-    email: 'admin@techcorp.example.com',
-    name: 'Sarah Chen',
-  },
-  {
-    email: 'admin@greenenergy.example.com',
-    name: 'Michael Green',
-  },
-  {
-    email: 'admin@healthfirst.example.com',
-    name: 'Dr. Emily Watson',
-  },
-  {
-    email: 'admin@urbanconstruction.example.com',
-    name: 'Robert Martinez',
-  },
-  {
-    email: 'admin@fraudulent.example.com',
-    name: 'John Suspicious',
-  },
-  {
-    email: 'admin@datasync.example.com',
-    name: 'Anna Data',
-  },
-];
-
-export async function seedSuperAdmins(prisma: PrismaClient) {
-  console.log('Seeding super admins...');
-
-  await prisma.user.createMany({
-    data: SUPER_ADMINS.map((admin) => ({
-      ...admin,
-      isConfirmed: true,
-      role: 'SUPER_ADMIN',
-    })),
-  });
-
-  console.log(
-    `Super admins: ${SUPER_ADMINS.map((u) => u.email).join(', ')} seeded.`,
-  );
+export interface SeededUsers {
+  superAdmin: { id: string; email: string };
+  johnOrgAdmin: { id: string; email: string };
+  pendingOrgAdmin: { id: string; email: string };
+  employees: Array<{ id: string; email: string; name: string }>;
 }
 
-export async function seedOrgAdmins(prisma: PrismaClient) {
-  console.log('Seeding org admins...');
+const EMPLOYEE_STATUSES = [
+  'ACTIVE',
+  'ON_BOARDING',
+  'PROBATION',
+  'ON_LEAVE',
+] as const;
 
-  await prisma.user.createMany({
-    data: ORG_ADMINS.map((admin) => ({
-      ...admin,
+export async function seedUsers(prisma: PrismaClient): Promise<SeededUsers> {
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'chris.haddad@humanline.com' },
+    update: {
+      name: 'Chris Haddad',
+      role: 'SUPER_ADMIN',
       isConfirmed: true,
-      role: 'ORG_ADMIN',
-    })),
+      organizationId: null,
+      departmentId: null,
+      employeeStatus: null,
+    },
+    create: {
+      email: 'chris.haddad@humanline.com',
+      name: 'Chris Haddad',
+      role: 'SUPER_ADMIN',
+      isConfirmed: true,
+    },
   });
 
-  console.log(
-    `Org admins: ${ORG_ADMINS.map((u) => u.email).join(', ')} seeded.`,
-  );
+  const johnOrgAdmin = await prisma.user.upsert({
+    where: { email: 'john@pork.admin' },
+    update: {
+      name: 'John Pork',
+      role: 'ORG_ADMIN',
+      isConfirmed: true,
+      organizationId: null,
+      departmentId: null,
+      employeeStatus: null,
+    },
+    create: {
+      email: 'john@pork.admin',
+      name: 'John Pork',
+      role: 'ORG_ADMIN',
+      isConfirmed: true,
+    },
+  });
+
+  const pendingOrgAdmin = await prisma.user.upsert({
+    where: { email: 'dana@acme.admin' },
+    update: {
+      name: 'Dana Wright',
+      role: 'ORG_ADMIN',
+      isConfirmed: true,
+      organizationId: null,
+      departmentId: null,
+      employeeStatus: null,
+    },
+    create: {
+      email: 'dana@acme.admin',
+      name: 'Dana Wright',
+      role: 'ORG_ADMIN',
+      isConfirmed: true,
+    },
+  });
+
+  const employees: Array<{ id: string; email: string; name: string }> = [];
+
+  for (let i = 1; i <= 8; i += 1) {
+    const fullName = faker.person.fullName();
+    const employee = await prisma.user.upsert({
+      where: { email: `employee${i}@pork.admin` },
+      update: {
+        name: fullName,
+        role: 'EMPLOYEE',
+        isConfirmed: true,
+        employeeStatus: EMPLOYEE_STATUSES[i % EMPLOYEE_STATUSES.length],
+      },
+      create: {
+        email: `employee${i}@pork.admin`,
+        name: fullName,
+        role: 'EMPLOYEE',
+        isConfirmed: true,
+        employeeStatus: EMPLOYEE_STATUSES[i % EMPLOYEE_STATUSES.length],
+      },
+    });
+
+    employees.push({
+      id: employee.id,
+      email: employee.email,
+      name: employee.name,
+    });
+  }
+
+  const authUsers = [
+    superAdmin.id,
+    johnOrgAdmin.id,
+    pendingOrgAdmin.id,
+    ...employees.map((u) => u.id),
+  ];
+
+  for (const userId of authUsers) {
+    await prisma.password.upsert({
+      where: { userId },
+      update: {
+        hashedPassword: DEFAULT_PASSWORD_HASH,
+        failedLoginCount: 0,
+      },
+      create: {
+        userId,
+        hashedPassword: DEFAULT_PASSWORD_HASH,
+        failedLoginCount: 0,
+      },
+    });
+  }
+
+  return {
+    superAdmin: { id: superAdmin.id, email: superAdmin.email },
+    johnOrgAdmin: { id: johnOrgAdmin.id, email: johnOrgAdmin.email },
+    pendingOrgAdmin: { id: pendingOrgAdmin.id, email: pendingOrgAdmin.email },
+    employees,
+  };
 }

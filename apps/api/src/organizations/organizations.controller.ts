@@ -1,6 +1,14 @@
-import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Body,
+  Post,
+} from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
-import { Roles, CurrentUser } from '../auth/decorators';
+import { Roles, CurrentUser, Public } from '../auth/decorators';
 import type { User, OrganizationStatus } from '@repo/db';
 import type {
   OrganizationListResponse,
@@ -11,6 +19,18 @@ import type {
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
+
+  //create org request - open to public
+  @Post()
+  @Public() // mark this route as public if you have an auth guard
+  async createOrganization(@Body() body: { name: string; email: string }) {
+    try {
+      return await this.organizationsService.createOrganization(body);
+    } catch (err) {
+      console.error(err);
+      throw err; // so Nest logs the full error
+    }
+  }
 
   @Get()
   @Roles('SUPER_ADMIN')
@@ -55,3 +75,6 @@ export class OrganizationsController {
     };
   }
 }
+
+//Side notes:
+// Any route with @roles or @currentUser() requires login

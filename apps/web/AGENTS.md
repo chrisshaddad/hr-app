@@ -6,9 +6,21 @@ Next.js 16 web application for the HR app.
 
 React frontend with Tailwind CSS and Shadcn UI components for HR management.
 
+## Guidelines
+
+Design React components with flexible, consistent interfaces that prevent runtime errors from prop mismatches and support multiple usage patterns while maintaining backward compatibility.
+
+- **Make props optional when possible** - Use optional props (`propName?: Type`) to allow multiple usage patterns without breaking existing implementations
+- **Support both direct data and ID-based patterns** - Components should accept either pre-fetched data objects or IDs for lazy loading, choosing the most efficient approach based on context
+- **Maintain backward compatibility** - Existing usage patterns must continue to work without modification when extending component interfaces
+- **Clear prop documentation** - Use TypeScript interfaces and JSDoc comments to document all accepted prop combinations and their intended use cases
+- **Consistent error handling** - Implement graceful fallbacks when required props are missing or invalid, preventing runtime crashes
+- **Type safety across patterns** - Ensure TypeScript types accurately represent all valid prop combinations and catch interface mismatches at compile time
+
 ### Server Components
 
 - `params` and `searchParams` are async - MUST await:
+
   ```tsx
   const { id } = await params; // DO
   const { id } = params; // DON'T - will fail
@@ -35,8 +47,6 @@ cd apps/web && npm run build
 ```
 
 ## Dos and Don'ts
-
-<!-- TODO Validate that this doc align with the already present react implementation -->
 
 ### Do
 

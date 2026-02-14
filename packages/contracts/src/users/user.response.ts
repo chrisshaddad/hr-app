@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { userRoleSchema } from './user-role.schema';
 
+//department (optional nested object)
+const departmentSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+});
 // User profile (optional nested object)
 const userProfileSchema = z.object({
   firstName: z.string().nullable(),
@@ -12,7 +17,6 @@ const userProfileSchema = z.object({
   jobTitle: z.string().nullable(),
 });
 
-// Response from /auth/me endpoint
 export const userResponseSchema = z.object({
   id: z.uuid(),
   email: z.email(),
@@ -22,5 +26,16 @@ export const userResponseSchema = z.object({
   departmentId: z.uuid().nullable(),
   isConfirmed: z.boolean(),
   profile: userProfileSchema.nullable().optional(),
+  createdAt: z.string(),
+  department: departmentSchema.nullable().optional(),
 });
 export type UserResponse = z.infer<typeof userResponseSchema>;
+
+// Response from GET /employees
+export const employeeListResponseSchema = z.object({
+  employees: z.array(userResponseSchema),
+  total: z.number(),
+  page: z.number(),
+  limit: z.number(),
+});
+export type EmployeeListResponse = z.infer<typeof employeeListResponseSchema>;

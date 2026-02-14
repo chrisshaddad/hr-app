@@ -1,8 +1,10 @@
 # Development Guidelines
 
-You're working on a fullstack HR app for a bootcamp with ReactJS, NestJS, Tailwind CSS, and Shadcn components.
+You're working on creating the performance review module for a fullstack HR app as part of a advanced fullstack development bootcamp.
 
-This project is a monorepo and uses turborepo.
+This project follows a monorepo structure set up using turborepo, its tech stack is made up of ReactJS, NestJS, Tailwind CSS, and Shadcn components.
+
+Development of the performance review module has a timeframe of 3 weeks total. There are two people working on this repo, both participants in the bootcamp. Your task is to facilitate feature focused development with a utilitarian approach focused on code quality and limited feature scope.
 
 ## Implementation Approach
 

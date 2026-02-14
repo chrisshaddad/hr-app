@@ -1,23 +1,23 @@
-# Packages Directory
+# Packages
 
-This directory contains shared packages for the HR app monorepo.
+Shared packages for the monorepo.
 
 ## Packages
 
-- [`contracts/`](contracts/) - Shared TypeScript interfaces and Zod schemas
-- [`database/`](database/) - Database schema and Prisma client
+- `packages/contracts/` - Zod schemas for API validation
+- `packages/database/` - Prisma client and database utilities
+- `packages/eslint-config/` - ESLint configurations
+- `packages/typescript-config/` - TypeScript configurations
 
-## Quick Commands
+## Commands
 
 ```bash
-# Build all packages
-# Add actual turborepo specific commands
-
-# Type check all packages
-npm run check-types
+cd packages/database && npm run db:generate  # Generate Prisma client
+cd packages/database && npm run db:migrate  # Run migrations
+cd packages/database && npm run db:seed     # Seed database
 ```
 
 ## See Also
-
-- [Contracts Package](contracts/AGENTS.md)
-- [Database Package](database/AGENTS.md)
+- [Root AGENTS.md](../AGENTS.md)
+- [Contracts Package](packages/contracts/AGENTS.md)
+- [Database Package](packages/database/AGENTS.md)

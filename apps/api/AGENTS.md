@@ -1,32 +1,28 @@
 # API (NestJS Backend)
 
-This is a NestJS REST API for the HR app.
+NestJS REST API for the HR app.
 
-## Project Description
+## API Description
 
 NestJS backend providing authentication, organizations management, and HR-related endpoints.
 
-## Key Paths
+### Validation
 
-- **Controllers**: [`src/`](src/) - API route handlers
-- **Services**: [`src/`](src/) - Business logic
-- **Modules**: [`src/`](src/) - NestJS modules
-- **Database**: Uses Prisma client from `@hr-app/database`
+- Use ZodValidationPipe with `@UsePipes` decorator on endpoints
+- Import schemas from `@repo/contracts` package
+
+### Key Paths
+
+- `src/auth/` - Authentication (magic links, sessions)
+- `src/organizations/` - Organization management
+- `src/common/pipes/zod-validation.pipe.ts` - Custom validation pipe
 
 ## Commands
 
 ```bash
-# Type check single file
-npx tsc --noEmit --skipLibCheck path/to/file.ts
-
-# Format single file
-# Add actual turborepo specific commands
-
-# Lint single file
-# Add actual turborepo specific commands
-
-# Run development server
-# Add actual turborepo specific commands
+cd apps/api && npm run dev      # Port 3001
+cd apps/api && npm run lint
+cd apps/api && npm run test
 ```
 
 ## Dos and Don'ts

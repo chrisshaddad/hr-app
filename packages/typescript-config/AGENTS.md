@@ -1,26 +1,13 @@
-# TypeScript Config Package
+# TypeScript Config
 
-Shared TypeScript configurations for the HR app.
+Shared TypeScript configurations.
 
-## Project Description
+## Configs
 
-TypeScript configuration presets for different project types.
-
-## Key Paths
-
-- [`base.json`](base.json) - Base configuration
-- [`nestjs.json`](nestjs.json) - NestJS-specific config
-- [`nextjs.json`](nextjs.json) - Next.js-specific config
-- [`react-library.json`](react-library.json) - React library config
-
-## Usage
-
-```json
-// In tsconfig.json
-{
-  "extends": "# Add actual turborepo specific paths"
-}
-```
+- `base.json` - Base configuration
+- `nestjs.json` - NestJS specific
+- `nextjs.json` - Next.js specific
+- `react-library.json` - React library package
 
 ## See Also
 

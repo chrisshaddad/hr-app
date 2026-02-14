@@ -4,20 +4,21 @@ This directory contains the application packages for the HR app.
 
 ## Packages
 
-- [`api/`](api/) - NestJS backend API (port 3001)
-- [`web/`](web/) - Next.js frontend web app (port 3000)
+- `api/` - NestJS backend (port 3001)
+- `web/` - Next.js frontend (port 3000)
 
-## Quick Commands
+## Commands
 
 ```bash
-# Run API development server
-# Add actual turborepo specific commands
+# API
+cd apps/api && npm run dev
+cd apps/api && npm run lint
+cd apps/api && npm run test
 
-# Run web development server
-# Add actual turborepo specific commands
-
-# Build all apps
-# Add actual turborepo specific commands
+# Web
+cd apps/web && npm run dev
+cd apps/web && npm run lint
+cd apps/web && npm run build
 ```
 
 ## See Also

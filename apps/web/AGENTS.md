@@ -1,36 +1,37 @@
 # Web (Next.js Frontend)
 
-This is a Next.js web application for the HR app using App Router.
+Next.js 16 web application for the HR app.
 
-## Project Description
+## Frontend Description
 
 React frontend with Tailwind CSS and Shadcn UI components for HR management.
 
-## Key Paths
+### Server Components
 
-- **Pages**: [`app/`](app/) - Next.js App Router pages
-- **Components**: [`components/`](components/) - React components
-- **UI Components**: [`components/ui/`](components/ui/) - Shadcn UI components
-- **Hooks**: [`hooks/`](hooks/) - Custom React hooks
-- **Lib**: [`lib/`](lib/) - Utilities and API client
+- `params` and `searchParams` are async - MUST await:
+  ```tsx
+  const { id } = await params; // DO
+  const { id } = params; // DON'T - will fail
+  ```
+
+### API Calls
+
+- Always use `credentials: 'include'` for fetch calls
+- Use typed `fetcher<T>()` and `apiPost<T>()` from `lib/api.ts`
+
+### Key Paths
+
+- `app/(authenticated)/` - Protected routes with layout
+- `components/ui/` - Shadcn UI components
+- `lib/api.ts` - API client utilities
+- `hooks/` - Custom React hooks
 
 ## Commands
 
 ```bash
-# Type check single file
-npx tsc --noEmit --skipLibCheck path/to/file.ts
-
-# Format single file
-# Add actual turborepo specific commands
-
-# Lint single file
-# Add actual turborepo specific commands
-
-# Run development server
-# Add actual turborepo specific commands
-
-# Build
-# Add actual turborepo specific commands
+cd apps/web && npm run dev      # Port 3000
+cd apps/web && npm run lint
+cd apps/web && npm run build
 ```
 
 ## Dos and Don'ts

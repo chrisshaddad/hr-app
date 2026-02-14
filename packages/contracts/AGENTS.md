@@ -1,31 +1,6 @@
-# Contracts Package
+# Contracts (Zod Schemas)
 
-Shared TypeScript interfaces and Zodv4 schemas for the HR app.
-
-## Project Description
-
-This package contains type definitions and validation schemas shared between the API and web applications.
-
-## Key Paths
-
-- [`src/`](src/) - TypeScript types and Zod schemas
-- [`src/auth/`](src/auth/) - Authentication-related types
-- [`src/users/`](src/users/) - User-related types
-- [`src/organizations/`](src/organizations/) - Organization-related types
-- [`src/common/`](src/common/) - Common types (dates, etc.)
-
-## Commands
-
-```bash
-# Type check
-npx tsc --noEmit
-
-# Format
-# Add actual turborepo specific commands
-
-# Lint
-# Add actual turborepo specific commands
-```
+Zod 4 schemas for API request/response validation.
 
 ## Specific Zod4 guidelines
 
@@ -175,8 +150,21 @@ Head to the [Zed 4 docs](https://zod.dev/v4/changelog) for the full changelog
 - Add types only used by one application
 - Duplicate types that exist in other packages
 
+## Key Schemas
+
+- `src/auth/` - Magic link request/verify schemas
+- `src/users/` - User role schemas
+- `src/organizations/` - Organization schemas
+
+## Commands
+
+```bash
+cd packages/contracts && npm run build
+```
+
 ## See Also
 
-- [Root AGENTS.md](../../AGENTS.md)
+- [Root AGENTS.md](../AGENTS.md)
+- [API Package](../apps/api/AGENTS.md)
 - [Database Package](../database/AGENTS.md)
 - [Zed 4 docs](https://zod.dev/v4/changelog)

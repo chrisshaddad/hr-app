@@ -41,22 +41,66 @@ Development of the performance review module has a timeframe of 3 weeks total. T
 
 Use these file-scoped commands for fast validation:
 
+### Root level (turborepo)
+
+npm run dev # Run all dev servers
+npm run build # Build all apps/packages
+npm run lint # Lint all
+npm run check-types # Type check all
+npm run format # Format with Prettier
+
+### API (NestJS)
+
+cd apps/api && npm run dev # API on port 3001
+cd apps/api && npm run lint # Lint API
+cd apps/api && npm run test # Run tests
+
+### Web (Next.js)
+
+cd apps/web && npm run dev # Web on port 3000
+cd apps/web && npm run lint # Lint web
+cd apps/web && npm run build # Build web
+
+### Database
+
+cd packages/database && npm run db:generate # Generate Prisma client
+cd packages/database && npm run db:migrate # Run migrations
+cd packages/database && npm run db:seed # Seed database
+
 ### Type Check Single File
 
 ```bash
- # Add actual turborepo specific commands
+# API (NestJS)
+cd apps/api && npx tsc --noEmit --skipLibCheck path/to/file.ts
+
+# Web (Next.js)
+cd apps/web && npx tsc --noEmit --skipLibCheck path/to/file.ts
+
+# Contracts package
+cd packages/contracts && npx tsc --noEmit --skipLibCheck path/to/file.ts
 ```
 
 ### Format Single File
 
 ```bash
- # Add actual turborepo specific commands
+# Format any file (from root)
+npx prettier --write path/to/file.ts
+
+# Format API files
+cd apps/api && npx prettier --write path/to/file.ts
+
+# Format Web files
+cd apps/web && npx prettier --write path/to/file.ts
 ```
 
 ### Lint Single File
 
 ```bash
- # Add actual turborepo specific commands
+# Lint API files
+cd apps/api && npx eslint path/to/file.ts
+
+# Lint Web files
+cd apps/web && npx eslint path/to/file.ts
 ```
 
 ### Unit Tests
@@ -66,7 +110,7 @@ Unit tests are out of scope of this project
 ### Full Build (Only When Explicitly Requested)
 
 ```bash
- # Add actual turborepo specific commands
+npm run build
 ```
 
 ---

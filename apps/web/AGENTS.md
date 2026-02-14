@@ -35,6 +35,8 @@ npx tsc --noEmit --skipLibCheck path/to/file.ts
 
 ## Dos and Don'ts
 
+<!-- TODO Validate that this doc align with the already present react implementation -->
+
 ### Do
 
 - Use existing UI components from [`components/ui/`](components/ui/)

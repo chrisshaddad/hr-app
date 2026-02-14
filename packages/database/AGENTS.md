@@ -26,6 +26,8 @@ npx tsc --noEmit
 
 ## Dos and Don'ts
 
+<!-- TODO Specific DB expansion and intended usage guielines -->
+
 ### Do
 
 - Keep schema in sync with contracts package types

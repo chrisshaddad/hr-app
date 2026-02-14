@@ -34,6 +34,7 @@ npx tsc --noEmit
 - Use Zod for request/response validation schemas
 - Export types that are used by both API and web
 - Keep schemas in sync with Prisma schema
+<!-- TODO Mention specific details about the new changes in zod 4 -->
 
 ### Don't
 

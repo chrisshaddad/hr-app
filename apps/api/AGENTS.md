@@ -31,6 +31,8 @@ npx tsc --noEmit --skipLibCheck path/to/file.ts
 
 ## Dos and Don'ts
 
+<!-- TODO Validate that this doc align with the already present nest implementation -->
+
 ### Do
 
 - Use dependency injection (NestJS patterns)

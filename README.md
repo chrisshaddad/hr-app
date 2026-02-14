@@ -31,7 +31,7 @@ npm run dev
 - **Web**: http://localhost:3000
 - **API**: http://localhost:3001
 - **Mailpit**: http://localhost:8025
-
+- **MinIo**: http://localhost:9000
 ## Database
 
 ```bash

@@ -3,22 +3,31 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { Users, HelpCircle, Settings, LogOut, Building2 } from 'lucide-react';
-import { useAuth, useUser } from '@/hooks/use-auth';
+import {
+  Users,
+  HelpCircle,
+  Settings,
+  LogOut,
+  Building2,
+  MessageSquare,
+  LayoutDashboard,
+  Briefcase,
+} from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarContent,
   SidebarMenuItem,
-  SidebarSeparator,
+  SidebarMenuButton,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from '@/components/atoms/Sidebar/Sidebar';
+import { useAuth, useUser } from '@/hooks/use-auth';
 
 interface NavItem {
   title: string;
@@ -32,17 +41,22 @@ const orgNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     url: '/dashboard',
-    icon: Users,
+    icon: LayoutDashboard,
   },
   {
     title: 'Jobs',
     url: '/jobs',
-    icon: Users,
+    icon: Briefcase,
   },
   {
     title: 'Candidates',
     url: '/candidates',
     icon: Users,
+  },
+  {
+    icon: MessageSquare,
+    title: 'Messaging',
+    url: '/messaging',
   },
 ];
 
@@ -124,13 +138,13 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild={!item.disabled}
-                    isActive={isActive(item.url)}
                     disabled={item.disabled}
+                    isActive={isActive(item.url)}
                     className={cn(
                       'h-11 gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
                       item.disabled && 'cursor-not-allowed opacity-50',
                       isActive(item.url)
-                        ? 'bg-primary-100 text-gray-900 hover:bg-primary-200'
+                        ? 'bg-alerts-success-base! text-white! hover:bg-alerts-success-dark! data-[active=true]:bg-alerts-success-base! data-[active=true]:text-white!'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
                     )}
                   >
@@ -144,8 +158,21 @@ export function AppSidebar() {
                       </div>
                     ) : (
                       <Link href={item.url}>
-                        <item.icon className="h-5 w-5 text-gray-500" />
-                        <span>{item.title}</span>
+                        <item.icon
+                          className={cn(
+                            'h-5 w-5',
+                            isActive(item.url)
+                              ? 'text-white!'
+                              : 'text-gray-500',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            isActive(item.url) ? 'text-white!' : '',
+                          )}
+                        >
+                          {item.title}
+                        </span>
                       </Link>
                     )}
                   </SidebarMenuButton>

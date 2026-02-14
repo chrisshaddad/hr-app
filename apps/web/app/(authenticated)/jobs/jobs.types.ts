@@ -1,3 +1,5 @@
+import type { JobApplicationsResponse } from '@repo/contracts';
+
 export type JobFormData = {
   jobTitle: string;
   location: string;
@@ -24,3 +26,6 @@ export type Job = {
   expectedClosingDate: string;
   status: 'draft' | 'published' | 'closed';
 };
+
+export type JobApplicationItem =
+  JobApplicationsResponse['applications'][number];

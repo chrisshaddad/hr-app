@@ -3,27 +3,28 @@
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
-import { JobFormData } from './jobs.types';
-import { fetcher, apiPost } from '@/lib/api';
-import { CreateJobForm } from '@/components/molecules';
-import { JobRow } from '@/components/molecules/JobRow/JobRow';
 import {
-  JobListResponse,
   JobResponse,
+  JobListResponse,
   CreateJobRequest,
+  UpdateJobStatusRequest,
 } from '@repo/contracts';
 import {
   Button,
   Loader,
-  SideModal,
   Skeleton,
+  SideModal,
   SearchInput,
 } from '@/components/atoms';
+import { JobFormData } from './jobs.types';
+import { fetcher, apiPost, apiPatch } from '@/lib/api';
+import { CreateJobForm } from '@/components/molecules';
+import { JobRow } from '@/components/molecules/JobRow/JobRow';
 
 export default function JobsPage() {
-  // const router = useRouter();
+  const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [jobs, setJobs] = useState<JobListResponse['jobs']>([]);
@@ -48,6 +49,10 @@ export default function JobsPage() {
       }
 
       setJobs(data.jobs);
+      // Store in sessionStorage to persist across navigation
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('jobs', JSON.stringify(data.jobs));
+      }
     } catch (err: any) {
       const errorMessage = err?.message || 'Failed to load jobs';
 
@@ -79,6 +84,7 @@ export default function JobsPage() {
       setIsCreateJobModalOpen(false);
 
       // Always fetch fresh jobs to ensure we have the correct data with IDs
+      // This will also update sessionStorage
       await fetchAllJobs(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create job');
@@ -88,16 +94,56 @@ export default function JobsPage() {
   };
 
   const handleJobClick = (jobId: string) => {
-    // router.push(`/jobs/${jobId}`);
+    router.push(`/jobs/${jobId}`);
   };
 
-  const handleStatusChange = (jobId: string, newStatus: string) => {};
+  const handleStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      const payload: UpdateJobStatusRequest = {
+        status: newStatus as 'draft' | 'published' | 'closed',
+      };
+
+      await apiPatch<JobResponse>(`/jobs/${jobId}/status`, payload);
+
+      const updatedJobs = jobs.map((job) =>
+        job.id === jobId ? { ...job, status: newStatus as any } : job,
+      );
+      setJobs(updatedJobs);
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('jobs', JSON.stringify(updatedJobs));
+      }
+
+      toast.success('Job status updated successfully');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update job status');
+      await fetchAllJobs(false);
+    }
+  };
 
   const filteredJobs = jobs.filter((job) =>
     job.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   useEffect(() => {
+    // Check if we have cached jobs in sessionStorage
+    if (typeof window !== 'undefined') {
+      const cachedJobs = sessionStorage.getItem('jobs');
+      if (cachedJobs) {
+        try {
+          const parsedJobs = JSON.parse(cachedJobs);
+          if (Array.isArray(parsedJobs) && parsedJobs.length > 0) {
+            setJobs(parsedJobs);
+            setIsJobsShimmerLoading(false);
+            return; // Don't fetch if we have cached data
+          }
+        } catch (e) {
+          // Invalid cache, continue to fetch
+        }
+      }
+    }
+
+    // Only fetch if we don't have cached data
     fetchAllJobs();
   }, []);
 
@@ -191,12 +237,12 @@ export default function JobsPage() {
                   key={job.id}
                   title={job.title}
                   status={job.status}
-                  numberOfCandidates={0}
                   onClick={handleJobClick}
                   createdAt={job.createdAt}
                   companyName={job.organization.name}
                   onStatusChange={handleStatusChange}
                   department={job.department || 'N/A'}
+                  numberOfCandidates={job.numberOfCandidates}
                 />
               ))}
             </div>

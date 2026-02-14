@@ -19,7 +19,7 @@ export const organizationDetailResponseSchema = z.object({
   createdAt: dateSchema,
   updatedAt: dateSchema,
   approvedAt: dateSchema.nullable(),
-  createdBy: organizationUserSchema,
+  createdBy: organizationUserSchema.nullable(),
   approvedBy: organizationUserSchema.nullable(),
   _count: z.object({
     users: z.number(),

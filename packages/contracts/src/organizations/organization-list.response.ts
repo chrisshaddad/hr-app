@@ -16,7 +16,7 @@ const organizationListItemSchema = z.object({
   status: organizationStatusSchema,
   website: z.string().nullable(),
   createdAt: dateSchema,
-  createdBy: organizationCreatorSchema,
+  createdBy: organizationCreatorSchema.nullable(),
   _count: z.object({
     users: z.number(),
     branches: z.number(),

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { DatabaseModule } from './database/database.module';
+import { BranchesModule } from './branches/branches.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DatabaseModule } from './database/database.module';
     AuthModule,
     MailModule,
     OrganizationsModule,
+    BranchesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import type { OrganizationStatus } from '@repo/db';
-import type {
-  OrganizationListResponse,
-  OrganizationDetailResponse,
+import { OrganizationStatus } from '@repo/db';
+import {
+  type OrganizationListResponse,
+  type OrganizationDetailResponse,
+  organizationStatusSchema,
 } from '@repo/contracts';
+import { UserRole } from '@repo/db';
 
 @Injectable()
 export class OrganizationsService {
@@ -156,6 +158,17 @@ export class OrganizationsService {
       },
     });
 
+    // Confirm org admin so that the magic link works
+    if (existing.createdById) {
+      await this.prisma.user.update({
+        where: { id: existing.createdById },
+        data: {
+          isConfirmed: true,
+          organizationId: id,
+        },
+      });
+    }
+
     return organization;
   }
 
@@ -210,5 +223,61 @@ export class OrganizationsService {
     });
 
     return organization;
+  }
+  /**
+   * Create a new organization (initially with PENDING status)
+   */
+  async createOrganization(data: {
+    name: string;
+    email: string;
+    description?: string;
+    website?: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Check if a user with this email already exists
+      let user = await tx.user.findUnique({ where: { email: data.email } });
+      if (!user) {
+        user = await tx.user.create({
+          data: {
+            name: `${data.name} Admin`,
+            email: data.email,
+            role: UserRole.ORG_ADMIN,
+          },
+        });
+      }
+      console.log(UserRole);
+
+      // 2. Check if this user already has created an org
+      const existingOrg = await tx.organization.findFirst({
+        where: { createdById: user.id },
+      });
+
+      if (existingOrg) {
+        throw new Error('You have already requested an organization');
+      }
+
+      // 3. Create the organization
+      const organization = await tx.organization.create({
+        data: {
+          name: data.name,
+          contactEmail: data.email,
+          status: OrganizationStatus.PENDING,
+          description: data.description,
+          website: data.website,
+          createdById: user.id,
+        },
+      });
+
+      // 4. Link user to org
+      await tx.user.update({
+        where: { id: user.id },
+        data: { organizationId: organization.id },
+      });
+
+      return {
+        message: 'Organization request submitted. Awaiting approval.',
+        organizationId: organization.id,
+      };
+    });
   }
 }

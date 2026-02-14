@@ -8,6 +8,7 @@ export interface SeededUsers {
   superAdmin: { id: string; email: string };
   johnOrgAdmin: { id: string; email: string };
   pendingOrgAdmin: { id: string; email: string };
+  extraOrgAdmins: Array<{ id: string; email: string }>;
   employees: Array<{ id: string; email: string; name: string }>;
 }
 
@@ -16,6 +17,15 @@ const EMPLOYEE_STATUSES = [
   'ON_BOARDING',
   'PROBATION',
   'ON_LEAVE',
+] as const;
+
+const EXTRA_ORG_ADMINS = [
+  { email: 'admin1@northstar.admin', name: 'Northstar Admin' },
+  { email: 'admin2@lumen.admin', name: 'Lumen Admin' },
+  { email: 'admin3@cascade.admin', name: 'Cascade Admin' },
+  { email: 'admin4@atlas.admin', name: 'Atlas Admin' },
+  { email: 'admin5@harbor.admin', name: 'Harbor Admin' },
+  { email: 'admin6@summit.admin', name: 'Summit Admin' },
 ] as const;
 
 export async function seedUsers(prisma: PrismaClient): Promise<SeededUsers> {
@@ -74,6 +84,29 @@ export async function seedUsers(prisma: PrismaClient): Promise<SeededUsers> {
   });
 
   const employees: Array<{ id: string; email: string; name: string }> = [];
+  const extraOrgAdmins: Array<{ id: string; email: string }> = [];
+
+  for (const extraAdmin of EXTRA_ORG_ADMINS) {
+    const user = await prisma.user.upsert({
+      where: { email: extraAdmin.email },
+      update: {
+        name: extraAdmin.name,
+        role: 'ORG_ADMIN',
+        isConfirmed: true,
+        organizationId: null,
+        departmentId: null,
+        employeeStatus: null,
+      },
+      create: {
+        email: extraAdmin.email,
+        name: extraAdmin.name,
+        role: 'ORG_ADMIN',
+        isConfirmed: true,
+      },
+    });
+
+    extraOrgAdmins.push({ id: user.id, email: user.email });
+  }
 
   for (let i = 1; i <= 8; i += 1) {
     const fullName = faker.person.fullName();
@@ -105,6 +138,7 @@ export async function seedUsers(prisma: PrismaClient): Promise<SeededUsers> {
     superAdmin.id,
     johnOrgAdmin.id,
     pendingOrgAdmin.id,
+    ...extraOrgAdmins.map((u) => u.id),
     ...employees.map((u) => u.id),
   ];
 
@@ -127,6 +161,7 @@ export async function seedUsers(prisma: PrismaClient): Promise<SeededUsers> {
     superAdmin: { id: superAdmin.id, email: superAdmin.email },
     johnOrgAdmin: { id: johnOrgAdmin.id, email: johnOrgAdmin.email },
     pendingOrgAdmin: { id: pendingOrgAdmin.id, email: pendingOrgAdmin.email },
+    extraOrgAdmins,
     employees,
   };
 }

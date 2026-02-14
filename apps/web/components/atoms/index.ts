@@ -92,11 +92,12 @@ import { Toaster } from './Sonner/Sonner';
 import * as Sidebar from './Sidebar/Sidebar';
 import { Dropdown } from './Dropdown/Dropdown';
 import { Skeleton } from './Skeleton/Skeleton';
-import { Textarea } from './TextArea/TextArea';
+import { TextArea } from './TextArea/TextArea';
 import { TopNavbar } from './TopNavbar/TopNavbar';
 import { AppSidebar } from './Sidebar/AppSidebar';
 import { SideModal } from './SideModal/SideModal';
 import { DatePicker } from './DatePicker/DatePicker';
+import { KanbanBoard } from './KanbanBoard/KanbanBoard';
 import { SearchInput } from './SearchInput/SearchInput';
 
 export {
@@ -117,7 +118,7 @@ export {
   Sidebar,
   Skeleton,
   Dropdown,
-  Textarea,
+  TextArea,
   TableRow,
   TopNavbar,
   TableBody,
@@ -146,6 +147,7 @@ export {
   SelectValue,
   DialogTitle,
   SelectLabel,
+  KanbanBoard,
   SelectGroup,
   TableCaption,
   SheetTrigger,

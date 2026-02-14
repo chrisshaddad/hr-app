@@ -18,12 +18,12 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
-    register,
-    handleSubmit,
     reset,
     watch,
     setValue,
+    register,
     clearErrors,
+    handleSubmit,
     formState: { errors },
   } = useForm<MagicLinkRequest>({
     resolver: zodResolver(magicLinkRequestSchema),

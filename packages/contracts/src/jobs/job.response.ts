@@ -18,6 +18,7 @@ export const jobResponseSchema = z.object({
   description: z.string().nullable(),
   experienceLevel: z.string().nullable(),
   expectedClosingDate: z.string().nullable(),
+  numberOfCandidates: z.number().int().min(0),
   status: z.enum(['draft', 'published', 'closed']),
 });
 

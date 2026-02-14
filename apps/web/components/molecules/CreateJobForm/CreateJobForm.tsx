@@ -6,7 +6,7 @@ import { useFormik } from 'formik';
 import {
   Input,
   Button,
-  Textarea,
+  TextArea,
   Dropdown,
   DatePicker,
 } from '@/components/atoms';
@@ -162,7 +162,7 @@ export const CreateJobForm = ({
               }}
               onBlur={() => formik.setFieldTouched('expectedClosingDate', true)}
             />
-            <Textarea
+            <TextArea
               rows={8}
               required
               name="description"

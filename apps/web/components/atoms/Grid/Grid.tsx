@@ -44,7 +44,19 @@ const Grid = <T extends Record<string, any>>({
     >
       <div className="overflow-x-auto flex-1 flex flex-col min-h-0">
         <div className="shrink-0">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              {table.getHeaderGroups()[0]?.headers.map((header) => {
+                const columnCount =
+                  table.getHeaderGroups()[0]?.headers.length || 1;
+                return (
+                  <col
+                    key={header.id}
+                    style={{ width: `${100 / columnCount}%` }}
+                  />
+                );
+              })}
+            </colgroup>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr
@@ -58,8 +70,10 @@ const Grid = <T extends Record<string, any>>({
                       <th
                         key={header.id}
                         className={cn(
-                          'p-4 text-left text-xs font-bold text-greyscale-600',
-                          isFirst && 'rounded-tl-[16px]',
+                          'text-left text-xs font-bold text-greyscale-600',
+                          isFirst
+                            ? 'pl-4 pr-4 pt-4 pb-4 rounded-tl-[16px]'
+                            : 'p-4',
                           isLast && 'rounded-tr-[16px]',
                         )}
                       >
@@ -78,11 +92,18 @@ const Grid = <T extends Record<string, any>>({
           </table>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <colgroup>
-              {table.getHeaderGroups()[0]?.headers.map((header) => (
-                <col key={header.id} style={{ width: header.getSize() }} />
-              ))}
+              {table.getHeaderGroups()[0]?.headers.map((header) => {
+                const columnCount =
+                  table.getHeaderGroups()[0]?.headers.length || 1;
+                return (
+                  <col
+                    key={header.id}
+                    style={{ width: `${100 / columnCount}%` }}
+                  />
+                );
+              })}
             </colgroup>
             <tbody>
               {table.getRowModel().rows.map((row) => (
@@ -91,19 +112,25 @@ const Grid = <T extends Record<string, any>>({
                   className="border-b border-greyscale-300 hover:bg-greyscale-50"
                   style={{ height: rowHeight }}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-5">
-                      {flexRender(
-                        cell.column.columnDef.cell ||
-                          ((info) => (
-                            <span className="text-greyscale-900 text-xs font-medium">
-                              {info.getValue() as string}
-                            </span>
-                          )),
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell, cellIndex) => {
+                    const isFirst = cellIndex === 0;
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn('py-5', isFirst ? 'pl-4 pr-4' : 'px-4')}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell ||
+                            ((info) => (
+                              <span className="text-greyscale-900 text-xs font-medium">
+                                {info.getValue() as string}
+                              </span>
+                            )),
+                          cell.getContext(),
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

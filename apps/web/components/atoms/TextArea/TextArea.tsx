@@ -5,7 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TextareaProps } from './TextArea.types';
 
-const Textarea = ({
+const TextArea = ({
   name,
   label,
   value,
@@ -58,4 +58,4 @@ const Textarea = ({
   );
 };
 
-export { Textarea };
+export { TextArea };

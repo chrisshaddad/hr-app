@@ -5,3 +5,5 @@ export * from './apply-job.response';
 export * from './create-job.request';
 export * from './public-job.response';
 export * from './job-applications.response';
+export * from './update-job-status.request';
+export * from './update-application-status.request';

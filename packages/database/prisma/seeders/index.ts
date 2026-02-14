@@ -1,15 +1,20 @@
 import { prisma } from '../../src/client';
 import { seedSuperAdmins, seedOrgAdmins } from './seedUsers';
 import { seedOrganizations } from './seedOrganizations';
+import { seedOrgStructure } from './seedOrgStructure';
 
 async function main() {
-  // Seed users first (org admins need to exist before organizations)
+  // 1) Users (super admins + org admins) including passwords + profiles
   await seedSuperAdmins(prisma);
   await seedOrgAdmins(prisma);
 
-  // Seed organizations (links org admins to their orgs)
+  // 2) Organizations (12 orgs) + link org admin to organizationId + approvals
   await seedOrganizations(prisma);
+
+  // 3) Branches + departments + employees (and their passwords/profiles) + sessions/magiclinks
+  await seedOrgStructure(prisma);
 }
+
 main()
   .then(async () => {
     await prisma.$disconnect();

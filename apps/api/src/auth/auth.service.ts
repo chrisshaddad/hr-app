@@ -80,7 +80,13 @@ export class AuthService {
    */
   async verifyMagicLink(token: string): Promise<{
     sessionId: string;
-    user: { id: string; email: string; name: string; role: string };
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      organizationId: string | null;
+    };
   }> {
     // Find the magic link
     const magicLink = await this.prisma.magicLink.findUnique({
@@ -128,6 +134,7 @@ export class AuthService {
         email: magicLink.user.email,
         name: magicLink.user.name,
         role: magicLink.user.role,
+        organizationId: magicLink.user.organizationId,
       },
     };
   }
